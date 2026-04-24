@@ -1,0 +1,92 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { writeFile, mkdir } from 'fs/promises'
+import { existsSync } from 'fs'
+import { join } from 'path'
+import { getCurrentUser } from '@/lib/auth'
+
+export async function POST(request: NextRequest) {
+  try {
+    const user = await getCurrentUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    }
+
+    const formData = await request.formData()
+    const file = formData.get('file') as File
+
+    if (!file) {
+      return NextResponse.json(
+        { error: 'Nenhum arquivo enviado' },
+        { status: 400 }
+      )
+    }
+
+    // Validar tamanho do arquivo (máximo 100MB)
+    const maxSize = 100 * 1024 * 1024 // 100MB
+    if (file.size > maxSize) {
+      return NextResponse.json(
+        { error: 'Arquivo muito grande. Tamanho máximo: 100MB' },
+        { status: 400 }
+      )
+    }
+
+    // Criar diretório de uploads se não existir
+    const uploadsDir = join(process.cwd(), 'public', 'uploads')
+    if (!existsSync(uploadsDir)) {
+      await mkdir(uploadsDir, { recursive: true })
+    }
+
+    // Gerar nome único para o arquivo
+    const timestamp = Date.now()
+    const randomString = Math.random().toString(36).substring(2, 15)
+    const originalName = file.name.toLowerCase()
+    const dotIndex = originalName.lastIndexOf('.')
+    const fileExtension = dotIndex !== -1 ? originalName.substring(dotIndex) : ''
+    const fileName = `${timestamp}-${randomString}${fileExtension}`
+    const filePath = join(uploadsDir, fileName)
+
+    // Salvar arquivo
+    const bytes = await file.arrayBuffer()
+    const buffer = Buffer.from(bytes)
+    await writeFile(filePath, buffer)
+
+    // Retornar caminho relativo para salvar no banco
+    const relativePath = `/uploads/${fileName}`
+    const fileSize = formatFileSize(file.size)
+
+    return NextResponse.json({
+      success: true,
+      filePath: relativePath,
+      fileName: file.name,
+      fileSize: fileSize,
+      originalSize: file.size,
+    })
+  } catch (error: any) {
+    console.error('Error uploading file:', error)
+    return NextResponse.json(
+      { error: 'Erro ao fazer upload do arquivo: ' + error.message },
+      { status: 500 }
+    )
+  }
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes === 0) return '0 Bytes'
+  const k = 1024
+  const sizes = ['Bytes', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
