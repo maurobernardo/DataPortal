@@ -1,8 +1,10 @@
-import bcrypt from 'bcryptjs'
+import { hashPassword } from '../lib/auth'
+import { createAuthUser, db, ensureUsersTable, findUserByEmail } from '../lib/db'
 import { isStrongPassword, normalizeEmail, normalizeText } from '../lib/security'
-import { db } from '../lib/db'
 
 async function main() {
+  await ensureUsersTable()
+
   const email = normalizeEmail(process.argv[2] || 'admin@data4moz.com')
   const password = normalizeText(process.argv[3], 256)
   const name = normalizeText(process.argv[4] || 'Administrador Principal', 120)
@@ -15,22 +17,29 @@ async function main() {
     throw new Error('A senha deve ter no mínimo 12 caracteres, maiúscula, minúscula, número e símbolo.')
   }
 
-  const hashedPassword = await bcrypt.hash(password, 10)
+  const passwordHash = await hashPassword(password)
+  const existing = await findUserByEmail(email)
 
-  await db.execute(
-    `INSERT INTO User (email, password, name, createdAt, updatedAt)
-     VALUES (?, ?, ?, NOW(), NOW())
-     ON DUPLICATE KEY UPDATE updatedAt = NOW()`,
-    [email, hashedPassword, name]
-  )
+  if (existing) {
+    await db.execute(
+      `UPDATE users SET name = ?, password_hash = ?, email_verified = 1, role = 'admin', verification_token = NULL, verification_expires = NULL WHERE id = ?`,
+      [name, passwordHash, existing.id]
+    )
+  } else {
+    await db.execute(
+      `INSERT INTO users (name, email, password_hash, email_verified, role, created_at)
+       VALUES (?, ?, ?, 1, 'admin', NOW())`,
+      [name, email, passwordHash]
+    )
+  }
 
-  const [rows] = await db.execute('SELECT id, email, name FROM User WHERE email = ? LIMIT 1', [email]) as any
-  const user = rows[0]
+  const user = await findUserByEmail(email)
 
   console.log('Usuário criado/atualizado:', {
-    id: user.id,
-    email: user.email,
-    name: user.name,
+    id: user?.id,
+    email: user?.email,
+    name: user?.name,
+    role: user?.role,
   })
 }
 
@@ -39,17 +48,3 @@ main()
     console.error(e)
     process.exit(1)
   })
-  .finally(async () => {})
-
-
-
-
-
-
-
-
-
-
-
-
-

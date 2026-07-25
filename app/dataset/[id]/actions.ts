@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { getCurrentUser } from '@/lib/auth'
 import {
   createStatistic,
   findDatasetById,
@@ -10,12 +11,9 @@ import {
 
 export async function incrementView(datasetId: number) {
   try {
-    // Incrementar contador de visualizações
+    const session = await getCurrentUser()
     await incrementDatasetViews(datasetId)
-
-    // Registrar estatística
-    await createStatistic(datasetId, 'view')
-
+    await createStatistic(datasetId, 'view', session?.userId)
     revalidatePath(`/dataset/${datasetId}`)
   } catch (error) {
     console.error('Error incrementing view:', error)
@@ -38,9 +36,8 @@ export async function downloadDataset(formData: FormData) {
 
     // Incrementar contador de downloads
     await incrementDatasetDownloads(datasetId)
-
-    // Registrar estatística
-    await createStatistic(datasetId, 'download')
+    const session = await getCurrentUser()
+    await createStatistic(datasetId, 'download', session?.userId)
 
     revalidatePath(`/dataset/${datasetId}`)
     revalidatePath('/dashboard')

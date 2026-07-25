@@ -18,6 +18,7 @@ interface Dataset {
 
 interface DatasetCatalogCardProps {
   dataset: Dataset
+  highlight?: string
 }
 
 const formatColors: { [key: string]: string } = {
@@ -29,7 +30,7 @@ const formatColors: { [key: string]: string } = {
   'GML': 'bg-indigo-100 text-indigo-700 border-indigo-200',
 }
 
-export function DatasetCatalogCard({ dataset }: DatasetCatalogCardProps) {
+export function DatasetCatalogCard({ dataset, highlight }: DatasetCatalogCardProps) {
   const keywords = dataset.keywords?.split(',').slice(0, 3) || []
   const formatColor = formatColors[dataset.format] || 'bg-gray-100 text-gray-700 border-gray-200'
   const isPopular = dataset.downloads > 10 || dataset.views > 50
@@ -58,10 +59,10 @@ export function DatasetCatalogCard({ dataset }: DatasetCatalogCardProps) {
               )}
             </div>
             <h3 className="text-lg font-bold text-gray-900 group-hover:text-green-700 transition-colors mb-2 line-clamp-2 leading-snug">
-              {dataset.title}
+              <HighlightedText text={dataset.title} query={highlight} />
             </h3>
             <p className="text-sm text-gray-500 line-clamp-2 leading-relaxed">
-              {dataset.description}
+              <HighlightedText text={dataset.description} query={highlight} />
             </p>
           </div>
         </div>
@@ -139,5 +140,30 @@ export function DatasetCatalogCard({ dataset }: DatasetCatalogCardProps) {
         </div>
       </div>
     </Link>
+  )
+}
+
+function escapeRegex(input: string) {
+  return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function HighlightedText({ text, query }: { text: string; query?: string }) {
+  const q = (query || '').trim()
+  if (!q) return <>{text}</>
+
+  const parts = text.split(new RegExp(`(${escapeRegex(q)})`, 'ig'))
+  return (
+    <>
+      {parts.map((part, idx) => {
+        const isMatch = part.toLowerCase() === q.toLowerCase()
+        return isMatch ? (
+          <mark key={idx} className="bg-yellow-200/70 text-inherit rounded px-0.5">
+            {part}
+          </mark>
+        ) : (
+          <span key={idx}>{part}</span>
+        )
+      })}
+    </>
   )
 }

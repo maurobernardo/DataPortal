@@ -1,0 +1,12 @@
+/* app/ai-insights/ai-insights.css
+   Tokens e utilitários partilhados: app/globals.css
+   import './ai-insights.css' na página AI Insights.
+*/
+
+/* Mesma tipografia que o resto do portal (Inter / --pd-font-sans). */
+.ai-page {
+  font-family: var(--pd-font-sans);
+  color: var(--pd-ink-700);
+  background: var(--pd-surface-50);
+  -webkit-font-smoothing: antialiased;
+}

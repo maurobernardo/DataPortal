@@ -13,9 +13,14 @@ interface ReportRequestButtonProps {
     partners?: string | null
   }
   email?: string
+  className?: string
 }
 
-export function ReportRequestButton({ report, email = 'portaldedados@data4moz.com' }: ReportRequestButtonProps) {
+export function ReportRequestButton({
+  report,
+  email = 'portaldedados@data4moz.com',
+  className = 'inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 text-white font-medium hover:bg-green-700 transition disabled:opacity-60 disabled:cursor-not-allowed',
+}: ReportRequestButtonProps) {
   const [loading, setLoading] = useState(false)
 
   const handleClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -59,11 +64,11 @@ export function ReportRequestButton({ report, email = 'portaldedados@data4moz.co
       type="button"
       onClick={handleClick}
       disabled={loading}
-      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 text-white font-medium hover:bg-green-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
+      className={className}
       aria-label={`Request do relatório completo: ${report.title}`}
     >
       <Mail className="w-4 h-4" />
-      {loading ? 'Enviando...' : 'Request'}
+      {loading ? 'A enviar…' : 'Solicitar relatório'}
     </button>
   )
 }

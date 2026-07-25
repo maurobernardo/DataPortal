@@ -6,8 +6,10 @@ import { Navigation } from './Navigation'
 export function ConditionalNavigation() {
   const pathname = usePathname()
   
-  // Não mostrar navegação no dashboard e admin (eles têm seus próprios headers)
-  if (pathname?.startsWith('/dashboard') || pathname?.startsWith('/admin')) {
+  // Não mostrar navegação no dashboard, admin ou visualização full-screen de mapas
+  const isMainDashboard = pathname === '/dashboard' || pathname?.startsWith('/dashboard/')
+  const isMapViewer = pathname?.startsWith('/maps/') && pathname !== '/maps'
+  if (isMainDashboard || pathname?.startsWith('/admin') || isMapViewer) {
     return null
   }
   

@@ -1,7 +1,13 @@
 import { redirect } from 'next/navigation'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentUserProfile } from '@/lib/auth'
 import { ModernDashboard } from '@/components/ModernDashboard'
-import { db } from '@/lib/db'
+import {
+  db,
+  countReportRequests,
+  countRegisteredUsers,
+  findAllRegisteredUsers,
+  getAuthenticatedActivity,
+} from '@/lib/db'
 
 async function getDashboardData() {
   const today = new Date()
@@ -14,6 +20,7 @@ async function getDashboardData() {
     totalDownloads,
     totalVisitors,
     totalReports,
+    totalReportRequests,
     viewsThisMonth,
     downloadsThisMonth,
     viewsLastMonth,
@@ -23,6 +30,9 @@ async function getDashboardData() {
     statistics,
     datasetsByCategory,
     recentActivity,
+    totalRegisteredUsers,
+    registeredUsers,
+    authenticatedActivity,
   ] = await Promise.all([
     (async () => {
       const [rows] = await db.execute('SELECT COUNT(*) as total FROM Dataset') as any
@@ -44,6 +54,7 @@ async function getDashboardData() {
       const [rows] = await db.execute('SELECT COUNT(*) as total FROM Report') as any
       return rows[0]?.total ?? 0
     })(),
+    countReportRequests(),
     (async () => {
       const [rows] = await db.execute(
         `SELECT COUNT(*) as total FROM Statistic WHERE type='view' AND createdAt >= ?`,
@@ -93,7 +104,7 @@ async function getDashboardData() {
       return rows.map((r: any) => ({ ...r, category: { id: r.cat_id, name: r.cat_name, description: r.cat_desc, dataType: r.cat_dataType } }))
     })(),
     (async () => {
-      const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+      const since = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
       const [rows] = await db.execute(
         `SELECT
            s.*,
@@ -152,10 +163,10 @@ async function getDashboardData() {
           : null,
       }))
     })(),
+    countRegisteredUsers(),
+    findAllRegisteredUsers(),
+    getAuthenticatedActivity(30),
   ])
-
-  // Como o modelo ReportRequest é novo, iniciamos o total de requests em 0.
-  const totalReportRequests = 0
 
   // Calcular percentuais de mudança
   const viewsChange = viewsLastMonth > 0
@@ -259,14 +270,27 @@ async function getDashboardData() {
     conversionRates,
     userRetention,
     categoryPerformance,
+    totalRegisteredUsers,
+    registeredUsers: registeredUsers.map((u) => ({
+      ...u,
+      createdAt: new Date(u.createdAt).toISOString(),
+    })),
+    authenticatedActivity: authenticatedActivity.map((a: any) => ({
+      ...a,
+      createdAt: new Date(a.createdAt).toISOString(),
+    })),
   }
 }
 
 export default async function DashboardPage() {
-  const user = await getCurrentUser()
+  const user = await getCurrentUserProfile()
 
   if (!user) {
-    redirect('/admin/login')
+    redirect('/login?next=/dashboard')
+  }
+
+  if (user.role !== 'admin') {
+    redirect('/')
   }
 
   const data = await getDashboardData()

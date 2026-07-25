@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { writeFile, mkdir } from 'fs/promises'
 import { existsSync } from 'fs'
 import { join } from 'path'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentAdmin } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await getCurrentUser()
+    const user = await getCurrentAdmin()
     if (!user) {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+      return NextResponse.json({ error: 'Acesso reservado a administradores' }, { status: 403 })
     }
 
     const formData = await request.formData()

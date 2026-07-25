@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createCategory, findAllCategories } from '@/lib/db'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentAdmin } from '@/lib/auth'
 
 export async function GET() {
   try {
@@ -18,9 +18,9 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await getCurrentUser()
+    const user = await getCurrentAdmin()
     if (!user) {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+      return NextResponse.json({ error: 'Acesso reservado a administradores' }, { status: 403 })
     }
 
     const { name, description, dataType } = await request.json()
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     console.error('Error creating category:', error)
     if (error?.code === 'ER_DUP_ENTRY') {
       return NextResponse.json(
-        { error: 'Categoria já existe' },
+        { error: 'Já existe uma categoria com este nome para este tipo de dados.' },
         { status: 400 }
       )
     }

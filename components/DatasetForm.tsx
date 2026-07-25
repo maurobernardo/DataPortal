@@ -143,6 +143,18 @@ export function DatasetForm() {
     setUploadedFile(null)
 
     try {
+      // Geoespacial: Shapefile deve ser ZIP (um .shp sozinho é incompleto)
+      if (formData.dataType === 'geoespacial') {
+        const ext = file.name.toLowerCase().slice(file.name.lastIndexOf('.'))
+        const isZip = ext === '.zip'
+        const isTiff = ext === '.tif' || ext === '.tiff'
+        const isGeoJson = ext === '.geojson' || ext === '.json'
+
+        if (!isZip && !isTiff && !isGeoJson) {
+          throw new Error('Para dados geoespaciais, envie .zip (Shapefile), .tif/.tiff (GeoTiff) ou .geojson/.json')
+        }
+      }
+
       const formDataObj = new FormData()
       formDataObj.append('file', file)
 
@@ -228,6 +240,16 @@ export function DatasetForm() {
     // Validar se há arquivo (obrigatório para novos datasets)
     if (!editingId && !formData.filePath) {
       alert('Por favor, faça o upload de um arquivo antes de salvar.')
+      return
+    }
+
+    // Shapefile deve ser cadastrado via .zip
+    if (
+      formData.dataType === 'geoespacial' &&
+      String(formData.format).toLowerCase() === 'shapefile' &&
+      !String(formData.filePath).toLowerCase().endsWith('.zip')
+    ) {
+      alert('Para Shapefile, faça upload de um arquivo .zip')
       return
     }
 
@@ -537,7 +559,7 @@ export function DatasetForm() {
                   <input
                     type="file"
                     onChange={handleFileUpload}
-                    accept={formData.dataType === 'geoespacial' ? ".shp,.geojson,.json,.gpkg,.csv,.zip,.dbf,.shx,.prj,.cpg,.tif,.tiff" : undefined}
+                    accept={formData.dataType === 'geoespacial' ? ".zip,.geojson,.json,.tif,.tiff" : undefined}
                     className="hidden"
                     id="file-upload"
                     disabled={uploading}
@@ -572,7 +594,7 @@ export function DatasetForm() {
                         </span>
                         <span className="text-xs text-gray-400 mt-1 text-center px-4">
                           {formData.dataType === 'geoespacial'
-                            ? 'Formatos: Shapefile, GeoTiff, CSV (máx. 100MB)'
+                            ? 'Formatos: Shapefile (.zip), GeoTiff (.tif/.tiff), GeoJSON (.geojson/.json) (máx. 100MB)'
                             : 'Aceita qualquer tipo de ficheiro (máx. 100MB)'}
                         </span>
                       </>

@@ -1,8 +1,8 @@
 export default function PoliticaCookiesPage() {
   return (
-    <section className="px-4 py-12 md:py-16">
+    <section className="px-4 pt-8 pb-8 sm:pt-10 md:pb-10">
       <div className="mx-auto max-w-5xl">
-        <div className="mb-8 rounded-2xl bg-gradient-to-r from-yellow-500 to-green-500 p-8 text-white shadow-xl">
+        <div className="mb-5 rounded-2xl bg-gradient-to-r from-yellow-500 to-green-500 p-6 text-white shadow-xl sm:p-8">
           <h1 className="text-3xl md:text-4xl font-bold">Politica de Cookies</h1>
           <p className="mt-3 text-white/90">
             Informacoes sobre cookies essenciais e tecnicos utilizados no portal.

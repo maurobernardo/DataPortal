@@ -1,26 +1,116 @@
 'use client'
 
-import { Mail, MapPin, Phone, Globe, Map } from 'lucide-react'
+import { Mail, MapPin, Phone, Globe, Map, Send } from 'lucide-react'
 import { FormEvent, useState } from 'react'
 
-export function ContactsSection() {
-  const mapsUrl =
-    'https://www.google.com/maps/search/?api=1&query=Rua+de+Barue%2C+Condominio+da+PAF+35%2C+Chimoio%2C+Mozambique'
+const mapsUrl =
+  'https://www.google.com/maps/search/?api=1&query=Rua+de+Barue%2C+Condominio+da+PAF+35%2C+Chimoio%2C+Mozambique'
+
+const INFO_CARDS = [
+  {
+    icon: Mail,
+    label: 'Email',
+    accent: '#064E2C',
+    accentLight: '#F1F8F4',
+    accentBorder: '#CFE3D6',
+    labelColor: '#064E2C',
+    content: (
+      <a
+        href="mailto:portaldedados@data4moz.com"
+        className="text-[15px] text-[#064E2C] font-medium hover:underline transition"
+      >
+        portaldedados@data4moz.com
+      </a>
+    ),
+  },
+  {
+    icon: Phone,
+    label: 'Telefone',
+    accent: '#dc2626',
+    accentLight: '#fef2f2',
+    accentBorder: '#fecaca',
+    labelColor: '#b91c1c',
+    content: (
+      <div className="flex flex-col gap-0.5">
+        <a href="tel:+17604504448" className="text-[15px] text-red-700 font-medium hover:underline transition block">
+          +1 760 450 4448
+        </a>
+        <a href="tel:+258828863737" className="text-[15px] text-red-700 font-medium hover:underline transition block">
+          +258 82 886 3737
+        </a>
+      </div>
+    ),
+  },
+  {
+    icon: MapPin,
+    label: 'Localização',
+    accent: '#064E2C',
+    accentLight: '#F1F8F4',
+    accentBorder: '#CFE3D6',
+    labelColor: '#064E2C',
+    content: (
+      <div>
+        <p className="text-[15px] text-gray-600 leading-relaxed mb-3">
+          Rua de Barue, Condomínio da PAF 35,<br />Chimoio, Moçambique
+        </p>
+        <a
+          href={mapsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#CFE3D6] bg-[#F1F8F4] text-[12px] font-bold text-[#064E2C] hover:bg-[#E7F3EB] transition"
+        >
+          <Map className="w-3 h-3" />
+          Ver no Google Maps
+        </a>
+      </div>
+    ),
+  },
+  {
+    icon: Globe,
+    label: 'Website',
+    accent: '#d97706',
+    accentLight: '#fffbeb',
+    accentBorder: '#fde68a',
+    labelColor: '#92400e',
+    content: (
+      <div className="flex flex-col gap-0.5">
+        <a
+          href="https://dataportal.co.mz"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[15px] text-amber-800 font-medium hover:underline transition block"
+        >
+          dataportal.co.mz
+        </a>
+        <a
+          href="https://data4moz.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[15px] text-amber-800 font-medium hover:underline transition block"
+        >
+          data4moz.com
+        </a>
+      </div>
+    ),
+  },
+]
+
+type ContactsSectionProps = {
+  /** Dentro do modal global: sem id na secção e com menos espaçamento vertical. */
+  variant?: 'page' | 'modal'
+}
+
+export function ContactsSection({ variant = 'page' }: ContactsSectionProps) {
+  const isModal = variant === 'modal'
   const [loading, setLoading] = useState(false)
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    subject: '',
-    message: '',
-  })
+  const [formData, setFormData] = useState({ name: '', email: '', subject: '', message: '' })
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     if (loading) return
     setLoading(true)
     setFeedback(null)
-
     try {
       const response = await fetch('/api/contact', {
         method: 'POST',
@@ -28,12 +118,8 @@ export function ContactsSection() {
         body: JSON.stringify(formData),
       })
       const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data?.error || 'Não foi possível enviar a mensagem.')
-      }
-
-      setFeedback({ type: 'success', message: 'Mensagem enviada com sucesso!' })
+      if (!response.ok) throw new Error(data?.error || 'Não foi possível enviar a mensagem.')
+      setFeedback({ type: 'success', message: 'Mensagem enviada com sucesso! Entraremos em contacto em breve.' })
       setFormData({ name: '', email: '', subject: '', message: '' })
     } catch (error: any) {
       setFeedback({ type: 'error', message: error.message || 'Erro ao enviar mensagem.' })
@@ -43,152 +129,165 @@ export function ContactsSection() {
   }
 
   return (
-    <section id="contato" className="py-16 md:py-20 px-4 bg-gradient-to-br from-green-50 to-yellow-50/30 relative overflow-hidden">
-      {/* Background decorativo */}
-      <div className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-br from-green-200 to-green-300 rounded-full blur-3xl opacity-20 -z-0 animate-pulse"></div>
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-br from-red-200 to-yellow-200 rounded-full blur-3xl opacity-20 -z-0 animate-pulse" style={{ animationDelay: '1s' }}></div>
-      
-      <div className="container mx-auto max-w-6xl relative z-10">
-        <div className="text-center mb-12 animate-slide-up">
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-800 mb-4 relative inline-block">
-            Entre em <span className="bg-gradient-to-r from-green-500 to-green-600 bg-clip-text text-transparent">Contacto</span>
+    <section
+      id={isModal ? undefined : 'contato'}
+      className={`font-body-stack relative overflow-hidden bg-gradient-to-b from-[#f0f5f1] to-[#e8f0ea] ${
+        isModal ? 'rounded-b-2xl py-10 md:py-11' : 'border-t border-[#E2E8E5] py-16 md:py-24'
+      }`}
+    >
+      {/* Ambient glows */}
+      <div className="pointer-events-none absolute -top-24 -left-24 w-[480px] h-[480px] rounded-full bg-[radial-gradient(circle,_#bbf7d0_0%,_transparent_65%)] opacity-45" />
+      <div className="pointer-events-none absolute -bottom-20 -right-16 w-80 h-80 rounded-full bg-[radial-gradient(circle,_#fecaca_0%,_transparent_65%)] opacity-30" />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+
+        {/* ── Header ── */}
+        <div className="mb-10 animate-fade-in">
+          <div className="inline-flex items-center gap-2 rounded-full bg-[#F1F8F4] border border-[#CFE3D6] px-4 py-1.5 mb-5">
+            <span className="w-2 h-2 rounded-full bg-[#064E2C] animate-pulse" />
+            <span className="text-[11px] font-bold tracking-widest uppercase text-[#064E2C]">
+              Contacto
+            </span>
+          </div>
+          <h2
+            id={isModal ? 'contact-modal-title' : undefined}
+            className="text-3xl md:text-4xl lg:text-[40px] font-extrabold text-gray-900 leading-[1.12] mb-3 tracking-tight"
+          >
+            Entre em <span className="text-[#064E2C]">contacto</span>
           </h2>
-          <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto">
-            Tem alguma dúvida ou precisa de assistência? Estamos aqui para ajudar.
+          <p className="text-[16px] md:text-[17px] text-gray-600 leading-relaxed max-w-xl">
+            Tem alguma dúvida ou precisa de assistência? A nossa equipa está disponível para ajudar.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Email */}
-          <div className="bg-white rounded-2xl p-6 shadow-lg hover-lift transition-all duration-300 border border-gray-100 animate-slide-up group hover:border-green-300">
-            <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300 group-hover:rotate-6 mb-4">
-              <Mail className="w-7 h-7 text-green-600" />
-            </div>
-            <h3 className="text-lg font-bold text-gray-800 mb-2">Email</h3>
-            <a 
-              href="mailto:portaldedados@data4moz.com" 
-              className="text-green-600 hover:text-green-700 transition text-sm md:text-base"
-            >
-              portaldedados@data4moz.com
-            </a>
-          </div>
+        {/* ── Main layout: info cards left, form right ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.5fr] gap-5 items-start">
 
-          {/* Telefone */}
-          <div className="bg-white rounded-2xl p-6 shadow-lg hover-lift transition-all duration-300 border border-gray-100 animate-slide-up group hover:border-green-300" style={{ animationDelay: '0.1s' }}>
-            <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300 group-hover:rotate-6 mb-4">
-              <Phone className="w-7 h-7 text-red-600" />
-            </div>
-            <h3 className="text-lg font-bold text-gray-800 mb-2">Telefone</h3>
-            <a 
-              href="tel:+258828863737" 
-              className="text-red-600 hover:text-red-700 transition text-sm md:text-base"
-            >
-              +258 828863737
-            </a>
-          </div>
-
-          {/* Localização */}
-          <div className="bg-white rounded-2xl p-6 shadow-lg hover-lift transition-all duration-300 border border-gray-100 animate-slide-up group hover:border-green-300" style={{ animationDelay: '0.2s' }}>
-            <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300 group-hover:rotate-6 mb-4">
-              <MapPin className="w-7 h-7 text-green-600" />
-            </div>
-            <h3 className="text-lg font-bold text-gray-800 mb-2">Localização</h3>
-            <p className="text-green-600 text-sm md:text-base mb-3">
-              Rua de Barue, Condominio da PAF 35, Chimoio, Mozambique
-            </p>
-            <a
-              href={mapsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-lg bg-green-600 px-3 py-2 text-xs font-semibold text-white hover:bg-green-700 transition"
-            >
-              <Map className="w-4 h-4" />
-              Google Maps
-            </a>
-          </div>
-
-          {/* Website */}
-          <div className="bg-white rounded-2xl p-6 shadow-lg hover-lift transition-all duration-300 border border-gray-100 animate-slide-up group hover:border-green-300" style={{ animationDelay: '0.3s' }}>
-            <div className="w-14 h-14 bg-yellow-100 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300 group-hover:rotate-6 mb-4">
-              <Globe className="w-7 h-7 text-yellow-600" />
-            </div>
-            <h3 className="text-lg font-bold text-gray-800 mb-2">Website</h3>
-            <a 
-              href="https://www.dataportall.com" 
-              className="text-yellow-600 hover:text-yellow-700 transition text-sm md:text-base"
-            >
-              www.dataportall.com
-            </a>
-          </div>
-        </div>
-
-        {/* Formulário de contato opcional */}
-        <div className="mt-12 bg-white rounded-2xl p-8 shadow-lg border border-gray-100 animate-slide-up" style={{ animationDelay: '0.4s' }}>
-          <h3 className="text-xl md:text-2xl font-bold text-gray-800 mb-6 text-center">Envie-nos uma mensagem</h3>
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">Nome</label>
-              <input
-                type="text"
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-                required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
-                placeholder="Seu nome"
-              />
-            </div>
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-              <input
-                type="email"
-                id="email"
-                value={formData.email}
-                onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
-                required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
-                placeholder="Seu email"
-              />
-            </div>
-            <div className="md:col-span-2">
-              <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">Assunto</label>
-              <input
-                type="text"
-                id="subject"
-                value={formData.subject}
-                onChange={(e) => setFormData((prev) => ({ ...prev, subject: e.target.value }))}
-                required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
-                placeholder="Assunto da mensagem"
-              />
-            </div>
-            <div className="md:col-span-2">
-              <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">Mensagem</label>
-              <textarea
-                id="message"
-                rows={4}
-                value={formData.message}
-                onChange={(e) => setFormData((prev) => ({ ...prev, message: e.target.value }))}
-                required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
-                placeholder="Sua mensagem..."
-              ></textarea>
-            </div>
-            {feedback && (
-              <div className={`md:col-span-2 rounded-lg px-4 py-3 text-sm font-medium ${feedback.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
-                {feedback.message}
-              </div>
-            )}
-            <div className="md:col-span-2 text-center">
-              <button
-                type="submit"
-                disabled={loading}
-                className="px-8 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg font-bold shadow-lg hover:shadow-green-500/30 hover:scale-105 transition-all duration-300"
+          {/* Info cards */}
+          <div className="flex flex-col gap-3">
+            {INFO_CARDS.map(({ icon: Icon, label, accentLight, accentBorder, labelColor, content }, i) => (
+              <div
+                key={label}
+                className="bg-white border border-gray-200 rounded-2xl px-5 py-4 flex items-start gap-4 hover:border-[#CFE3D6] hover:shadow-sm hover:-translate-y-0.5 transition-all duration-200 animate-slide-up"
+                style={{ animationDelay: `${i * 0.07}s` }}
               >
-                {loading ? 'Enviando...' : 'Enviar Mensagem'}
-              </button>
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border"
+                  style={{ background: accentLight, borderColor: accentBorder }}
+                >
+                  <Icon className="w-4 h-4" style={{ stroke: labelColor } as React.CSSProperties} />
+                </div>
+                <div>
+                  <p
+                    className="text-[11px] font-bold tracking-widest uppercase mb-2"
+                    style={{ color: labelColor }}
+                  >
+                    {label}
+                  </p>
+                  {content}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Contact form */}
+          <div
+            className="bg-white border border-gray-200 rounded-2xl p-7 animate-slide-up shadow-sm"
+            style={{ animationDelay: '0.28s' }}
+          >
+            {/* Form header */}
+            <div className="mb-6 pb-5 border-b border-gray-100">
+              <h3 className="text-xl font-bold text-gray-900 mb-1">Envie-nos uma mensagem</h3>
+              <p className="text-[14px] text-gray-600">Respondemos com a maior brevidade possível.</p>
             </div>
-          </form>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label htmlFor="name" className="block text-[11px] font-bold tracking-widest uppercase text-gray-600">
+                    Nome
+                  </label>
+                  <input
+                    type="text"
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData((p) => ({ ...p, name: e.target.value }))}
+                    required
+                    placeholder="O seu nome"
+                    className="w-full px-3.5 py-3 text-[15px] border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-[#064E2C] focus:ring-2 focus:ring-[#E7F3EB] transition outline-none placeholder:text-gray-400"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label htmlFor="email" className="block text-[11px] font-bold tracking-widest uppercase text-gray-600">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData((p) => ({ ...p, email: e.target.value }))}
+                    required
+                    placeholder="O seu email"
+                    className="w-full px-3.5 py-3 text-[15px] border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-[#064E2C] focus:ring-2 focus:ring-[#E7F3EB] transition outline-none placeholder:text-gray-400"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label htmlFor="subject" className="block text-[11px] font-bold tracking-widest uppercase text-gray-600">
+                  Assunto
+                </label>
+                <input
+                  type="text"
+                  id="subject"
+                  value={formData.subject}
+                  onChange={(e) => setFormData((p) => ({ ...p, subject: e.target.value }))}
+                  required
+                  placeholder="Assunto da mensagem"
+                  className="w-full px-3.5 py-3 text-[15px] border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-[#064E2C] focus:ring-2 focus:ring-[#E7F3EB] transition outline-none placeholder:text-gray-400"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label htmlFor="message" className="block text-[11px] font-bold tracking-widest uppercase text-gray-600">
+                  Mensagem
+                </label>
+                <textarea
+                  id="message"
+                  rows={4}
+                  value={formData.message}
+                  onChange={(e) => setFormData((p) => ({ ...p, message: e.target.value }))}
+                  required
+                  placeholder="Escreva a sua mensagem..."
+                  className="w-full px-3.5 py-3 min-h-[120px] text-[15px] border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-[#064E2C] focus:ring-2 focus:ring-[#E7F3EB] transition outline-none resize-none placeholder:text-gray-400"
+                />
+              </div>
+
+              {feedback && (
+                <div
+                  className={`rounded-xl px-4 py-3 text-[12px] font-semibold border ${
+                    feedback.type === 'success'
+                      ? 'bg-[#F1F8F4] text-[#064E2C] border-[#CFE3D6]'
+                      : 'bg-red-50 text-red-700 border-red-200'
+                  }`}
+                >
+                  {feedback.message}
+                </div>
+              )}
+
+              <div className="flex justify-end pt-1">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="inline-flex items-center gap-2.5 px-6 py-3 bg-[#064E2C] text-white rounded-xl text-[15px] font-bold hover:bg-[#053D23] disabled:opacity-60 disabled:cursor-not-allowed hover:-translate-y-0.5 transition-all duration-200 shadow-md shadow-[#064E2C]/20"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  {loading ? 'A enviar...' : 'Enviar Mensagem'}
+                </button>
+              </div>
+            </form>
+          </div>
+
         </div>
       </div>
     </section>

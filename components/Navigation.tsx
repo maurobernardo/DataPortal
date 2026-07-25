@@ -1,172 +1,286 @@
 'use client'
 
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
-import { Home, FolderOpen, Settings, Menu, X, Mail, Database, FileText } from 'lucide-react'
+import { Menu, X, Database, FileText, BarChart3, Map, MapPinned, Home, Sparkles, LogIn, UserPlus } from 'lucide-react'
 import Image from 'next/image'
+import { NavUserMenu } from '@/components/NavUserMenu'
+
+type SessionUser = {
+  id: number
+  name: string
+  email: string
+  role: 'user' | 'admin'
+  initials: string
+}
+
+function isNavLinkActive(pathname: string, href: string): boolean {
+  if (href === '/') return pathname === '/'
+  return pathname === href || pathname.startsWith(`${href}/`)
+}
 
 export function Navigation() {
+  const pathname = usePathname()
   const [scrolled, setScrolled] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [aiInsightsSoonOpen, setAiInsightsSoonOpen] = useState(false)
+  const [compactNav, setCompactNav] = useState(false)
+  const [sessionUser, setSessionUser] = useState<SessionUser | null>(null)
 
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 20)
-    }
+    const handleScroll = () => setScrolled(window.scrollY > 20)
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 1240px)')
+    const update = () => setCompactNav(mq.matches)
+    update()
+    mq.addEventListener('change', update)
+    return () => mq.removeEventListener('change', update)
+  }, [])
+
+  useEffect(() => {
+    let alive = true
+    fetch('/api/auth/me')
+      .then((r) => r.json())
+      .then((data) => {
+        if (!alive) return
+        setSessionUser(data.user || null)
+      })
+      .catch(() => {
+        if (!alive) return
+        setSessionUser(null)
+      })
+    return () => {
+      alive = false
+    }
+  }, [pathname])
+
+  useEffect(() => {
+    if (!aiInsightsSoonOpen) return
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setAiInsightsSoonOpen(false)
+    }
+    document.addEventListener('keydown', onEsc)
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.removeEventListener('keydown', onEsc)
+      document.body.style.overflow = prevOverflow
+    }
+  }, [aiInsightsSoonOpen])
+
+  const openAiInsightsSoon = () => {
+    setMobileMenuOpen(false)
+    setAiInsightsSoonOpen(true)
+  }
+
+  const navGroups = [
+    {
+      links: [
+        { href: '/', label: 'Início', compactLabel: 'Início', icon: Home },
+        { href: '/dados-espaciais', label: 'Geoespaciais', compactLabel: 'Geo', icon: Map },
+        { href: '/dados-alfanumericos', label: 'Alfanuméricos', compactLabel: 'Alfanum.', icon: Database },
+      ],
+    },
+    {
+      links: [
+        { href: '/dashboards-alfanumericos', label: 'Dashboards', compactLabel: 'Dash.', icon: BarChart3 },
+        { href: '/maps', label: 'Mapas Inteligentes', compactLabel: 'Mapas', icon: MapPinned },
+        { href: '/relatorios', label: 'Relatórios', compactLabel: 'Relat.', icon: FileText },
+      ],
+    },
+  ]
+
+  const navLinks = navGroups.flatMap((g) => g.links)
+
   return (
-    <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled
-          ? 'bg-white/95 backdrop-blur-md shadow-lg'
-          : 'bg-white/95 shadow-sm md:bg-transparent md:shadow-none'
-      }`}
-    >
-      <div className="container mx-auto px-4 py-1 md:py-2">
-        <div className="flex justify-between items-center">
-          <Link
-            href="/"
-            className="flex items-center text-xl md:text-2xl font-bold bg-gradient-to-r from-green-500 to-green-600 bg-clip-text text-transparent hover:from-green-400 hover:to-green-500 transition"
-          >
-            <div className="w-14 h-14 md:w-16 md:h-16 flex items-center justify-center">
-              <Image 
-                src="/images/logo.png"
-                alt="Data Portal Logo" 
-                width={56}
-                height={56}
-                className="w-10 h-10 md:w-12 md:h-12 object-contain"
-              />
+    <>
+      <nav className={`pd-nav${scrolled ? ' scrolled' : ''}`}>
+        <div className="pd-nav-inner">
+          <Link href="/" className="pd-logo">
+            <Image
+              src="/images/logo.png"
+              alt="Logo do Portal de Dados"
+              width={36}
+              height={36}
+              className="pd-logo-mark"
+            />
+            <div className="pd-logo-text">
+              Portal de Dados
+              <small>Plataforma Nacional</small>
             </div>
           </Link>
-          
-          {/* Desktop Menu */}
-          <div className="hidden md:flex gap-4 lg:gap-6 items-center">
-            <Link
-              href="/"
-              className="flex items-center gap-2 text-gray-700 hover:text-green-600 font-medium transition relative group text-sm lg:text-base"
-            >
-              <Home className="w-4 h-4" />
-              <span>Início</span>
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-green-600 group-hover:w-full transition-all duration-300"></span>
-            </Link>
-            <Link
-              href="/dados-espaciais"
-              className="flex items-center gap-2 text-gray-700 hover:text-green-600 font-medium transition relative group text-sm lg:text-base"
-            >
-              <FolderOpen className="w-4 h-4" />
-              <span>Dados Geoespaciais</span>
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-green-600 group-hover:w-full transition-all duration-300"></span>
-            </Link>
-            <Link
-              href="/dados-alfanumericos"
-              className="flex items-center gap-2 text-gray-700 hover:text-green-600 font-medium transition relative group text-sm lg:text-base"
-            >
-              <Database className="w-4 h-4" />
-              <span>Dados Alfanumericos</span>
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-green-600 group-hover:w-full transition-all duration-300"></span>
-            </Link>
-            <Link
-              href="/relatorios"
-              className="flex items-center gap-2 text-gray-700 hover:text-green-600 font-medium transition relative group text-sm lg:text-base"
-            >
-              <FileText className="w-4 h-4" />
-              <span>Relatórios</span>
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-green-600 group-hover:w-full transition-all duration-300"></span>
-            </Link>
-            <Link
-              href="/dados-espaciais"
-              onClick={(e) => {
-                e.preventDefault()
-                window.location.href = '/#contato'
-              }}
-              className="flex items-center gap-2 text-gray-700 hover:text-green-600 font-medium transition relative group text-sm lg:text-base cursor-pointer"
-            >
-              <Mail className="w-4 h-4" />
-              <span>Conctato</span>
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-green-600 group-hover:w-full transition-all duration-300"></span>
-            </Link>
-            <Link
-              href="/admin"
-              className="flex items-center gap-2 px-3 lg:px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-400 hover:to-green-500 transition shadow-lg hover:shadow-xl text-sm lg:text-base"
-            >
-              <Settings className="w-4 h-4" />
-              <span>Admin</span>
-            </Link>
+
+          <div className="pd-nav-right">
+            <div className="pd-nav-links">
+              {navGroups.map((group, gi) => (
+                <div key={gi} className="pd-nav-link-group">
+                  {group.links.map(({ href, label, compactLabel, icon: Icon }) => {
+                    const active = isNavLinkActive(pathname, href)
+                    const displayLabel = compactNav ? compactLabel : label
+                    return (
+                      <Link
+                        key={href}
+                        href={href}
+                        className={`pd-nav-link${active ? ' active' : ''}${href === '/maps' ? ' pd-nav-link--maps' : ''}`}
+                        aria-current={active ? 'page' : undefined}
+                        title={label}
+                      >
+                        {!compactNav ? <Icon size={15} strokeWidth={2} aria-hidden /> : null}
+                        <span className="pd-nav-link-label">{displayLabel}</span>
+                      </Link>
+                    )
+                  })}
+                </div>
+              ))}
+            </div>
+            <div className="pd-nav-actions" aria-label="Acções">
+              {sessionUser ? (
+                <NavUserMenu
+                  name={sessionUser.name}
+                  email={sessionUser.email}
+                  initials={sessionUser.initials}
+                  role={sessionUser.role}
+                  compact={compactNav}
+                />
+              ) : (
+                <div className="pd-nav-auth">
+                  <Link href="/login" className="pd-nav-auth-link" title="Entrar">
+                    <LogIn size={15} strokeWidth={2} aria-hidden />
+                    <span>Entrar</span>
+                  </Link>
+                  <Link href="/registo" className="pd-nav-auth-register" title="Criar conta">
+                    <UserPlus size={15} strokeWidth={2} aria-hidden />
+                    <span>Registar</span>
+                  </Link>
+                </div>
+              )}
+              <button
+                type="button"
+                className="pd-nav-link-ai"
+                title="AI Insights — em breve"
+                onClick={openAiInsightsSoon}
+              >
+                AI
+                <span className="pd-pill-new">NEW</span>
+              </button>
+            </div>
           </div>
 
-          {/* Mobile Menu Button */}
           <button
+            type="button"
+            className="pd-mobile-btn"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="md:hidden p-2 text-gray-700 hover:text-green-600 transition"
-            aria-label="Toggle menu"
+            aria-label="Abrir ou fechar menu"
           >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
         </div>
 
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <div className="md:hidden mt-4 pb-4 border-t border-gray-200 animate-slide-up">
-            <div className="flex flex-col gap-3 pt-4">
+        <div className={`pd-mobile-menu${mobileMenuOpen ? ' open' : ''}`}>
+          {navLinks.map(({ href, label, icon: Icon }) => {
+            const active = isNavLinkActive(pathname, href)
+            return (
               <Link
-                href="/"
+                key={href}
+                href={href}
+                className={`pd-mobile-link${active ? ' active' : ''}`}
+                aria-current={active ? 'page' : undefined}
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-2 text-gray-700 hover:text-green-600 font-medium transition py-2 px-2 rounded-lg hover:bg-gray-50"
               >
-                <Home className="w-5 h-5" />
-                <span>Início</span>
+                <Icon size={18} strokeWidth={2} />
+                {label}
               </Link>
-              <Link
-                href="/dados-espaciais"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-2 text-gray-700 hover:text-green-600 font-medium transition py-2 px-2 rounded-lg hover:bg-gray-50"
-              >
-                <FolderOpen className="w-5 h-5" />
-                <span>Dados Geoespaciais</span>
-              </Link>
-              <Link
-                href="/dados-alfanumericos"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-2 text-gray-700 hover:text-green-600 font-medium transition py-2 px-2 rounded-lg hover:bg-gray-50"
-              >
-                <Database className="w-5 h-5" />
-                <span>Dados Alfanumericos</span>
-              </Link>
-              <Link
-                href="/relatorios"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-2 text-gray-700 hover:text-green-600 font-medium transition py-2 px-2 rounded-lg hover:bg-gray-50"
-              >
-                <FileText className="w-5 h-5" />
-                <span>Relatórios</span>
-              </Link>
-              <Link
-                href="/dados-espaciais"
-                onClick={(e) => {
-                  e.preventDefault()
-                  window.location.href = '/#contato'
-                  setMobileMenuOpen(false)
-                }}
-                className="flex items-center gap-2 text-gray-700 hover:text-green-500 font-medium transition py-2 px-2 rounded-lg hover:bg-gray-50 cursor-pointer"
-              >
-                <Mail className="w-5 h-5" />
-                <span>Conctato</span>
-              </Link>
-              <Link
-                href="/admin"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-400 hover:to-green-500 transition shadow-lg mt-2"
-              >
-                <Settings className="w-5 h-5" />
-                <span>Admin</span>
-              </Link>
-            </div>
+            )
+          })}
+          <button type="button" className="pd-mobile-link-ai" onClick={openAiInsightsSoon}>
+            AI Insights
+            <span className="pd-pill-new">NEW</span>
+          </button>
+
+          <div className="pd-mobile-divider" />
+
+          <div className="pd-mobile-cta">
+            {sessionUser ? (
+              <div className="px-1">
+                <NavUserMenu
+                  name={sessionUser.name}
+                  email={sessionUser.email}
+                  initials={sessionUser.initials}
+                  role={sessionUser.role}
+                />
+                {sessionUser.role === 'admin' && (
+                  <Link
+                    href="/dashboard"
+                    className="pd-mobile-btn-outline w-full mt-2"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Painel admin
+                  </Link>
+                )}
+              </div>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="pd-mobile-btn-outline w-full"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <LogIn size={18} strokeWidth={2} />
+                  Entrar
+                </Link>
+                <Link
+                  href="/registo"
+                  className="pd-mobile-btn-primary w-full"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <UserPlus size={18} strokeWidth={2} />
+                  Registar
+                </Link>
+              </>
+            )}
           </div>
-        )}
-      </div>
-    </nav>
+        </div>
+      </nav>
+
+      {aiInsightsSoonOpen ? (
+        <div
+          className="fixed inset-0 z-[110] flex items-center justify-center bg-black/55 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="ai-insights-soon-title"
+        >
+          <button
+            type="button"
+            className="absolute inset-0 cursor-default"
+            aria-label="Fechar"
+            onClick={() => setAiInsightsSoonOpen(false)}
+          />
+          <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="mb-4 flex size-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#6B4FBB] to-[#064E2C] text-white">
+              <Sparkles className="size-6" aria-hidden />
+            </div>
+            <h2 id="ai-insights-soon-title" className="text-xl font-bold text-gray-900 mb-2">
+              Em breve
+            </h2>
+            <p className="text-sm text-gray-600 leading-relaxed mb-6">
+              O módulo <strong>AI Insights</strong> está em desenvolvimento e será disponibilizado em breve no
+              Portal de Dados. Fique atento às novidades.
+            </p>
+            <button
+              type="button"
+              className="w-full rounded-xl bg-[#064E2C] px-4 py-3 text-sm font-semibold text-white hover:bg-[#04361F] transition"
+              onClick={() => setAiInsightsSoonOpen(false)}
+            >
+              Entendido
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </>
   )
 }

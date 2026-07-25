@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { deleteCategory, findCategoryById, updateCategory } from '@/lib/db'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentAdmin } from '@/lib/auth'
 
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = await getCurrentUser()
+    const user = await getCurrentAdmin()
     if (!user) {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+      return NextResponse.json({ error: 'Acesso reservado a administradores' }, { status: 403 })
     }
 
     const id = parseInt(params.id)
@@ -38,6 +38,12 @@ export async function PUT(
     return NextResponse.json(category)
   } catch (error: any) {
     console.error('Error updating category:', error)
+    if (error?.code === 'ER_DUP_ENTRY') {
+      return NextResponse.json(
+        { error: 'Já existe uma categoria com este nome para este tipo de dados.' },
+        { status: 400 }
+      )
+    }
     return NextResponse.json(
       { error: 'Erro ao atualizar categoria' },
       { status: 500 }
@@ -50,9 +56,9 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = await getCurrentUser()
+    const user = await getCurrentAdmin()
     if (!user) {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+      return NextResponse.json({ error: 'Acesso reservado a administradores' }, { status: 403 })
     }
 
     const id = parseInt(params.id)

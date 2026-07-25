@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Database, Eye, Download, Users, TrendingUp, Globe, Layers, Map } from 'lucide-react'
+import { RevealOnScroll } from './RevealOnScroll'
 
 interface StatsSectionProps {
   totalDatasets?: number
@@ -78,7 +79,7 @@ export function StatsSection({ totalDatasets = 0, totalViews = 0, totalDownloads
   ]
 
   return (
-    <section className="py-16 md:py-20 lg:py-24 px-4 bg-gradient-to-br from-gray-50 via-green-50/50 to-yellow-50/30 relative overflow-hidden">
+    <section className="py-12 md:py-20 px-4 bg-gradient-to-br from-gray-50 via-green-50/50 to-yellow-50/30 relative overflow-hidden">
       {/* Background decorativo */}
       <div className="absolute inset-0 -z-10">
         <div className="absolute top-0 left-0 w-full h-full bg-grid-pattern opacity-5"></div>
@@ -102,21 +103,19 @@ export function StatsSection({ totalDatasets = 0, totalViews = 0, totalDownloads
           {stats.map((stat, index) => {
             const IconComponent = stat.icon
             return (
-              <div
-                key={index}
-                className="bg-white rounded-2xl p-6 md:p-8 shadow-xl border border-gray-100 hover:border-green-400 transition-all duration-300 hover-lift animate-slide-up group"
-                style={{ animationDelay: `${index * 0.1}s` }}
-              >
-                <div className={`w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br ${stat.color} rounded-2xl flex items-center justify-center mb-4 md:mb-6 mx-auto group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300`}>
-                  <IconComponent className="w-8 h-8 md:w-10 md:h-10 text-white" />
+              <RevealOnScroll key={index} delayMs={index * 90}>
+                <div className="home-card p-6 md:p-8 group">
+                  <div className={`w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br ${stat.color} rounded-2xl flex items-center justify-center mb-4 md:mb-6 mx-auto group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300`}>
+                    <IconComponent className="w-8 h-8 md:w-10 md:h-10 text-white" />
+                  </div>
+                  <div className={`text-4xl md:text-5xl font-bold ${stat.textColor} mb-2 text-center`}>
+                    {stat.value}
+                  </div>
+                  <div className="text-center text-sm md:text-base text-gray-600 font-medium">
+                    {stat.label}
+                  </div>
                 </div>
-                <div className={`text-4xl md:text-5xl font-bold ${stat.textColor} mb-2 text-center`}>
-                  {stat.value}
-                </div>
-                <div className="text-center text-sm md:text-base text-gray-600 font-medium">
-                  {stat.label}
-                </div>
-              </div>
+              </RevealOnScroll>
             )
           })}
         </div>
@@ -126,15 +125,14 @@ export function StatsSection({ totalDatasets = 0, totalViews = 0, totalDownloads
           {features.map((feature, index) => {
             const IconComponent = feature.icon
             return (
-              <div
-                key={index}
-                className="flex items-center gap-3 px-6 py-3 bg-white/80 backdrop-blur-sm rounded-full shadow-lg border border-green-100 hover:border-green-300 transition-all duration-300 hover:scale-105"
-              >
-                <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center">
-                  <IconComponent className="w-5 h-5 text-white" />
+              <RevealOnScroll key={index} delayMs={420 + index * 70}>
+                <div className="home-pill flex items-center gap-3 px-6 py-3 backdrop-blur-sm rounded-full border hover:border-green-300 transition-all duration-300 hover:scale-105">
+                  <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center">
+                    <IconComponent className="w-5 h-5 text-white" />
+                  </div>
+                  <span className="font-semibold text-gray-700">{feature.text}</span>
                 </div>
-                <span className="font-semibold text-gray-700">{feature.text}</span>
-              </div>
+              </RevealOnScroll>
             )
           })}
         </div>

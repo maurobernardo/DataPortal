@@ -13,6 +13,7 @@ interface Report {
   partners: string | null
   filePath: string | null
   fileSize: string | null
+  detailsText: string | null
 }
 
 export function ReportForm() {
@@ -29,6 +30,7 @@ export function ReportForm() {
     coverage: '',
     author: '',
     partners: '',
+    detailsText: '',
   })
   const [yearMode, setYearMode] = useState<'single' | 'range'>('single')
   const [periodStart, setPeriodStart] = useState<string>(String(new Date().getFullYear()))
@@ -96,6 +98,7 @@ export function ReportForm() {
         coverage: '',
         author: '',
         partners: '',
+        detailsText: '',
       })
       setYearMode('single')
       setPeriodStart(String(new Date().getFullYear()))
@@ -129,6 +132,7 @@ export function ReportForm() {
       coverage: report.coverage,
       author: report.author || '',
       partners: report.partners || '',
+      detailsText: report.detailsText || '',
     })
     setEditingId(report.id)
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -335,6 +339,20 @@ export function ReportForm() {
               />
             </div>
 
+            <div className="animate-fade-in" style={{ animationDelay: '0.55s' }}>
+              <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                <FileText className="w-4 h-4 text-green-600" />
+                Detalhes do Relatório
+              </label>
+              <textarea
+                value={formData.detailsText}
+                onChange={(e) => setFormData({ ...formData, detailsText: e.target.value })}
+                placeholder="Descreva o conteúdo, metodologia, principais achados e contexto do relatório..."
+                rows={5}
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-300 bg-white hover:border-gray-300"
+              />
+            </div>
+
             <div className="flex gap-3 pt-4 animate-fade-in" style={{ animationDelay: '0.6s' }}>
               <button
                 type="submit"
@@ -364,6 +382,7 @@ export function ReportForm() {
                       coverage: '',
                       author: '',
                       partners: '',
+                      detailsText: '',
                     })
                     setYearMode('single')
                     setPeriodStart(String(new Date().getFullYear()))
@@ -419,6 +438,11 @@ export function ReportForm() {
                       <h3 className="font-bold text-gray-800 mb-1 group-hover:text-green-600 transition line-clamp-1">
                         {report.title}
                       </h3>
+                      {report.detailsText && (
+                        <p className="text-xs text-gray-500 mb-2 line-clamp-2">
+                          {report.detailsText}
+                        </p>
+                      )}
                       <div className="flex items-center gap-3 text-xs text-gray-500">
                         <span className="flex items-center gap-1">
                           <FileText className="w-3 h-3" />

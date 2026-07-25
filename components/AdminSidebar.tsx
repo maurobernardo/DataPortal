@@ -5,7 +5,6 @@ import { usePathname } from 'next/navigation'
 import {
   BarChart3,
   Database,
-  FolderTree,
   Home,
   Settings,
   LogOut,
@@ -40,18 +39,19 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
       href: '/admin',
       active: pathname === '/admin',
     },
-    {
-      icon: FolderTree,
-      label: 'Categorias',
-      href: '/admin',
-      active: false,
-    },
+  ]
+  const mainLinks = [
+    { icon: Home, label: 'Início', href: '/' },
+    { icon: FolderOpen, label: 'Geoespaciais', href: '/dados-espaciais' },
+    { icon: Database, label: 'Alfanuméricos', href: '/dados-alfanumericos' },
+    { icon: BarChart3, label: 'Dashboard', href: '/dashboards-alfanumericos' },
+    { icon: FileText, label: 'Relatórios', href: '/relatorios' },
   ]
 
   async function handleLogout() {
     try {
       await fetch('/api/auth/logout', { method: 'POST' })
-      router.push('/admin/login')
+      router.push('/login')
       router.refresh()
     } catch (error) {
       console.error('Error logging out:', error)
@@ -111,34 +111,19 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
           <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 px-3">
             Links
           </div>
-          <Link
-            href="/"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200"
-          >
-            <Home className="w-5 h-5 text-gray-500" />
-            <span>Início</span>
-          </Link>
-          <Link
-            href="/dados-espaciais"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200"
-          >
-            <FolderOpen className="w-5 h-5 text-gray-500" />
-            <span>Dados Geoespaciais</span>
-          </Link>
-          <Link
-            href="/dados-alfanumericos"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200"
-          >
-            <Database className="w-5 h-5 text-gray-500" />
-            <span>Dados Alfanuméricos</span>
-          </Link>
-          <Link
-            href="/relatorios"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200"
-          >
-            <FileText className="w-5 h-5 text-gray-500" />
-            <span>Relatórios</span>
-          </Link>
+          {mainLinks.map((item) => {
+            const Icon = item.icon
+            return (
+              <Link
+                key={item.label}
+                href={item.href}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200"
+              >
+                <Icon className="w-5 h-5 text-gray-500" />
+                <span>{item.label}</span>
+              </Link>
+            )
+          })}
           <Link
             href="/"
             onClick={(e) => {
@@ -148,7 +133,7 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200 cursor-pointer"
           >
             <Mail className="w-5 h-5 text-gray-500" />
-            <span>Contacto</span>
+            <span>Contato</span>
           </Link>
         </div>
       </div>

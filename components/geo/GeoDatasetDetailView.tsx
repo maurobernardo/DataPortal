@@ -1,0 +1,373 @@
+import type { ReactNode } from 'react'
+
+import Link from 'next/link'
+
+import {
+
+  ArrowLeft,
+
+  Calendar,
+
+  Database,
+
+  Download,
+
+  FileText,
+
+  Globe,
+
+  Grid3X3,
+
+  HardDrive,
+
+  Layers,
+
+  Ruler,
+
+  Tag,
+
+  TrendingUp,
+
+} from 'lucide-react'
+
+import { DatasetPreview } from '@/components/DatasetPreview'
+
+
+
+type DatasetDetail = {
+
+  id: number
+
+  title: string
+
+  description: string
+
+  dataType: string
+
+  format: string
+
+  source: string | null
+
+  year: number
+
+  views: number
+
+  downloads: number
+
+  keywords: string | null
+
+  geometry: string | null
+
+  coverage: string | null
+
+  minimumUnit: string | null
+
+  fileSize: string | null
+
+  filePath: string | null
+
+  category: { name: string }
+
+}
+
+
+
+export function GeoDatasetDetailView({ dataset }: { dataset: DatasetDetail }) {
+
+  const keywords = dataset.keywords?.split(',').map((k) => k.trim()).filter(Boolean) ?? []
+
+
+
+  return (
+
+    <div className="geo-detail-page">
+
+      <div className="geo-detail-inner">
+
+        <Link href="/dados-espaciais" className="geo-detail-back">
+
+          <ArrowLeft className="size-4" aria-hidden />
+
+          Voltar aos Dados Geoespaciais
+
+        </Link>
+
+
+
+        <div className="geo-detail-layout geo-detail-layout--geo-stack">
+
+          <section className="geo-detail-preview-sticky geo-detail-preview-full">
+            {dataset.filePath ? (
+              <DatasetPreview
+                datasetId={dataset.id}
+                dataType={dataset.dataType}
+                variant="catalog"
+                mapLayout="detail"
+                splitDetailCards
+                showHeader={false}
+              />
+            ) : (
+              <div className="geo-detail-preview-card">
+                <p className="text-sm text-[var(--pd-ink-500)] text-center py-10 px-4">
+                  Pré-visualização indisponível — ficheiro não associado
+                </p>
+              </div>
+            )}
+          </section>
+
+
+
+          <div className="geo-detail-main">
+
+            <div className="geo-detail-card">
+
+              <header className="geo-detail-hero">
+
+                <div className="geo-detail-hero-badges">
+
+                  <span className="geo-detail-badge">
+
+                    <Database className="size-3.5" aria-hidden />
+
+                    {dataset.category.name}
+
+                  </span>
+
+                  <span className="geo-detail-badge">{dataset.format}</span>
+
+                </div>
+
+                <h1 className="geo-detail-title">{dataset.title}</h1>
+
+                <div className="geo-detail-meta-row">
+
+                  <span className="inline-flex items-center gap-1.5">
+
+                    <Database className="size-4 opacity-80" aria-hidden />
+
+                    {dataset.source || 'Fonte não informada'}
+
+                  </span>
+
+                  <span className="inline-flex items-center gap-1.5">
+
+                    <Calendar className="size-4 opacity-80" aria-hidden />
+
+                    {dataset.year}
+
+                  </span>
+
+                </div>
+
+              </header>
+
+
+
+              <div className="geo-detail-body space-y-8">
+
+                <section>
+
+                  <h2 className="geo-detail-section-title">
+
+                    <span className="geo-detail-section-icon">
+
+                      <FileText className="size-5" aria-hidden />
+
+                    </span>
+
+                    Descrição
+
+                  </h2>
+
+                  <div className="geo-detail-prose">{dataset.description}</div>
+
+                </section>
+
+
+
+                <section>
+
+                  <h2 className="geo-detail-section-title">
+
+                    <span className="geo-detail-section-icon">
+
+                      <Grid3X3 className="size-5" aria-hidden />
+
+                    </span>
+
+                    Informações técnicas
+
+                  </h2>
+
+                  <div className="geo-detail-info-grid">
+
+                    <InfoCell icon={<Database className="size-4" />} label="Categoria" value={dataset.category.name} />
+
+                    <InfoCell icon={<Database className="size-4" />} label="Fonte" value={dataset.source || 'N/D'} />
+
+                    <InfoCell icon={<Calendar className="size-4" />} label="Ano" value={String(dataset.year)} />
+
+                    <InfoCell icon={<Layers className="size-4" />} label="Formato" value={dataset.format} />
+
+                    <InfoCell icon={<Globe className="size-4" />} label="Geometria" value={dataset.geometry || 'N/D'} />
+
+                    <InfoCell icon={<Globe className="size-4" />} label="Cobertura" value={dataset.coverage || 'N/D'} />
+
+                    <InfoCell icon={<Ruler className="size-4" />} label="Escala mínima" value={dataset.minimumUnit || 'N/D'} />
+
+                    <InfoCell icon={<HardDrive className="size-4" />} label="Tamanho" value={dataset.fileSize || 'Desconhecido'} />
+
+                  </div>
+
+
+
+                  {keywords.length > 0 && (
+
+                    <div className="mt-5 pt-5 border-t border-[#E2E8E5]">
+
+                      <div className="flex items-center gap-2 mb-3 text-sm font-semibold text-[var(--pd-ink-800)]">
+
+                        <Tag className="size-4 text-[var(--pd-green-700)]" aria-hidden />
+
+                        Palavras-chave
+
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+
+                        {keywords.map((keyword) => (
+
+                          <span
+
+                            key={keyword}
+
+                            className="px-3 py-1 rounded-lg bg-[var(--pd-green-50)] border border-[#CFE3D6] text-xs font-medium text-[var(--pd-green-900)]"
+
+                          >
+
+                            {keyword}
+
+                          </span>
+
+                        ))}
+
+                      </div>
+
+                    </div>
+
+                  )}
+
+                </section>
+
+
+
+                <div className="geo-detail-actions">
+
+                  {dataset.filePath ? (
+
+                    <a href={`/api/download/${dataset.id}`} className="geo-detail-btn-primary">
+
+                      <Download className="size-5" aria-hidden />
+
+                      Descarregar dados
+
+                    </a>
+
+                  ) : (
+
+                    <button type="button" disabled className="geo-detail-btn-primary opacity-50 cursor-not-allowed">
+
+                      Indisponível para download
+
+                    </button>
+
+                  )}
+
+                </div>
+
+
+
+                <div className="geo-detail-stats">
+
+                  <h3 className="text-base font-bold flex items-center gap-2">
+
+                    <TrendingUp className="size-5 opacity-90" aria-hidden />
+
+                    Estatísticas de uso
+
+                  </h3>
+
+                  <div className="geo-detail-stats-grid">
+
+                    <div className="geo-detail-stat-box">
+
+                      <div className="geo-detail-stat-num">{dataset.views + 1}</div>
+
+                      <div className="geo-detail-stat-label">Visualizações</div>
+
+                    </div>
+
+                    <div className="geo-detail-stat-box">
+
+                      <div className="geo-detail-stat-num">{dataset.downloads}</div>
+
+                      <div className="geo-detail-stat-label">Downloads</div>
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  )
+
+}
+
+
+
+function InfoCell({
+
+  icon,
+
+  label,
+
+  value,
+
+}: {
+
+  icon: ReactNode
+
+  label: string
+
+  value: string
+
+}) {
+
+  return (
+
+    <div className="geo-detail-info-cell">
+
+      <div className="flex items-center gap-2 text-[var(--pd-green-700)] mb-1">{icon}</div>
+
+      <div className="geo-detail-info-label">{label}</div>
+
+      <div className="geo-detail-info-value">{value}</div>
+
+    </div>
+
+  )
+
+}
+

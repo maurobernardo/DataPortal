@@ -1,14 +1,18 @@
 import { redirect } from 'next/navigation'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentUserProfile } from '@/lib/auth'
 import { AdminPanel } from '@/components/AdminPanel'
 import { AdminSidebar } from '@/components/AdminSidebar'
 import { AdminHeader } from '@/components/AdminHeader'
 
 export default async function AdminPage() {
-  const user = await getCurrentUser()
+  const user = await getCurrentUserProfile()
 
   if (!user) {
-    redirect('/admin/login')
+    redirect('/login?next=/admin')
+  }
+
+  if (user.role !== 'admin') {
+    redirect('/')
   }
 
   return (

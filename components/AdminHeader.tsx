@@ -18,12 +18,19 @@ export function AdminHeader({ user }: AdminHeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const router = useRouter()
   const currentDate = format(new Date(), "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })
+  const navLinks = [
+    { href: '/', label: 'Início', icon: Home },
+    { href: '/dados-espaciais', label: 'Geoespaciais', icon: FolderOpen },
+    { href: '/dados-alfanumericos', label: 'Alfanuméricos', icon: Database },
+    { href: '/dashboards-alfanumericos', label: 'Dashboard', icon: BarChart3 },
+    { href: '/relatorios', label: 'Relatórios', icon: FileText },
+  ]
 
   async function handleLogout() {
     try {
       await fetch('/api/auth/logout', { method: 'POST' })
       setMobileMenuOpen(false)
-      router.push('/admin/login')
+      router.push('/login')
       router.refresh()
     } catch (error) {
       console.error('Error logging out:', error)
@@ -46,46 +53,21 @@ export function AdminHeader({ user }: AdminHeaderProps) {
             </Link>
           </div>
           <div className="hidden md:flex items-center gap-3">
-            <Link
-              href="/"
-              className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition"
-            >
-              <Home className="w-4 h-4" />
-              <span className="text-sm font-medium">Início</span>
-            </Link>
-            <Link
-              href="/dados-espaciais"
-              className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition"
-            >
-              <FolderOpen className="w-4 h-4" />
-              <span className="text-sm font-medium">Dados Geoespaciais </span>
-            </Link>
-            <Link
-              href="/dados-alfanumericos"
-              className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition"
-            >
-              <Database className="w-4 h-4" />
-              <span className="text-sm font-medium">Dados Alfanuméricos</span>
-            </Link>
-            <Link
-              href="/relatorios"
-              className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition"
-            >
-              <FileText className="w-4 h-4" />
-              <span className="text-sm font-medium">Relatórios</span>
-            </Link>
+            {navLinks.map(({ href, label, icon: Icon }) => (
+              <Link
+                key={label}
+                href={href}
+                className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition"
+              >
+                <Icon className="w-4 h-4" />
+                <span className="text-sm font-medium">{label}</span>
+              </Link>
+            ))}
             {user && (
               <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center text-white font-semibold ml-2">
                 {user.name?.[0] || user.email[0].toUpperCase()}
               </div>
             )}
-            <Link
-              href="/dashboard"
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition shadow-lg hover:shadow-xl"
-            >
-              <BarChart3 className="w-4 h-4" />
-              <span className="font-medium">Dashboard</span>
-            </Link>
           </div>
           <div className="md:hidden border-t border-gray-100 pt-2">
             <div className="flex items-center justify-between gap-2">
@@ -150,22 +132,12 @@ export function AdminHeader({ user }: AdminHeaderProps) {
                 <BarChart3 className="w-5 h-5" />
                 <span>Dashboard</span>
               </Link>
-              <Link href="/" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50">
-                <Home className="w-5 h-5" />
-                <span>Início</span>
-              </Link>
-              <Link href="/dados-espaciais" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50">
-                <FolderOpen className="w-5 h-5" />
-                <span>Dados Geoespaciais</span>
-              </Link>
-              <Link href="/dados-alfanumericos" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50">
-                <Database className="w-5 h-5" />
-                <span>Dados Alfanuméricos</span>
-              </Link>
-              <Link href="/relatorios" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50">
-                <FileText className="w-5 h-5" />
-                <span>Relatórios</span>
-              </Link>
+              {navLinks.map(({ href, label, icon: Icon }) => (
+                <Link key={label} href={href} onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50">
+                  <Icon className="w-5 h-5" />
+                  <span>{label}</span>
+                </Link>
+              ))}
             </div>
             <div className="mt-6 pt-4 border-t border-gray-200">
               {user && (

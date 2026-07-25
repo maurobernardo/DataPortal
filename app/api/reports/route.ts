@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createReport, findAllReports } from '@/lib/db'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentAdmin } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
   try {
@@ -29,9 +29,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await getCurrentUser()
+    const user = await getCurrentAdmin()
     if (!user) {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+      return NextResponse.json({ error: 'Acesso reservado a administradores' }, { status: 403 })
     }
 
     const data = await request.json()
@@ -51,6 +51,7 @@ export async function POST(request: NextRequest) {
       partners: data.partners || null,
       filePath: data.filePath || null,
       fileSize: data.fileSize || null,
+      detailsText: data.detailsText || null,
     })
 
     return NextResponse.json(report)

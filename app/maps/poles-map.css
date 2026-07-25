@@ -1,0 +1,358 @@
+/* Painéis analíticos do mapa de postes (tema verde alinhado ao mapa de saúde) */
+
+.pm-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  background: var(--hm-surface, #0d1117);
+}
+
+.pm-analytics {
+  padding: 16px 18px 88px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* 5 KPIs numa fila */
+.pm-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 1100px) {
+  .pm-kpi-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .pm-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.pm-kpi {
+  background: var(--hm-panel, #161b22);
+  border: 1px solid var(--hm-border, #30363d);
+  border-radius: 10px;
+  padding: 14px 16px;
+  cursor: default;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  min-height: 108px;
+}
+
+.pm-kpi--clickable {
+  cursor: pointer;
+}
+
+.pm-kpi--clickable:hover {
+  border-color: var(--hm-accent-light, #e7f3eb);
+}
+
+.pm-kpi--active {
+  border-color: var(--hm-accent, #064e2c);
+  box-shadow: 0 0 0 1px var(--hm-accent-light, #e7f3eb);
+}
+
+.pm-kpi-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--hm-muted, #8b949e);
+  margin-bottom: 6px;
+}
+
+.pm-kpi-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--hm-text, #e6edf3);
+  font-variant-numeric: tabular-nums;
+}
+
+.pm-kpi-sub {
+  font-size: 0.7rem;
+  color: var(--hm-muted, #8b949e);
+  margin-top: 4px;
+}
+
+.pm-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  background: rgba(6, 78, 44, 0.15);
+  border: 1px solid rgba(231, 243, 235, 0.25);
+  border-radius: 8px;
+}
+
+.pm-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: var(--hm-panel, #161b22);
+  border: 1px solid var(--hm-border, #30363d);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  color: var(--hm-text, #e6edf3);
+}
+
+.pm-chip button {
+  background: none;
+  border: none;
+  color: #f87171;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+/* 3 narrativas numa fila */
+.pm-narrative-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 900px) {
+  .pm-narrative-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pm-narrative {
+  background: var(--hm-panel, #161b22);
+  border: 1px solid var(--hm-border, #30363d);
+  border-left: 4px solid var(--hm-accent, #064e2c);
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.pm-panel {
+  background: var(--hm-panel, #161b22);
+  border: 1px solid var(--hm-border, #30363d);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.pm-panel-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--hm-text, #e6edf3);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Gráficos 2×2 */
+.pm-chart-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 768px) {
+  .pm-chart-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Matriz + scatter lado a lado */
+.pm-duo-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .pm-duo-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Progresso semanal (2/3) + qualidade (1/3) */
+.pm-row-weekly {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 768px) {
+  .pm-row-weekly {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Mapa (~70%) + painel hotspots (~30%) */
+.pm-map-row {
+  display: grid;
+  grid-template-columns: 1fr minmax(240px, 30%);
+  align-items: stretch;
+  border: 1px solid var(--hm-border, #30363d);
+  border-radius: 8px;
+  overflow: hidden;
+  min-height: 520px;
+}
+
+.pm-map-row .hm-map-wrap {
+  position: relative;
+  flex: none;
+  height: 520px;
+  min-height: 520px;
+}
+
+.pm-map-row .hm-map-wrap .leaflet-container {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.pm-map-sidebar {
+  background: var(--hm-panel, #161b22);
+  padding: 14px;
+  border-left: 1px solid var(--hm-border, #30363d);
+  overflow-y: auto;
+  max-height: 520px;
+}
+
+.pm-panel--map .hm-controls {
+  background: transparent;
+  border: none;
+  padding: 0 0 12px;
+}
+
+.pm-hint {
+  font-size: 0.68rem;
+  color: var(--hm-muted, #8b949e);
+  margin-bottom: 8px;
+}
+
+.pm-matrix table {
+  width: 100%;
+  font-size: 0.8rem;
+  border-collapse: collapse;
+}
+
+.pm-matrix th,
+.pm-matrix td {
+  padding: 6px 8px;
+  text-align: center;
+}
+
+.pm-matrix th {
+  color: var(--hm-muted, #8b949e);
+  font-weight: 600;
+}
+
+.pm-top-table {
+  width: 100%;
+  font-size: 0.72rem;
+  border-collapse: collapse;
+}
+
+.pm-top-table th {
+  text-align: left;
+  padding: 8px;
+  color: var(--hm-muted, #8b949e);
+  border-bottom: 1px solid var(--hm-border, #30363d);
+}
+
+.pm-top-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--hm-border, #30363d);
+}
+
+.pm-top-table tr:hover {
+  background: rgba(6, 78, 44, 0.12);
+  cursor: pointer;
+}
+
+.pm-map-legend {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 500;
+  background: rgba(22, 27, 34, 0.95);
+  border: 1px solid var(--hm-border, #30363d);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.68rem;
+  max-width: 200px;
+  pointer-events: none;
+}
+
+.pm-map-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;
+}
+
+.pm-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Tooltips Recharts e Leaflet — verde do sistema, legíveis no tema escuro */
+.hm-root .recharts-tooltip-wrapper,
+.hm-root .recharts-default-tooltip {
+  outline: none;
+}
+
+.hm-root .recharts-default-tooltip {
+  background: var(--hm-panel, #161b22) !important;
+  border: 1px solid var(--hm-accent, #064e2c) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4) !important;
+  padding: 8px 12px !important;
+}
+
+.hm-root .recharts-tooltip-label {
+  color: var(--hm-accent-light, #e7f3eb) !important;
+  font-weight: 700 !important;
+  font-size: 12px !important;
+  margin-bottom: 4px !important;
+}
+
+.hm-root .recharts-tooltip-item-list li,
+.hm-root .recharts-tooltip-item {
+  color: var(--hm-text, #e6edf3) !important;
+  font-size: 11px !important;
+}
+
+.hm-root .recharts-tooltip-item-name,
+.hm-root .recharts-tooltip-item-separator {
+  color: var(--hm-accent-light, #e7f3eb) !important;
+}
+
+.hm-root .recharts-tooltip-item-value {
+  color: var(--hm-text, #e6edf3) !important;
+  font-weight: 600;
+}
+
+.hm-root .leaflet-tooltip {
+  background: var(--hm-panel, #161b22) !important;
+  border: 1px solid var(--hm-accent, #064e2c) !important;
+  color: var(--hm-text, #e6edf3) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35) !important;
+  font-size: 0.72rem !important;
+}
+
+.hm-root .leaflet-tooltip strong {
+  color: var(--hm-accent-light, #e7f3eb) !important;
+}
+
+.hm-root .leaflet-tooltip::before {
+  border-top-color: var(--hm-accent, #064e2c) !important;
+}

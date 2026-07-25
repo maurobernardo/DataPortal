@@ -1,60 +1,17 @@
 import { NextRequest } from 'next/server'
 import { db, findUserByEmail } from '@/lib/db'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentAdmin } from '@/lib/auth'
+import { buildDatasetFilterSql, buildStatisticDateFilterSql } from '@/lib/report-filters'
 
 export const dynamic = 'force-dynamic'
 
-function buildDatasetFilterSql(params: {
-  categoryName?: string | null
-  datasetFormat?: string | null
-  source?: string | null
-}) {
-  const conditions: string[] = []
-  const values: any[] = []
-
-  if (params.datasetFormat) {
-    conditions.push('d.format = ?')
-    values.push(params.datasetFormat)
-  }
-  if (params.source) {
-    conditions.push('d.source = ?')
-    values.push(params.source)
-  }
-  if (params.categoryName) {
-    conditions.push('c.name = ?')
-    values.push(params.categoryName)
-  }
-
-  return {
-    whereSql: conditions.length ? `AND ${conditions.join(' AND ')}` : '',
-    values,
-  }
-}
-
-function buildStatisticDateFilterSql(params: { startDate?: string | null; endDate?: string | null }) {
-  const conditions: string[] = []
-  const values: any[] = []
-  if (params.startDate) {
-    conditions.push('s.createdAt >= ?')
-    values.push(new Date(params.startDate))
-  }
-  if (params.endDate) {
-    conditions.push('s.createdAt <= ?')
-    values.push(new Date(params.endDate))
-  }
-  return {
-    whereSql: conditions.length ? `AND ${conditions.join(' AND ')}` : '',
-    values,
-  }
-}
-
 export async function GET(request: NextRequest) {
   try {
-    const user = await getCurrentUser()
+    const user = await getCurrentAdmin()
     
     if (!user) {
-      return new Response(JSON.stringify({ error: 'Acesso não autorizado' }), {
-        status: 401,
+      return new Response(JSON.stringify({ error: 'Acesso reservado a administradores' }), {
+        status: 403,
         headers: { 'Content-Type': 'application/json' },
       })
     }
@@ -274,6 +231,15 @@ export async function GET(request: NextRequest) {
         if (row.type === 'download') byDataset[key].downloads = row.cnt
       }
 
+      const topViewedEnriched = topViewed.map((d) => ({
+        ...d,
+        periodDownloads: byDataset[String(d.id)]?.downloads ?? 0,
+      }))
+      const topDownloadedEnriched = topDownloaded.map((d) => ({
+        ...d,
+        periodViews: byDataset[String(d.id)]?.views ?? 0,
+      }))
+
       const conversionIds = Object.keys(byDataset).map((id) => parseInt(id))
       const conversionRates = conversionIds.length
         ? await (async () => {
@@ -317,6 +283,8 @@ export async function GET(request: NextRequest) {
             category: categoryName || '',
             source: source || '',
             datasetFormat: datasetFormat || '',
+            startDate: startDate || '',
+            endDate: endDate || '',
           },
         },
         summary: {
@@ -325,8 +293,8 @@ export async function GET(request: NextRequest) {
           totalDownloads,
           avgConversionRate: totalViews > 0 ? (totalDownloads / totalViews) * 100 : 0,
         },
-        topViewed,
-        topDownloaded,
+        topViewed: topViewedEnriched,
+        topDownloaded: topDownloadedEnriched,
         conversionRates,
         categoryPerformance,
         categoryStats,
@@ -362,50 +330,56 @@ export async function GET(request: NextRequest) {
 
 // Função auxiliar para converter dados para CSV
 function convertToCSV(data: any): string {
-  // Gerar CSV com base nos dados fornecidos
+  const hasPeriodFilter = Boolean(
+    data.metadata?.filters?.startDate || data.metadata?.filters?.endDate
+  )
+  const viewCol = hasPeriodFilter ? 'Visualizações (período)' : 'Visualizações'
+  const dlCol = hasPeriodFilter ? 'Downloads (período)' : 'Downloads'
+  const pickViews = (d: any) => (hasPeriodFilter ? d.periodViews ?? 0 : d.periodViews ?? d.views ?? 0)
+  const pickDownloads = (d: any) =>
+    hasPeriodFilter ? d.periodDownloads ?? 0 : d.periodDownloads ?? d.downloads ?? 0
+
   let csv = ''
-  
-  // Adicionar cabeçalhos
+
   csv += 'Relatório de Dashboard\n'
-  csv += `Gerado em: ${data.metadata.generatedAt}\n\n`
-  
-  // Adicionar sumário
+  csv += `Gerado em: ${data.metadata.generatedAt}\n`
+  if (hasPeriodFilter) {
+    csv += `Período: ${data.metadata.filters.startDate || '—'} a ${data.metadata.filters.endDate || '—'}\n`
+  }
+  csv += '\n'
+
   csv += 'Sumário:\n'
   csv += `Total de Datasets,${data.summary.totalDatasets}\n`
   csv += `Total de Visualizações,${data.summary.totalViews}\n`
   csv += `Total de Downloads,${data.summary.totalDownloads}\n`
   csv += `Taxa de Conversão Média,${data.summary.avgConversionRate}%\n\n`
-  
-  // Adicionar top visualizados
+
   csv += 'Top Datasets Visualizados:\n'
-  csv += 'Título,Categoria,Visualizações,Downloads\n'
+  csv += `Título,Categoria,${viewCol},${dlCol}\n`
   data.topViewed.forEach((dataset: any) => {
-    csv += `"${dataset.title}","${dataset.category.name}",${dataset.views},${dataset.downloads}\n`
+    csv += `"${dataset.title}","${dataset.category.name}",${pickViews(dataset)},${pickDownloads(dataset)}\n`
   })
   csv += '\n'
-  
-  // Adicionar top baixados
+
   csv += 'Top Datasets Baixados:\n'
-  csv += 'Título,Categoria,Downloads,Visualizações\n'
+  csv += `Título,Categoria,${dlCol},${viewCol}\n`
   data.topDownloaded.forEach((dataset: any) => {
-    csv += `"${dataset.title}","${dataset.category.name}",${dataset.downloads},${dataset.views}\n`
+    csv += `"${dataset.title}","${dataset.category.name}",${pickDownloads(dataset)},${pickViews(dataset)}\n`
   })
   csv += '\n'
-  
-  // Adicionar taxas de conversão
+
   csv += 'Taxas de Conversão:\n'
   csv += 'Dataset,Visualizações,Downloads,Taxa de Conversão (%)\n'
   data.conversionRates.forEach((rate: any) => {
     csv += `"${rate.datasetTitle}",${rate.views},${rate.downloads},${rate.conversionRate.toFixed(2)}%\n`
   })
   csv += '\n'
-  
-  // Adicionar performance por categoria
+
   csv += 'Performance por Categoria:\n'
   csv += 'Categoria,Total Visualizações,Total Downloads,Taxa de Conversão Média (%)\n'
   data.categoryPerformance.forEach((perf: any) => {
     csv += `"${perf.categoryName}",${perf.totalViews},${perf.totalDownloads},${perf.averageConversionRate.toFixed(2)}%\n`
   })
-  
+
   return csv
 }

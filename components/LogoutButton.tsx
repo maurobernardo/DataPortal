@@ -9,7 +9,7 @@ export function LogoutButton() {
   async function handleLogout() {
     try {
       await fetch('/api/auth/logout', { method: 'POST' })
-      router.push('/admin/login')
+      router.push('/login')
       router.refresh()
     } catch (error) {
       console.error('Error logging out:', error)

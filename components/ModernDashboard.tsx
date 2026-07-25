@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import {
@@ -14,7 +14,7 @@ import {
   Filter,
   Download as DownloadIcon
 } from 'lucide-react'
-import { TemporalChart } from './TemporalChart'
+import { TemporalChart, type TemporalGranularity } from './TemporalChart'
 import { Doughnut } from 'react-chartjs-2'
 import {
   Chart as ChartJS,
@@ -104,12 +104,33 @@ interface ModernDashboardProps {
     conversionRates: ConversionRate[]
     userRetention: UserRetention
     categoryPerformance: CategoryPerformance[]
+    totalRegisteredUsers: number
+    registeredUsers: Array<{
+      id: number
+      name: string
+      email: string
+      emailVerified: boolean
+      role: string
+      createdAt: string
+    }>
+    authenticatedActivity: Array<{
+      id: number
+      type: string
+      createdAt: string
+      userId: number
+      userName: string
+      userEmail: string
+      datasetId: number
+      datasetTitle: string
+    }>
   }
   user: {
     email: string
     name?: string
   }
 }
+
+type TemporalPeriod = '7' | '30' | 'month'
 
 export function ModernDashboard({ data, user }: ModernDashboardProps) {
   const [reportFilters, setReportFilters] = useState<ReportFilter>({
@@ -119,6 +140,28 @@ export function ModernDashboard({ data, user }: ModernDashboardProps) {
     formatFilter: '',
     source: '',
   })
+  const [temporalPeriod, setTemporalPeriod] = useState<TemporalPeriod>('30')
+  const [temporalGranularity, setTemporalGranularity] = useState<TemporalGranularity>('daily')
+
+  const filteredTemporalStats = useMemo(() => {
+    const now = new Date()
+    let since: Date
+    if (temporalPeriod === '7') {
+      since = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+    } else if (temporalPeriod === 'month') {
+      since = new Date(now.getFullYear(), now.getMonth(), 1)
+    } else {
+      since = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+    }
+    return data.statistics.filter((s) => new Date(s.createdAt as string) >= since)
+  }, [data.statistics, temporalPeriod])
+
+  const temporalSubtitle = useMemo(() => {
+    const gran = temporalGranularity === 'weekly' ? 'agrupamento semanal' : 'agrupamento diário'
+    if (temporalPeriod === '7') return `Últimos 7 dias · ${gran}`
+    if (temporalPeriod === 'month') return `Este mês · ${gran}`
+    return `Últimos 30 dias · ${gran}`
+  }, [temporalPeriod, temporalGranularity])
 
   // Dados para gráfico de rosca (categorias)
   const categoryChartData = {
@@ -127,10 +170,10 @@ export function ModernDashboard({ data, user }: ModernDashboardProps) {
       {
         data: data.categoryStats.map((item) => item.count),
         backgroundColor: [
-          'rgba(34, 197, 94, 0.8)',   // green-500
+          'rgba(6, 78, 44, 0.82)',   // brand #064E2C
           'rgba(239, 68, 68, 0.8)',   // red-500
           'rgba(234, 179, 8, 0.8)',   // yellow-500
-          'rgba(22, 163, 74, 0.8)',   // green-600
+          'rgba(4, 54, 31, 0.82)',   // brand strong #04361F
           'rgba(220, 38, 38, 0.8)',   // red-600
           'rgba(202, 138, 4, 0.8)',   // yellow-600
         ],
@@ -332,18 +375,18 @@ export function ModernDashboard({ data, user }: ModernDashboardProps) {
                 </div>
               </div>
 
-              {/* Visitantes */}
+              {/* Utilizadores registados */}
               <div className="bg-white rounded-xl p-5 md:p-6 shadow-lg hover-lift transition border border-gray-100">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                    <Users className="w-6 h-6 text-red-600" />
+                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                    <Users className="w-6 h-6 text-green-700" />
                   </div>
                 </div>
-                <div className="text-sm text-gray-600 mb-1">Visitas ao Portal</div>
-                <div className="text-3xl font-bold text-gray-800 mb-2">{data.totalVisitors.toLocaleString('pt-BR')}</div>
-                <div className="text-sm text-gray-500">
-                  Total de eventos de visita (visualizações)
+                <div className="text-sm text-gray-600 mb-1">Utilizadores</div>
+                <div className="text-3xl font-bold text-gray-800 mb-2">
+                  {data.totalRegisteredUsers.toLocaleString('pt-BR')}
                 </div>
+                <div className="text-sm text-gray-500">Contas registadas</div>
               </div>
 
               {/* Taxa de Conversão */}
@@ -479,15 +522,31 @@ export function ModernDashboard({ data, user }: ModernDashboardProps) {
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
                 <div>
                   <h3 className="text-lg font-bold text-gray-800">Evolução Temporal</h3>
-                  <p className="text-sm text-gray-500">Visualizações e downloads nos últimos 30 dias</p>
+                  <p className="text-sm text-gray-500">{temporalSubtitle}</p>
                 </div>
-                <select className="w-full sm:w-auto text-sm border border-gray-200 rounded-lg px-3 py-2 sm:py-1">
-                  <option>Últimos 30 dias</option>
-                  <option>Últimos 7 dias</option>
-                  <option>Este mês</option>
-                </select>
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                  <select
+                    className="w-full sm:w-auto text-sm border border-gray-200 rounded-lg px-3 py-2"
+                    value={temporalPeriod}
+                    onChange={(e) => setTemporalPeriod(e.target.value as TemporalPeriod)}
+                    aria-label="Período do gráfico"
+                  >
+                    <option value="7">Últimos 7 dias</option>
+                    <option value="30">Últimos 30 dias</option>
+                    <option value="month">Este mês</option>
+                  </select>
+                  <select
+                    className="w-full sm:w-auto text-sm border border-gray-200 rounded-lg px-3 py-2"
+                    value={temporalGranularity}
+                    onChange={(e) => setTemporalGranularity(e.target.value as TemporalGranularity)}
+                    aria-label="Agrupamento do gráfico"
+                  >
+                    <option value="daily">Diário</option>
+                    <option value="weekly">Semanal</option>
+                  </select>
+                </div>
               </div>
-              <TemporalChart statistics={data.statistics} />
+              <TemporalChart statistics={filteredTemporalStats} granularity={temporalGranularity} />
             </div>
 
             {/* Atividade Recente */}
@@ -522,6 +581,108 @@ export function ModernDashboard({ data, user }: ModernDashboardProps) {
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+            {/* Utilizadores registados */}
+            <div className="bg-white rounded-xl p-4 md:p-6 shadow-lg border border-gray-100">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-lg font-bold text-gray-800">Utilizadores registados</h3>
+                  <p className="text-sm text-gray-500">
+                    {data.totalRegisteredUsers.toLocaleString('pt-BR')} conta(s) no portal
+                  </p>
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-200 text-left text-gray-500">
+                      <th className="py-2 pr-4 font-semibold">Nome</th>
+                      <th className="py-2 pr-4 font-semibold">Email</th>
+                      <th className="py-2 pr-4 font-semibold">Estado</th>
+                      <th className="py-2 pr-4 font-semibold">Perfil</th>
+                      <th className="py-2 font-semibold">Registo</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.registeredUsers.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="py-6 text-center text-gray-500">
+                          Nenhum utilizador registado.
+                        </td>
+                      </tr>
+                    ) : (
+                      data.registeredUsers.map((u) => (
+                        <tr key={u.id} className="border-b border-gray-100 last:border-0">
+                          <td className="py-3 pr-4 font-medium text-gray-800">{u.name}</td>
+                          <td className="py-3 pr-4 text-gray-600">{u.email}</td>
+                          <td className="py-3 pr-4">
+                            <span
+                              className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${
+                                u.emailVerified
+                                  ? 'bg-green-100 text-green-800'
+                                  : 'bg-amber-100 text-amber-800'
+                              }`}
+                            >
+                              {u.emailVerified ? 'Confirmado' : 'Pendente'}
+                            </span>
+                          </td>
+                          <td className="py-3 pr-4 capitalize text-gray-600">{u.role}</td>
+                          <td className="py-3 text-gray-500 whitespace-nowrap">
+                            {format(new Date(u.createdAt), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Actividade de utilizadores autenticados */}
+            <div className="bg-white rounded-xl p-4 md:p-6 shadow-lg border border-gray-100">
+              <h3 className="text-lg font-bold text-gray-800 mb-1">Actividade de utilizadores autenticados</h3>
+              <p className="text-sm text-gray-500 mb-4">
+                Visualizações e downloads associados a sessões iniciadas
+              </p>
+              <div className="space-y-3">
+                {data.authenticatedActivity.length === 0 ? (
+                  <p className="text-sm text-gray-500 py-4 text-center">
+                    Ainda não há actividade de utilizadores autenticados.
+                  </p>
+                ) : (
+                  data.authenticatedActivity.map((activity) => (
+                    <div
+                      key={activity.id}
+                      className="flex items-start md:items-center gap-3 md:gap-4 p-3 bg-gray-50 rounded-lg"
+                    >
+                      <div
+                        className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                          activity.type === 'view' ? 'bg-green-100' : 'bg-red-100'
+                        }`}
+                      >
+                        {activity.type === 'view' ? (
+                          <Eye className="w-5 h-5 text-green-600" />
+                        ) : (
+                          <Download className="w-5 h-5 text-red-600" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-gray-800 text-sm">
+                          {activity.userName}{' '}
+                          <span className="font-normal text-gray-500">({activity.userEmail})</span>
+                        </p>
+                        <p className="text-sm text-gray-700">
+                          {activity.type === 'view' ? 'Visualizou' : 'Descarregou'}{' '}
+                          <span className="font-medium">{activity.datasetTitle}</span>
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {format(new Date(activity.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>

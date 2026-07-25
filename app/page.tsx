@@ -1,16 +1,16 @@
-import Link from 'next/link'
 import { db, countDatasets } from '@/lib/db'
 import { HeroSection } from '@/components/HeroSection'
-import { StatsSection } from '@/components/StatsSection'
+import { FeaturedCatalogSection } from '@/components/FeaturedCatalogSection'
 import { AboutSection } from '@/components/AboutSection'
-import { SpatialDataSection } from '@/components/SpatialDataSection'
 import { FeaturesSection } from '@/components/FeaturesSection'
-import { ContactsSection } from '@/components/ContactsSection'
+import { FAQSection } from '@/components/FAQSection'
+import { PartnersCarouselSection } from '@/components/PartnersCarouselSection'
+
 export const dynamic = 'force-dynamic'
 
 async function getStats() {
   try {
-    const [totalDatasets, sums] = await Promise.all([
+    const [totalDatasets, sums, orgRows] = await Promise.all([
       countDatasets(),
       (async () => {
         const [rows] = await db.execute(
@@ -18,42 +18,95 @@ async function getStats() {
         ) as any
         return rows[0] || { views: 0, downloads: 0 }
       })(),
+      (async () => {
+        const [rows] = await db.execute(
+          'SELECT COUNT(DISTINCT source) as organizations FROM Dataset WHERE source IS NOT NULL AND source != ""'
+        ) as any
+        return rows[0] || { organizations: 0 }
+      })(),
     ])
 
     return {
       datasets: totalDatasets,
       views: sums.views || 0,
       downloads: sums.downloads || 0,
+      organizations: orgRows.organizations || 0,
     }
   } catch (error) {
-    return { datasets: 0, views: 0, downloads: 0 }
+    return { datasets: 0, views: 0, downloads: 0, organizations: 0 }
+  }
+}
+
+async function getMostViewedDatasets() {
+  try {
+    const base = `SELECT d.id, d.title, d.description, d.source, d.format, d.dataType, d.views, d.downloads, d.updatedAt,
+              c.name as categoryName
+       FROM Dataset d
+       LEFT JOIN Category c ON c.id = d.categoryId`
+    const [geoRows] = await db.execute(
+      `${base} WHERE d.dataType = 'geoespacial' ORDER BY d.views DESC, d.downloads DESC LIMIT 18`
+    ) as any
+    const [alfRows] = await db.execute(
+      `${base} WHERE d.dataType = 'alfanumerico' ORDER BY d.views DESC, d.downloads DESC LIMIT 18`
+    ) as any
+    const geo = Array.isArray(geoRows) ? geoRows : []
+    const alf = Array.isArray(alfRows) ? alfRows : []
+    const merged = [...geo, ...alf].sort(
+      (a: any, b: any) =>
+        (Number(b.views) || 0) - (Number(a.views) || 0) ||
+        (Number(b.downloads) || 0) - (Number(a.downloads) || 0)
+    )
+    return merged.slice(0, 30) as any[]
+  } catch {
+    return []
   }
 }
 
 export default async function Home() {
-  const stats = await getStats()
+  const [stats, mostViewed] = await Promise.all([getStats(), getMostViewedDatasets()])
+
+  const heroDatasets = mostViewed.map((dataset) => ({
+    id: Number(dataset.id),
+    title: dataset.title || 'Dataset sem título',
+    source: dataset.source || null,
+    format: dataset.format || null,
+    views: Number(dataset.views || 0),
+  }))
+
+  const featuredDatasets = mostViewed.map((dataset) => ({
+    id: Number(dataset.id),
+    title: dataset.title || 'Dataset sem título',
+    description: dataset.description || 'Sem descrição disponível.',
+    updated: dataset.updatedAt
+      ? new Date(dataset.updatedAt).toLocaleDateString('pt-BR')
+      : 'Sem data',
+    downloads: Number(dataset.downloads || 0),
+    views: Number(dataset.views || 0),
+    format: dataset.format || 'Dados',
+    source: dataset.source || 'Portal',
+    category: dataset.categoryName || 'Geral',
+    dataType:
+      dataset.dataType === 'geoespacial'
+        ? ('geoespacial' as const)
+        : ('alfanumerico' as const),
+  }))
 
   return (
-    <div className="relative overflow-hidden">
-      {/* Background decorativo global */}
-      <div className="fixed inset-0 -z-10 pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-green-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-float"></div>
-        <div className="absolute top-0 right-1/4 w-96 h-96 bg-red-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-float" style={{ animationDelay: '2s' }}></div>
-        <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-green-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-float" style={{ animationDelay: '4s' }}></div>
-        <div className="absolute top-1/2 left-0 w-64 h-64 bg-yellow-300 rounded-full mix-blend-multiply filter blur-2xl opacity-15 animate-float" style={{ animationDelay: '1s' }}></div>
-        <div className="absolute bottom-1/4 right-0 w-80 h-80 bg-green-300 rounded-full mix-blend-multiply filter blur-2xl opacity-15 animate-float" style={{ animationDelay: '3s' }}></div>
-      </div>
-
-      <HeroSection />
-      <AboutSection />
-      <StatsSection 
-        totalDatasets={stats.datasets}
-        totalViews={stats.views}
-        totalDownloads={stats.downloads}
+    <div className="overflow-x-hidden">
+      <HeroSection
+        statsData={{
+          datasets: Number(stats.datasets || 0),
+          organizations: Number(stats.organizations || 0),
+          downloads: Number(stats.downloads || 0),
+          views: Number(stats.views || 0),
+        }}
+        highlightedDatasets={heroDatasets}
       />
+      <FeaturedCatalogSection datasets={featuredDatasets} />
+      <AboutSection />
       <FeaturesSection />
-      <SpatialDataSection />
-      <ContactsSection />
+      <PartnersCarouselSection />
+      <FAQSection />
     </div>
   )
 }

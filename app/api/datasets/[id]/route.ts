@@ -1,34 +1,78 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { deleteDataset, findDatasetById, updateDataset } from '@/lib/db'
-import { getCurrentUser } from '@/lib/auth'
+import { deleteDataset, findCategoryById, findDatasetById, updateDataset } from '@/lib/db'
+import { getCurrentAdmin } from '@/lib/auth'
+
+const ALLOWED_DATA_TYPES = new Set(['geoespacial', 'alfanumerico'])
+
+function isValidDataType(value: unknown): value is 'geoespacial' | 'alfanumerico' {
+  return typeof value === 'string' && ALLOWED_DATA_TYPES.has(value)
+}
+
+function isZipPath(filePath: unknown) {
+  return typeof filePath === 'string' && filePath.toLowerCase().endsWith('.zip')
+}
 
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = await getCurrentUser()
+    const user = await getCurrentAdmin()
     if (!user) {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+      return NextResponse.json({ error: 'Acesso reservado a administradores' }, { status: 403 })
     }
 
     const id = parseInt(params.id)
     const data = await request.json()
 
+    const existing = await findDatasetById(id)
+    if (!existing) {
+      return NextResponse.json({ error: 'Dataset não encontrado' }, { status: 404 })
+    }
+
+    const categoryId = Number.parseInt(String(data.categoryId ?? existing.categoryId), 10)
+    if (!Number.isFinite(categoryId)) {
+      return NextResponse.json({ error: 'categoryId inválido' }, { status: 400 })
+    }
+
+    const dataType = isValidDataType(data.dataType) ? data.dataType : (isValidDataType(existing.dataType) ? existing.dataType : 'geoespacial')
+    const category = await findCategoryById(categoryId)
+    if (!category) {
+      return NextResponse.json({ error: 'Categoria não encontrada' }, { status: 400 })
+    }
+    if (!isValidDataType(category.dataType)) {
+      return NextResponse.json({ error: 'Categoria com dataType inválido' }, { status: 400 })
+    }
+    if (category.dataType !== dataType) {
+      return NextResponse.json(
+        { error: `Tipo de dados incompatível com a categoria (categoria: ${category.dataType}, dataset: ${dataType})` },
+        { status: 400 }
+      )
+    }
+
+    const nextFilePath = typeof data.filePath === 'string' && data.filePath.trim() ? data.filePath : existing.filePath
+    if (!nextFilePath) {
+      return NextResponse.json({ error: 'filePath inválido' }, { status: 400 })
+    }
+
+    if (dataType === 'geoespacial' && String(data.format ?? existing.format).toLowerCase() === 'shapefile' && !isZipPath(nextFilePath)) {
+      return NextResponse.json({ error: 'Para Shapefile, envie um arquivo .zip' }, { status: 400 })
+    }
+
     const dataset = await updateDataset(id, {
-      title: data.title,
-      description: data.description,
-      categoryId: parseInt(data.categoryId),
-      source: data.source || '',
-      year: data.year || new Date().getFullYear(),
-      format: data.format,
-      fileSize: data.fileSize || '',
-      filePath: data.filePath || '',
+      title: data.title ?? existing.title,
+      description: data.description ?? existing.description,
+      categoryId,
+      source: data.source ?? existing.source ?? '',
+      year: data.year ?? existing.year ?? new Date().getFullYear(),
+      format: data.format ?? existing.format,
+      fileSize: data.fileSize ?? existing.fileSize ?? '',
+      filePath: nextFilePath,
       geometry: data.geometry || null,
       coverage: data.coverage || null,
       minimumUnit: data.minimumUnit || null,
       keywords: data.keywords || null,
-      dataType: data.dataType || 'geoespacial',
+      dataType,
     })
 
     if (!dataset) {
@@ -53,9 +97,9 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = await getCurrentUser()
+    const user = await getCurrentAdmin()
     if (!user) {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+      return NextResponse.json({ error: 'Acesso reservado a administradores' }, { status: 403 })
     }
 
     const id = parseInt(params.id)

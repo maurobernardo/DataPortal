@@ -1,69 +1,86 @@
-import jwt from 'jsonwebtoken'
+import bcrypt from 'bcryptjs'
+import crypto from 'crypto'
 import { cookies } from 'next/headers'
+import {
+  getSessionCookieOptions,
+  SESSION_COOKIE_NAME,
+  signSessionToken,
+  verifySessionToken,
+  normalizeRole,
+  type SessionPayload,
+} from '@/lib/session'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production'
-const DEFAULT_SECRET = 'your-super-secret-jwt-key-change-this-in-production'
-export const AUTH_COOKIE_NAME = 'auth-token'
+export {
+  getSessionCookieOptions,
+  SESSION_COOKIE_NAME,
+  signSessionToken,
+  verifySessionToken,
+  normalizeRole,
+  type SessionPayload,
+} from '@/lib/session'
 
-export interface TokenPayload {
-  userId: number
-  email: string
+export async function hashPassword(password: string): Promise<string> {
+  return bcrypt.hash(password, 10)
 }
 
-export function generateToken(payload: TokenPayload): string {
-  if (process.env.NODE_ENV === 'production' && JWT_SECRET === DEFAULT_SECRET) {
-    throw new Error('JWT_SECRET inseguro para produção')
-  }
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' })
+export async function comparePassword(password: string, hash: string): Promise<boolean> {
+  return bcrypt.compare(password, hash)
 }
 
-export function verifyToken(token: string): TokenPayload | null {
-  try {
-    if (process.env.NODE_ENV === 'production' && JWT_SECRET === DEFAULT_SECRET) {
-      return null
-    }
-    return jwt.verify(token, JWT_SECRET) as TokenPayload
-  } catch {
-    return null
-  }
+/** Token aleatório para confirmação de email (não é JWT). */
+export function generateToken(): string {
+  return crypto.randomBytes(32).toString('hex')
 }
 
-export async function getCurrentUser() {
+export function generateOtp(): string {
+  return crypto.randomInt(100000, 1000000).toString()
+}
+
+export async function getCurrentUser(): Promise<SessionPayload | null> {
   const cookieStore = await cookies()
-  const token = cookieStore.get(AUTH_COOKIE_NAME)?.value
+  const token = cookieStore.get(SESSION_COOKIE_NAME)?.value
 
   if (!token) {
     return null
   }
 
-  const payload = verifyToken(token)
-  if (!payload) {
+  return verifySessionToken(token)
+}
+
+export async function getCurrentAdmin(): Promise<SessionPayload | null> {
+  const profile = await getCurrentUserProfile()
+  if (!profile || profile.role !== 'admin') {
     return null
   }
-
-  return payload
+  return { userId: profile.id, email: profile.email, role: 'admin' }
 }
 
-export function getAuthCookieOptions() {
-  const isProd = process.env.NODE_ENV === 'production'
+export async function getCurrentUserProfile() {
+  const session = await getCurrentUser()
+  if (!session) return null
+
+  const { findUserById } = await import('@/lib/db')
+  const user = await findUserById(session.userId)
+  if (!user) return null
+
+  const role = normalizeRole(user.role)
+
   return {
-    httpOnly: true,
-    secure: isProd,
-    sameSite: isProd ? 'strict' : 'lax',
-    maxAge: 60 * 60 * 24 * 7,
-    path: '/',
-  } as const
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    role,
+    emailVerified: Boolean(user.emailVerified),
+  }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
+export function getUserInitials(name?: string | null, email?: string): string {
+  if (name?.trim()) {
+    const parts = name.trim().split(/\s+/).filter(Boolean)
+    if (parts.length >= 2) {
+      return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase()
+    }
+    return parts[0].slice(0, 2).toUpperCase()
+  }
+  return (email?.[0] || 'U').toUpperCase()
+}

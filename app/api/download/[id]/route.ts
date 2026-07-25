@@ -7,6 +7,7 @@ import {
   findDatasetById,
   incrementDatasetDownloads,
 } from '@/lib/db'
+import { getCurrentUser } from '@/lib/auth'
 
 export async function GET(
   request: NextRequest,
@@ -54,9 +55,8 @@ export async function GET(
 
     // Incrementar contador de downloads
     await incrementDatasetDownloads(datasetId)
-
-    // Registrar estatística
-    await createStatistic(datasetId, 'download')
+    const session = await getCurrentUser()
+    await createStatistic(datasetId, 'download', session?.userId)
 
     // Retornar o arquivo para download
     const contentType = fileName.endsWith('.zip') ? 'application/zip' :

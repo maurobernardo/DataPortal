@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { SESSION_COOKIE_NAME } from '@/lib/session'
 
 function getAllowedOrigins(): string[] {
   const raw = process.env.CORS_ALLOWED_ORIGINS || ''
@@ -17,10 +18,32 @@ function applySecurityHeaders(response: NextResponse): NextResponse {
   return response
 }
 
+function isProtectedPath(pathname: string): boolean {
+  if (pathname === '/dashboard' || pathname.startsWith('/dashboard/')) return true
+  if (pathname === '/admin' || pathname.startsWith('/admin/')) {
+    if (pathname === '/admin/login') return false
+    return true
+  }
+  return false
+}
+
 export function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname
   const origin = request.headers.get('origin')
   const allowedOrigins = getAllowedOrigins()
-  const isApiRoute = request.nextUrl.pathname.startsWith('/api/')
+  const isApiRoute = pathname.startsWith('/api/')
+
+  if (isProtectedPath(pathname)) {
+    const token = request.cookies.get(SESSION_COOKIE_NAME)?.value
+
+    // Middleware corre no Edge — só verifica presença do cookie.
+    // A validação JWT e o perfil admin fazem-se nas páginas/API (Node.js).
+    if (!token) {
+      const loginUrl = new URL('/login', request.url)
+      loginUrl.searchParams.set('next', pathname)
+      return applySecurityHeaders(NextResponse.redirect(loginUrl))
+    }
+  }
 
   if (isApiRoute && request.method === 'OPTIONS') {
     const preflight = new NextResponse(null, { status: 204 })
@@ -44,5 +67,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: '/:path*',
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\..*|public).*)'],
 }

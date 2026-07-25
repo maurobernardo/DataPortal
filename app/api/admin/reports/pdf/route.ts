@@ -1,62 +1,19 @@
 import { NextRequest } from 'next/server';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentAdmin } from '@/lib/auth';
 import { db, findUserByEmail } from '@/lib/db'
+import { buildDatasetFilterSql, buildStatisticDateFilterSql } from '@/lib/report-filters'
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 export const dynamic = 'force-dynamic';
 
-function buildDatasetFilterSql(params: {
-  categoryName?: string | null
-  datasetFormat?: string | null
-  source?: string | null
-}) {
-  const conditions: string[] = []
-  const values: any[] = []
-
-  if (params.datasetFormat) {
-    conditions.push('d.format = ?')
-    values.push(params.datasetFormat)
-  }
-  if (params.source) {
-    conditions.push('d.source = ?')
-    values.push(params.source)
-  }
-  if (params.categoryName) {
-    conditions.push('c.name = ?')
-    values.push(params.categoryName)
-  }
-
-  return {
-    whereSql: conditions.length ? `AND ${conditions.join(' AND ')}` : '',
-    values,
-  }
-}
-
-function buildStatisticDateFilterSql(params: { startDate?: string | null; endDate?: string | null }) {
-  const conditions: string[] = []
-  const values: any[] = []
-  if (params.startDate) {
-    conditions.push('s.createdAt >= ?')
-    values.push(new Date(params.startDate))
-  }
-  if (params.endDate) {
-    conditions.push('s.createdAt <= ?')
-    values.push(new Date(params.endDate))
-  }
-  return {
-    whereSql: conditions.length ? `AND ${conditions.join(' AND ')}` : '',
-    values,
-  }
-}
-
 export async function GET(request: NextRequest) {
   try {
-    const user = await getCurrentUser();
+    const user = await getCurrentAdmin();
     
     if (!user) {
-      return new Response(JSON.stringify({ error: 'Acesso não autorizado' }), {
-        status: 401,
+      return new Response(JSON.stringify({ error: 'Acesso reservado a administradores' }), {
+        status: 403,
         headers: { 'Content-Type': 'application/json' },
       });
     }
@@ -176,9 +133,17 @@ export async function GET(request: NextRequest) {
         const [rows] = await db.execute(
           `SELECT c.name as categoryName, COUNT(d.id) as count
            FROM Category c
-           LEFT JOIN Dataset d ON d.categoryId = c.id
+           LEFT JOIN Dataset d
+             ON d.categoryId = c.id
+             ${datasetFormat ? 'AND d.format = ?' : ''}
+             ${source ? 'AND d.source = ?' : ''}
+           ${categoryName ? 'WHERE c.name = ?' : ''}
            GROUP BY c.id`,
-          []
+          [
+            ...(datasetFormat ? [datasetFormat] : []),
+            ...(source ? [source] : []),
+            ...(categoryName ? [categoryName] : []),
+          ]
         ) as any
         return rows as Array<{ categoryName: string; count: number }>
       })(),
@@ -193,8 +158,8 @@ export async function GET(request: NextRequest) {
             `SELECT d.*, c.name as categoryName
              FROM Dataset d
              LEFT JOIN Category c ON d.categoryId = c.id
-             WHERE d.id IN (${placeholders})`,
-            topViewedIds
+             WHERE d.id IN (${placeholders}) ${datasetFilter.whereSql}`,
+            [...topViewedIds, ...datasetFilter.values]
           ) as any
           return (rows as any[])
             .map(r => ({ ...r, category: { name: r.categoryName }, periodViews: topViewedCounts.get(r.id) || 0 }))
@@ -211,8 +176,8 @@ export async function GET(request: NextRequest) {
             `SELECT d.*, c.name as categoryName
              FROM Dataset d
              LEFT JOIN Category c ON d.categoryId = c.id
-             WHERE d.id IN (${placeholders})`,
-            topDownloadedIds
+             WHERE d.id IN (${placeholders}) ${datasetFilter.whereSql}`,
+            [...topDownloadedIds, ...datasetFilter.values]
           ) as any
           return (rows as any[])
             .map(r => ({ ...r, category: { name: r.categoryName }, periodDownloads: topDownloadedCounts.get(r.id) || 0 }))
@@ -228,13 +193,25 @@ export async function GET(request: NextRequest) {
       if (row.type === 'download') byDataset[key].downloads = row.cnt
     }
 
+    const topViewedEnriched = topViewed.map((d) => ({
+      ...d,
+      periodDownloads: byDataset[String(d.id)]?.downloads ?? 0,
+    }))
+    const topDownloadedEnriched = topDownloaded.map((d) => ({
+      ...d,
+      periodViews: byDataset[String(d.id)]?.views ?? 0,
+    }))
+
     const conversionIds = Object.keys(byDataset).map((id) => parseInt(id))
     const conversionRates = conversionIds.length
       ? await (async () => {
           const placeholders = conversionIds.map(() => '?').join(',')
           const [rows] = await db.execute(
-            `SELECT id, title FROM Dataset WHERE id IN (${placeholders})`,
-            conversionIds
+            `SELECT d.id, d.title
+             FROM Dataset d
+             LEFT JOIN Category c ON d.categoryId = c.id
+             WHERE d.id IN (${placeholders}) ${datasetFilter.whereSql}`,
+            [...conversionIds, ...datasetFilter.values]
           ) as any
           return (rows as any[])
             .map(r => {
@@ -261,7 +238,7 @@ export async function GET(request: NextRequest) {
     const doc = new jsPDF();
 
     // Configurar cores do sistema
-    const primaryColor = '#22c55e'; // green-500
+    const primaryColor = '#064E2C'; // verde institucional DataPortal
     const secondaryColor = '#ef4444'; // red-500
     const accentColor = '#eab308'; // yellow-500
 
@@ -343,16 +320,20 @@ export async function GET(request: NextRequest) {
                      parseInt(accentColor.substring(5, 7), 16));
     doc.text('Top Datasets Visualizados', 20, (doc as any).lastAutoTable.finalY + 15);
 
-    const topViewedData = topViewed.map(dataset => [
+    const hasPeriodFilter = Boolean(startDate || endDate)
+    const viewedColLabel = hasPeriodFilter ? 'Visualizações (período)' : 'Visualizações'
+    const downloadedColLabel = hasPeriodFilter ? 'Downloads (período)' : 'Downloads'
+
+    const topViewedData = topViewedEnriched.map(dataset => [
       dataset.title.length > 30 ? dataset.title.substring(0, 30) + '...' : dataset.title,
       dataset.category.name,
-      dataset.views.toString(),
-      dataset.downloads.toString()
+      String(hasPeriodFilter ? (dataset.periodViews ?? 0) : (dataset.periodViews ?? dataset.views)),
+      String(hasPeriodFilter ? (dataset.periodDownloads ?? 0) : (dataset.periodDownloads ?? dataset.downloads)),
     ]);
 
     autoTable(doc, {
       startY: (doc as any).lastAutoTable.finalY + 20,
-      head: [['Título', 'Categoria', 'Visualizações', 'Downloads']],
+      head: [['Título', 'Categoria', viewedColLabel, downloadedColLabel]],
       body: topViewedData,
       theme: 'grid',
       styles: { 
@@ -376,16 +357,16 @@ export async function GET(request: NextRequest) {
                      parseInt(accentColor.substring(5, 7), 16));
     doc.text('Top Datasets Baixados', 20, (doc as any).lastAutoTable.finalY + 15);
 
-    const topDownloadedData = topDownloaded.map(dataset => [
+    const topDownloadedData = topDownloadedEnriched.map(dataset => [
       dataset.title.length > 30 ? dataset.title.substring(0, 30) + '...' : dataset.title,
       dataset.category.name,
-      dataset.downloads.toString(),
-      dataset.views.toString()
+      String(hasPeriodFilter ? (dataset.periodDownloads ?? 0) : (dataset.periodDownloads ?? dataset.downloads)),
+      String(hasPeriodFilter ? (dataset.periodViews ?? 0) : (dataset.periodViews ?? dataset.views)),
     ]);
 
     autoTable(doc, {
       startY: (doc as any).lastAutoTable.finalY + 20,
-      head: [['Título', 'Categoria', 'Downloads', 'Visualizações']],
+      head: [['Título', 'Categoria', downloadedColLabel, viewedColLabel]],
       body: topDownloadedData,
       theme: 'grid',
       styles: { 

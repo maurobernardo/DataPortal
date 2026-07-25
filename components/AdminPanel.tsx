@@ -4,10 +4,11 @@ import { useState } from 'react'
 import { DatasetForm } from './DatasetForm'
 import { CategoryForm } from './CategoryForm'
 import { ReportForm } from './ReportForm'
-import { Database, FolderTree, FileText, Layers } from 'lucide-react'
+import { AlphanumericDashboardForm } from './AlphanumericDashboardForm'
+import { BarChart3, Database, FolderTree, FileText, Layers } from 'lucide-react'
 
 export function AdminPanel() {
-  const [activeTab, setActiveTab] = useState<'datasets' | 'categories' | 'reports'>('datasets')
+  const [activeTab, setActiveTab] = useState<'datasets' | 'categories' | 'reports' | 'alphanumericDashboards'>('datasets')
 
   return (
     <div className="space-y-6">
@@ -69,12 +70,27 @@ export function AdminPanel() {
               <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-12 h-1 bg-green-600 rounded-t-full"></div>
             )}
           </button>
+          <button
+            onClick={() => setActiveTab('alphanumericDashboards')}
+            className={`flex items-center gap-3 px-4 md:px-6 py-3 text-sm md:text-base font-semibold transition-all duration-300 relative rounded-lg ${
+              activeTab === 'alphanumericDashboards'
+                ? 'bg-white text-green-600 shadow-md'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+            }`}
+          >
+            <BarChart3 className="w-5 h-5" />
+            <span>Dashboards</span>
+            {activeTab === 'alphanumericDashboards' && (
+              <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-12 h-1 bg-green-600 rounded-t-full"></div>
+            )}
+          </button>
         </div>
 
         <div className="p-4 md:p-6 animate-fade-in">
           {activeTab === 'datasets' && <DatasetForm />}
           {activeTab === 'categories' && <CategoryForm />}
           {activeTab === 'reports' && <ReportForm />}
+          {activeTab === 'alphanumericDashboards' && <AlphanumericDashboardForm />}
         </div>
       </div>
     </div>

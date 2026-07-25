@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { deleteReport, findReportById, updateReport } from '@/lib/db'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentAdmin } from '@/lib/auth'
 
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = await getCurrentUser()
+    const user = await getCurrentAdmin()
     if (!user) {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+      return NextResponse.json({ error: 'Acesso reservado a administradores' }, { status: 403 })
     }
 
     const id = parseInt(params.id)
@@ -30,6 +30,7 @@ export async function PUT(
       partners: data.partners || null,
       filePath: data.filePath || null,
       fileSize: data.fileSize || null,
+      detailsText: data.detailsText || null,
     })
 
     if (!report) {
@@ -54,9 +55,9 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = await getCurrentUser()
+    const user = await getCurrentAdmin()
     if (!user) {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+      return NextResponse.json({ error: 'Acesso reservado a administradores' }, { status: 403 })
     }
 
     const id = parseInt(params.id)

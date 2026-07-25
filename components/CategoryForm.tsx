@@ -6,6 +6,18 @@ interface Category {
   id: number
   name: string
   description: string | null
+  dataType?: string
+}
+
+function categoryTypeLabel(dataType: string | undefined) {
+  switch (dataType) {
+    case 'alfanumerico':
+      return 'Alfanumérico'
+    case 'dashboard':
+      return 'Dashboards'
+    default:
+      return 'Geoespacial'
+  }
 }
 
 export function CategoryForm() {
@@ -66,7 +78,12 @@ export function CategoryForm() {
         body: JSON.stringify(formData),
       })
 
-      if (!response.ok) throw new Error('Erro ao salvar categoria')
+      const data = await response.json().catch(() => ({}))
+
+      if (!response.ok) {
+        showFeedback(typeof data?.error === 'string' ? data.error : 'Erro ao salvar categoria', 'error')
+        return
+      }
 
       router.refresh()
       loadCategories()
@@ -158,6 +175,7 @@ export function CategoryForm() {
               >
                 <option value="geoespacial">Dados Geoespaciais</option>
                 <option value="alfanumerico">Dados Alfanuméricos</option>
+                <option value="dashboard">Dashboards públicos</option>
               </select>
             </div>
 
@@ -257,11 +275,14 @@ export function CategoryForm() {
                 >
                   <div className="flex justify-between items-start gap-4">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
-                        <FolderTree className="w-5 h-5 text-green-600" />
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                        <FolderTree className="w-5 h-5 text-green-600 shrink-0" />
                         <h3 className="font-bold text-gray-800 group-hover:text-green-600 transition">
                           {category.name}
                         </h3>
+                        <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-md bg-white/80 border border-green-200 text-green-800">
+                          {categoryTypeLabel(category.dataType)}
+                        </span>
                       </div>
                       {category.description && (
                         <p className="text-sm text-gray-600 line-clamp-2">
