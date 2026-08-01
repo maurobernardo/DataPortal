@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { deleteDataset, findCategoryById, findDatasetById, updateDataset } from '@/lib/db'
+import { deleteDataset, findCategoryById, findDatasetById, findDatasetUpdateSubscriberEmails, updateDataset } from '@/lib/db'
 import { getCurrentAdmin } from '@/lib/auth'
+import { hasAuthMailConfig, sendDatasetUpdatedEmail } from '@/lib/mailer'
+import { logger } from '@/lib/logger'
 
 const ALLOWED_DATA_TYPES = new Set(['geoespacial', 'alfanumerico'])
 
@@ -82,9 +84,17 @@ export async function PUT(
       )
     }
 
+    if (hasAuthMailConfig()) {
+      findDatasetUpdateSubscriberEmails(id)
+        .then((emails) =>
+          Promise.all(emails.map((email) => sendDatasetUpdatedEmail(email, dataset.title, id)))
+        )
+        .catch((error) => logger.error('dataset_update_subscriber_email_error', { error }))
+    }
+
     return NextResponse.json(dataset)
   } catch (error: any) {
-    console.error('Error updating dataset:', error)
+    logger.error('error_updating_dataset', { error: error })
     return NextResponse.json(
       { error: 'Erro ao atualizar dataset' },
       { status: 500 }
@@ -116,7 +126,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true })
   } catch (error: any) {
-    console.error('Error deleting dataset:', error)
+    logger.error('error_deleting_dataset', { error: error })
     return NextResponse.json(
       { error: 'Erro ao excluir dataset' },
       { status: 500 }

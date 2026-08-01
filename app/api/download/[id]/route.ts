@@ -8,6 +8,8 @@ import {
   incrementDatasetDownloads,
 } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
+import { recordDailyUsageAndMaybeAlertAdmins } from '@/lib/notifications'
+import { logger } from '@/lib/logger'
 
 export async function GET(
   request: NextRequest,
@@ -57,6 +59,7 @@ export async function GET(
     await incrementDatasetDownloads(datasetId)
     const session = await getCurrentUser()
     await createStatistic(datasetId, 'download', session?.userId)
+    recordDailyUsageAndMaybeAlertAdmins('downloads')
 
     // Retornar o arquivo para download
     const contentType = fileName.endsWith('.zip') ? 'application/zip' :
@@ -73,7 +76,7 @@ export async function GET(
       },
     })
   } catch (error: any) {
-    console.error('Error downloading file:', error)
+    logger.error('error_downloading_file', { error: error })
     return NextResponse.json(
       { error: 'Erro ao fazer download do arquivo' },
       { status: 500 }

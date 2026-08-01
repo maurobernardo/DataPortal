@@ -4,6 +4,10 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Loader2 } from 'lucide-react'
 import dynamic from 'next/dynamic'
+import { getCachedPreview, setCachedPreview } from '@/lib/preview-cache'
+import { GeoInsightsCard } from '@/components/geo/GeoInsightsCard'
+import { RelatedDatasets } from '@/components/RelatedDatasets'
+import type { GeoInsights } from '@/lib/geo-intelligence'
 
 const InteractiveGeoMapPreview = dynamic(
   () => import('@/components/geo/InteractiveGeoMapPreview'),
@@ -23,6 +27,7 @@ type PreviewGeo = {
   geojson: unknown
   bbox: [number, number, number, number] | null
   featureCount?: number
+  insights?: GeoInsights | null
 }
 
 export function GeoMapDetailPanel({ dataset }: { dataset: GeoDataset | null }) {
@@ -38,6 +43,34 @@ export function GeoMapDetailPanel({ dataset }: { dataset: GeoDataset | null }) {
     }
 
     let cancelled = false
+
+    const applyData = (data: any) => {
+      if (cancelled) return
+      if (data?.error) {
+        setPreview(null)
+        setError(data.error)
+        return
+      }
+      if (data?.type === 'geo') {
+        setPreview({
+          type: 'geo',
+          geojson: data.geojson,
+          bbox: data.bbox ?? null,
+          featureCount: data.featureCount,
+          insights: data.insights ?? null,
+        })
+      } else {
+        setPreview(null)
+        setError('Formato sem pré-visualização no mapa. Abra o dataset para mais detalhes.')
+      }
+    }
+
+    const cached = getCachedPreview(dataset.id)
+    if (cached) {
+      applyData(cached)
+      return
+    }
+
     setLoading(true)
     setError(null)
 
@@ -50,17 +83,8 @@ export function GeoMapDetailPanel({ dataset }: { dataset: GeoDataset | null }) {
           setError(data?.error || 'Pré-visualização indisponível')
           return
         }
-        if (data.type === 'geo') {
-          setPreview({
-            type: 'geo',
-            geojson: data.geojson,
-            bbox: data.bbox ?? null,
-            featureCount: data.featureCount,
-          })
-        } else {
-          setPreview(null)
-          setError('Formato sem pré-visualização no mapa. Abra o dataset para mais detalhes.')
-        }
+        setCachedPreview(dataset.id, data)
+        applyData(data)
       })
       .catch(() => {
         if (!cancelled) {
@@ -99,7 +123,7 @@ export function GeoMapDetailPanel({ dataset }: { dataset: GeoDataset | null }) {
       <div className="geo-map-preview">
         <div className="geo-map-preview-header">
           <div className="min-w-0">
-            <div className="geo-map-preview-title truncate">Pré-visualização — {dataset.title}</div>
+            <div className="geo-map-preview-title truncate">Pré-visualização: {dataset.title}</div>
             <div className="geo-map-preview-meta">
               {loading
                 ? 'A carregar geometria…'
@@ -192,6 +216,10 @@ export function GeoMapDetailPanel({ dataset }: { dataset: GeoDataset | null }) {
             <span className="geo-ldp-format-chip">{dataset.format}</span>
           </div>
         </div>
+
+        <GeoInsightsCard insights={preview?.insights ?? null} />
+
+        <RelatedDatasets datasetId={dataset.id} sectionLabelClassName="geo-ldp-section-label flex items-center gap-1.5" />
 
         <div className="geo-ldp-actions">
           <Link href={`/dataset/${dataset.id}`} className="geo-ldp-action-primary">

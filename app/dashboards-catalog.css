@@ -204,6 +204,38 @@
   justify-content: center;
   background: linear-gradient(135deg, var(--pd-green-50), #f2f7f3);
 }
+.db-card-preview-fallback {
+  height: 100%;
+  min-height: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px;
+  text-align: center;
+  background: var(--pd-surface-50);
+}
+
+.db-card-preview-fallback p {
+  font-size: 13px;
+  color: var(--pd-ink-600);
+  max-width: 280px;
+}
+
+.db-card-preview-fallback-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: var(--pd-green-700);
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
 .db-card-preview-open {
   position: absolute;
   bottom: 10px;
@@ -361,7 +393,10 @@
   .db-feat-card.small { min-height: 360px; }
 }
 .db-feat-card-tag {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
@@ -556,12 +591,55 @@
 }
 .db-gallery-card-body { padding: 16px; flex: 1; display: flex; flex-direction: column; }
 .db-gallery-card-org {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
   font-size: 11px;
   font-weight: 700;
   color: var(--pd-green-700);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   margin-bottom: 6px;
+}
+
+.db-gallery-card-thumb-wrap {
+  position: relative;
+}
+
+.db-favorite-btn-overlay {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 4;
+  background: color-mix(in srgb, var(--pd-ink-900) 55%, transparent);
+  color: white;
+  border-color: transparent;
+}
+
+.db-favorite-btn-overlay:hover {
+  color: #fff;
+  border-color: transparent;
+  background: color-mix(in srgb, #DC2626 70%, var(--pd-ink-900));
+}
+
+.db-favorite-btn-overlay.active {
+  background: #DC2626;
+  color: white;
+}
+
+.db-last-update-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--pd-ink-500);
+  background: var(--pd-surface-100);
+  padding: 2px 8px;
+  border-radius: 100px;
 }
 .db-gallery-card-title {
   font-size: 15px;
@@ -663,6 +741,10 @@
   gap: 8px;
 }
 .db-showcase-card-tag {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;

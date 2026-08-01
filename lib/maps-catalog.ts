@@ -53,7 +53,7 @@ export const MAP_CATALOG: PublicMapDashboard[] = [
     subtitle: 'Postos administrativos ADM3 · 20 variáveis compostas · Camada GIS',
     description:
       'Inteligência de saúde ligada a GIS ao nível do posto administrativo de Moçambique (~204 unidades), com 20 variáveis compostas de saúde desagregadas a partir de fontes provinciais. Coordenadas representam centroides aproximados (WGS84).',
-    coverage: 'Moçambique — 11 províncias, 204 postos ADM3',
+    coverage: 'Moçambique: 11 províncias, 204 postos ADM3',
     category: 'Saúde',
     badges: ['204 Postos Admin.', '20 Variáveis', '11 Províncias'],
     kind: 'health',
@@ -73,7 +73,7 @@ export const MAP_CATALOG: PublicMapDashboard[] = [
     subtitle: 'Mapa geoespacial · KPIs · Cross-filter · Exportação CSV',
     description:
       'Dashboard interactivo do levantamento de postes: mapa com estado e material, KPIs clicáveis, filtros cruzados, matriz material×estado, hotspots de defeitos e exportação dos postes de maior risco.',
-    coverage: 'Moçambique — Manica, Maputo Cidade, Maputo Província, Nampula',
+    coverage: 'Moçambique: Manica, Maputo Cidade, Maputo Província, Nampula',
     category: 'Infraestrutura',
     badges: ['3 911 Postes', '4 Províncias', 'Campo 2025'],
     kind: 'poles',
@@ -93,7 +93,7 @@ export const MAP_CATALOG: PublicMapDashboard[] = [
     subtitle: 'IMASIDA 2015 · IIM 2018 · Prevalência provincial RDT',
     description:
       'Dashboard analítico da prevalência de malária em crianças 6–59 meses: comparação IMASIDA 2015 com IIM 2018 por província, mosaico geográfico, ranking de variação e série temporal com contexto nacional.',
-    coverage: 'Moçambique — 11 províncias',
+    coverage: 'Moçambique: 11 províncias',
     category: 'Saúde',
     badges: ['11 Províncias', 'IMASIDA 2015', 'IIM 2018'],
     kind: 'malaria',
@@ -113,7 +113,7 @@ export const MAP_CATALOG: PublicMapDashboard[] = [
     subtitle: '25 alimentadores · Risco ciclónico · Idade da infra · Prioridade CAPEX',
     description:
       'Dashboard de inteligência energética sobre a rede de distribuição: mapa interactivo de alimentadores de média tensão, KPIs de clientes e transformadores, análise de risco ciclónico vs. vintage da infraestrutura e ranking de prioridade de investimento.',
-    coverage: 'Moçambique — 11 províncias (amostra 25 alimentadores)',
+    coverage: 'Moçambique: 11 províncias (amostra 25 alimentadores)',
     category: 'Energia',
     badges: ['25 Alimentadores', '93 130 Clientes', '748 km MV'],
     kind: 'feeder',
@@ -135,4 +135,67 @@ export function findMapBySlug(slug: string): PublicMapDashboard | undefined {
 
 export function findFeaturedMaps(): PublicMapDashboard[] {
   return MAP_CATALOG.filter((m) => m.featured)
+}
+
+/** Forma mínima de uma linha de MapOverride (lib/db.ts) — evita import de tipos de BD aqui. */
+export type MapOverrideLike = {
+  slug: string
+  title?: string | null
+  subtitle?: string | null
+  description?: string | null
+  coverage?: string | null
+  category?: string | null
+  badgesJson?: string | null
+  highlightsJson?: string | null
+  featured?: number | boolean | null
+  heroStatValue?: string | null
+  heroStatLabel?: string | null
+}
+
+/**
+ * Aplica sobreposições editáveis via admin sobre o catálogo estático. Campos NULL/omitidos na
+ * sobreposição mantêm o valor por defeito do código — não é possível criar novos "tipos" de
+ * mapa por aqui, só editar metadados dos já existentes.
+ */
+export function applyMapOverrides(
+  base: PublicMapDashboard[],
+  overrides: MapOverrideLike[]
+): PublicMapDashboard[] {
+  const bySlug = new Map(overrides.map((o) => [o.slug, o]))
+  return base.map((map) => {
+    const o = bySlug.get(map.slug)
+    if (!o) return map
+    let badges = map.badges
+    if (o.badgesJson) {
+      try {
+        const parsed = JSON.parse(o.badgesJson)
+        if (Array.isArray(parsed)) badges = parsed
+      } catch {
+        /* ignora JSON inválido */
+      }
+    }
+    let highlights = map.highlights
+    if (o.highlightsJson) {
+      try {
+        const parsed = JSON.parse(o.highlightsJson)
+        if (Array.isArray(parsed)) highlights = parsed
+      } catch {
+        /* ignora JSON inválido */
+      }
+    }
+    return {
+      ...map,
+      title: o.title || map.title,
+      subtitle: o.subtitle || map.subtitle,
+      description: o.description || map.description,
+      coverage: o.coverage || map.coverage,
+      category: o.category || map.category,
+      badges,
+      highlights,
+      featured: o.featured == null ? map.featured : Boolean(o.featured),
+      heroStat: o.heroStatValue
+        ? { value: o.heroStatValue, label: o.heroStatLabel || map.heroStat?.label || '' }
+        : map.heroStat,
+    }
+  })
 }

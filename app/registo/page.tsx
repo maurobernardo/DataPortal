@@ -7,7 +7,7 @@ export default function RegistoPage() {
     <AuthCard
       icon={UserPlus}
       title="Criar conta"
-      subtitle="Registe-se para aceder ao painel de administração"
+      subtitle="Registe-se para aceder ao Data Portal"
     >
       <RegisterForm />
     </AuthCard>

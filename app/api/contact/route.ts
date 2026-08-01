@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { isValidEmail, normalizeEmail, normalizeText, rateLimit } from '@/lib/security'
 import { hasMailConfig, sendContactEmail } from '@/lib/mailer'
 import { createContactMessage } from '@/lib/db'
+import { logger } from '@/lib/logger'
 
 export async function POST(request: NextRequest) {
   try {
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
-    const rl = rateLimit(`contact:${ip}`, 5, 60 * 60 * 1000)
+    const rl = await rateLimit(`contact:${ip}`, 5, 60 * 60 * 1000)
     if (!rl.allowed) {
       return NextResponse.json(
         { error: 'Muitas mensagens enviadas. Tente novamente mais tarde.' },
@@ -41,12 +42,12 @@ export async function POST(request: NextRequest) {
         message,
       })
     } else {
-      console.warn('SMTP nao configurado. Mensagem de contacto salva apenas na base.')
+      logger.warn('smtp_nao_configurado_mensagem_de_contacto_salva_apenas_na_ba')
     }
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error sending contact message:', error)
+    logger.error('error_sending_contact_message', { error: error })
     return NextResponse.json(
       { error: 'Erro interno ao enviar mensagem.' },
       { status: 500 }

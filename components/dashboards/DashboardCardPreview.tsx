@@ -1,9 +1,11 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { ExternalLink, Loader2 } from 'lucide-react'
+import { AlertTriangle, ExternalLink, Loader2 } from 'lucide-react'
 import { normalizeDashboardEmbedUrl } from '@/lib/dashboard-utils'
+
+const EMBED_TIMEOUT_MS = 9000
 
 function hasUsablePreviewImage(path?: string | null) {
   if (!path?.trim()) return false
@@ -33,6 +35,16 @@ export function DashboardCardPreview({
   const embedUrl = useMemo(() => normalizeDashboardEmbedUrl(url), [url])
   const [imageOk, setImageOk] = useState(true)
   const [iframeLoaded, setIframeLoaded] = useState(false)
+  const [embedTimedOut, setEmbedTimedOut] = useState(false)
+
+  // Muitos provedores (Tableau Public, Looker Studio, etc.) bloqueiam o embed via
+  // X-Frame-Options/CSP sem disparar onError no iframe — o spinner ficaria eterno.
+  // Um timeout é a única forma prática de detectar isto e mostrar uma alternativa.
+  useEffect(() => {
+    if (iframeLoaded) return
+    const timer = setTimeout(() => setEmbedTimedOut(true), EMBED_TIMEOUT_MS)
+    return () => clearTimeout(timer)
+  }, [iframeLoaded, embedUrl])
 
   const sizeClass = fill
     ? 'db-preview--fill'
@@ -55,6 +67,19 @@ export function DashboardCardPreview({
           className="absolute inset-0 h-full w-full object-cover"
           onError={() => setImageOk(false)}
         />
+      </div>
+    )
+  }
+
+  if (embedTimedOut && !iframeLoaded) {
+    return (
+      <div className={`db-card-preview ${sizeClass} db-card-preview-fallback`}>
+        <AlertTriangle className="size-6 text-amber-600" aria-hidden />
+        <p>Pré-visualização indisponível para este painel.</p>
+        <Link href={url} target="_blank" rel="noreferrer" className="db-card-preview-fallback-link">
+          <ExternalLink className="size-3.5" aria-hidden />
+          Abrir no site oficial
+        </Link>
       </div>
     )
   }

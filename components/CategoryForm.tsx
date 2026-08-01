@@ -264,7 +264,7 @@ export function CategoryForm() {
               <div className="text-center py-12">
                 <FolderTree className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                 <p className="text-gray-500">Nenhuma categoria cadastrada ainda.</p>
-                <p className="text-gray-400 text-sm mt-2">Crie a primeira categoria usando o formulário ao lado.</p>
+                <p className="text-gray-500 text-sm mt-2">Crie a primeira categoria usando o formulário ao lado.</p>
               </div>
             ) : (
               categories.map((category, index) => (

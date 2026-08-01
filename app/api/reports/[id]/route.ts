@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { deleteReport, findReportById, updateReport } from '@/lib/db'
 import { getCurrentAdmin } from '@/lib/auth'
+import { logger } from '@/lib/logger'
 
 export async function PUT(
   request: NextRequest,
@@ -42,7 +43,7 @@ export async function PUT(
 
     return NextResponse.json(report)
   } catch (error: any) {
-    console.error('Error updating report:', error)
+    logger.error('error_updating_report', { error: error })
     return NextResponse.json(
       { error: 'Erro ao atualizar relatório' },
       { status: 500 }
@@ -74,7 +75,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true })
   } catch (error: any) {
-    console.error('Error deleting report:', error)
+    logger.error('error_deleting_report', { error: error })
     return NextResponse.json(
       { error: 'Erro ao excluir relatório' },
       { status: 500 }

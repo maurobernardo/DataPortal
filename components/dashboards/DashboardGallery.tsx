@@ -5,6 +5,8 @@ import { ChevronDown, Search } from 'lucide-react'
 import { DASHBOARD_CATEGORIES } from '@/lib/dashboard-utils'
 import { DashboardCardPreview } from '@/components/dashboards/DashboardCardPreview'
 import { DashboardVisitLink } from '@/components/dashboards/DashboardVisitLink'
+import { FavoriteButton } from '@/components/FavoriteButton'
+import { DashboardLastUpdateBadge } from '@/components/dashboards/DashboardLastUpdateBadge'
 
 export type PublicDashboard = {
   id: number
@@ -14,11 +16,18 @@ export type PublicDashboard = {
   previewImagePath?: string | null
   category?: string | null
   views?: number
+  lastDataUpdate?: string | null
 }
 
 const GALLERY_PAGE_SIZE = 2
 
-export function DashboardGallery({ dashboards }: { dashboards: PublicDashboard[] }) {
+export function DashboardGallery({
+  dashboards,
+  favoriteIds,
+}: {
+  dashboards: PublicDashboard[]
+  favoriteIds?: Set<string>
+}) {
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState<string>('Todos')
   const [visibleCount, setVisibleCount] = useState(GALLERY_PAGE_SIZE)
@@ -104,14 +113,25 @@ export function DashboardGallery({ dashboards }: { dashboards: PublicDashboard[]
             <div className="db-gallery-grid db-gallery-grid--paged">
               {visible.map((item) => (
                 <article key={item.id} className="db-gallery-card">
-                  <DashboardCardPreview
-                    title={item.name}
-                    url={item.dashboardUrl}
-                    previewImagePath={item.previewImagePath}
-                    large
-                  />
+                  <div className="db-gallery-card-thumb-wrap">
+                    <DashboardCardPreview
+                      title={item.name}
+                      url={item.dashboardUrl}
+                      previewImagePath={item.previewImagePath}
+                      large
+                    />
+                    <FavoriteButton
+                      entityType="dashboard"
+                      entityId={item.id}
+                      initialFavorited={favoriteIds?.has(String(item.id)) ?? false}
+                      className="db-favorite-btn-overlay"
+                    />
+                  </div>
                   <div className="db-gallery-card-body">
-                    <div className="db-gallery-card-org">{item.category || 'Geral'}</div>
+                    <div className="db-gallery-card-org">
+                      {item.category || 'Geral'}
+                      <DashboardLastUpdateBadge date={item.lastDataUpdate} />
+                    </div>
                     <h3 className="db-gallery-card-title">{item.name}</h3>
                     {item.description ? (
                       <p className="db-gallery-card-desc">{item.description}</p>
@@ -120,6 +140,7 @@ export function DashboardGallery({ dashboards }: { dashboards: PublicDashboard[]
                       <DashboardVisitLink
                         id={item.id}
                         href={item.dashboardUrl}
+                        title={item.name}
                         className="db-gallery-card-cta"
                       />
                     </div>

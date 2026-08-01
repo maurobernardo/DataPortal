@@ -16,6 +16,8 @@ export {
   signSessionToken,
   verifySessionToken,
   normalizeRole,
+  signPending2faToken,
+  verifyPending2faToken,
   type SessionPayload,
 } from '@/lib/session'
 

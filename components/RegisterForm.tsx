@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Mail, Lock, Loader2, AlertCircle, User, CheckCircle2 } from 'lucide-react'
 import { parseApiResponse } from '@/lib/parse-api-response'
+import { SocialLoginButtons } from '@/components/SocialLoginButtons'
 
 export function RegisterForm() {
   const router = useRouter()
@@ -149,6 +150,8 @@ export function RegisterForm() {
           <span>Criar conta</span>
         )}
       </button>
+
+      <SocialLoginButtons />
 
       <p className="text-center text-sm text-gray-600">
         Já tem conta?{' '}

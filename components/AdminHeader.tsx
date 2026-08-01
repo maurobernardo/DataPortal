@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { Home, FolderOpen, Database, FileText, Settings, BarChart3, Menu, X, LogOut } from 'lucide-react'
+import { Home, FolderOpen, Database, FileText, Settings, BarChart3, MapPinned, Menu, X, LogOut } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
@@ -23,6 +23,7 @@ export function AdminHeader({ user }: AdminHeaderProps) {
     { href: '/dados-espaciais', label: 'Geoespaciais', icon: FolderOpen },
     { href: '/dados-alfanumericos', label: 'Alfanuméricos', icon: Database },
     { href: '/dashboards-alfanumericos', label: 'Dashboard', icon: BarChart3 },
+    { href: '/maps', label: 'Mapas Inteligentes', icon: MapPinned },
     { href: '/relatorios', label: 'Relatórios', icon: FileText },
   ]
 

@@ -8,12 +8,14 @@ import {
   incrementDatasetDownloads,
   incrementDatasetViews,
 } from '@/lib/db'
+import { recordDailyUsageAndMaybeAlertAdmins } from '@/lib/notifications'
 
 export async function incrementView(datasetId: number) {
   try {
     const session = await getCurrentUser()
     await incrementDatasetViews(datasetId)
     await createStatistic(datasetId, 'view', session?.userId)
+    recordDailyUsageAndMaybeAlertAdmins('views')
     revalidatePath(`/dataset/${datasetId}`)
   } catch (error) {
     console.error('Error incrementing view:', error)
@@ -38,6 +40,7 @@ export async function downloadDataset(formData: FormData) {
     await incrementDatasetDownloads(datasetId)
     const session = await getCurrentUser()
     await createStatistic(datasetId, 'download', session?.userId)
+    recordDailyUsageAndMaybeAlertAdmins('downloads')
 
     revalidatePath(`/dataset/${datasetId}`)
     revalidatePath('/dashboard')

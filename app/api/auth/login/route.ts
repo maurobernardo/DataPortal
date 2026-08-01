@@ -1,8 +1,15 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { comparePassword, getSessionCookieOptions, SESSION_COOKIE_NAME, signSessionToken } from '@/lib/auth'
+import {
+  comparePassword,
+  getSessionCookieOptions,
+  SESSION_COOKIE_NAME,
+  signPending2faToken,
+  signSessionToken,
+} from '@/lib/auth'
 import { findUserByEmail, resolveUserRole, updateUserRole } from '@/lib/db'
 import { isValidEmail, normalizeEmail, normalizeText, rateLimit } from '@/lib/security'
+import { logger } from '@/lib/logger'
 
 export async function POST(request: Request) {
   try {
@@ -11,7 +18,7 @@ export async function POST(request: Request) {
     const password = normalizeText(body?.password, 256)
 
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
-    const rl = rateLimit(`login:${ip}:${email}`, 10, 15 * 60 * 1000)
+    const rl = await rateLimit(`login:${ip}:${email}`, 10, 15 * 60 * 1000)
     if (!rl.allowed) {
       return NextResponse.json(
         { error: 'Muitas tentativas. Tente novamente em instantes.' },
@@ -29,7 +36,7 @@ export async function POST(request: Request) {
 
     const user = await findUserByEmail(email)
 
-    if (!user) {
+    if (!user || !user.password) {
       return NextResponse.json({ error: 'Credenciais inválidas' }, { status: 401 })
     }
 
@@ -53,6 +60,12 @@ export async function POST(request: Request) {
     if (role === 'admin' && user.role !== 'admin') {
       await updateUserRole(user.id, 'admin')
     }
+
+    if (user.totp_enabled) {
+      const pendingToken = signPending2faToken(user.id)
+      return NextResponse.json({ needsTotp: true, pendingToken })
+    }
+
     const token = signSessionToken({ userId: user.id, email: user.email, role })
     const cookieStore = await cookies()
     cookieStore.set(SESSION_COOKIE_NAME, token, getSessionCookieOptions())
@@ -71,7 +84,7 @@ export async function POST(request: Request) {
       },
     })
   } catch (error) {
-    console.error('Login error:', error)
+    logger.error('login_error', { error: error })
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
   }
 }

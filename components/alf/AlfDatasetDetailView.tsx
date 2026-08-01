@@ -14,6 +14,8 @@ import {
   TrendingUp,
 } from 'lucide-react'
 import { AlfDetailPreviewCard } from '@/components/alf/AlfDetailPreviewCard'
+import { Breadcrumbs } from '@/components/Breadcrumbs'
+import { RecordRecentlyViewed } from '@/components/RecordRecentlyViewed'
 
 type DatasetDetail = {
   id: number
@@ -29,7 +31,7 @@ type DatasetDetail = {
   coverage: string | null
   fileSize: string | null
   filePath: string | null
-  category: { name: string }
+  category: { id: number; name: string }
 }
 
 export function AlfDatasetDetailView({ dataset }: { dataset: DatasetDetail }) {
@@ -38,6 +40,22 @@ export function AlfDatasetDetailView({ dataset }: { dataset: DatasetDetail }) {
   return (
     <div className="geo-detail-page alf-detail-page">
       <div className="geo-detail-inner">
+        <RecordRecentlyViewed
+          id={dataset.id}
+          title={dataset.title}
+          href={`/dataset/${dataset.id}`}
+          dataType="alfanumerico"
+        />
+        <Breadcrumbs
+          items={[
+            { label: 'Dados Alfanuméricos', href: '/dados-alfanumericos' },
+            ...(dataset.category?.name
+              ? [{ label: dataset.category.name, href: `/dados-alfanumericos?category=${dataset.category.id}` }]
+              : []),
+            { label: dataset.title },
+          ]}
+        />
+
         <Link href="/dados-alfanumericos" className="geo-detail-back">
           <ArrowLeft className="size-4" aria-hidden />
           Voltar aos Dados Alfanuméricos

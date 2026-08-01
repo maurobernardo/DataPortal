@@ -5,6 +5,7 @@ import Link from 'next/link'
 import type { GeoDataset } from '@/components/geo/types'
 import { AlfPreviewInspector } from '@/components/alf/AlfPreviewInspector'
 import type { AlfTablePreview } from '@/components/alf/alf-preview-utils'
+import { getCachedPreview, setCachedPreview } from '@/lib/preview-cache'
 
 export function AlfDataDetailPanel({ dataset }: { dataset: GeoDataset | null }) {
   const [preview, setPreview] = useState<AlfTablePreview | null>(null)
@@ -19,6 +20,28 @@ export function AlfDataDetailPanel({ dataset }: { dataset: GeoDataset | null }) 
     }
 
     let cancelled = false
+
+    const applyData = (data: any) => {
+      if (cancelled) return
+      if (data?.type === 'table' && Array.isArray(data.columns)) {
+        setPreview({
+          type: 'table',
+          columns: data.columns,
+          rows: Array.isArray(data.rows) ? data.rows : [],
+          delimiter: data.delimiter,
+        })
+      } else {
+        setPreview(null)
+        setError(data?.error || 'Formato sem pré-visualização tabular. Abra o dataset para mais detalhes.')
+      }
+    }
+
+    const cached = getCachedPreview(dataset.id)
+    if (cached) {
+      applyData(cached)
+      return
+    }
+
     setLoading(true)
     setError(null)
 
@@ -31,17 +54,8 @@ export function AlfDataDetailPanel({ dataset }: { dataset: GeoDataset | null }) 
           setError(data?.error || 'Pré-visualização indisponível')
           return
         }
-        if (data.type === 'table' && Array.isArray(data.columns)) {
-          setPreview({
-            type: 'table',
-            columns: data.columns,
-            rows: Array.isArray(data.rows) ? data.rows : [],
-            delimiter: data.delimiter,
-          })
-        } else {
-          setPreview(null)
-          setError('Formato sem pré-visualização tabular. Abra o dataset para mais detalhes.')
-        }
+        setCachedPreview(dataset.id, data)
+        applyData(data)
       })
       .catch(() => {
         if (!cancelled) {

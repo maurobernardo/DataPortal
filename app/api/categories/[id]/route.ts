@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { deleteCategory, findCategoryById, updateCategory } from '@/lib/db'
 import { getCurrentAdmin } from '@/lib/auth'
+import { logger } from '@/lib/logger'
 
 export async function PUT(
   request: NextRequest,
@@ -37,7 +38,7 @@ export async function PUT(
 
     return NextResponse.json(category)
   } catch (error: any) {
-    console.error('Error updating category:', error)
+    logger.error('error_updating_category', { error: error })
     if (error?.code === 'ER_DUP_ENTRY') {
       return NextResponse.json(
         { error: 'Já existe uma categoria com este nome para este tipo de dados.' },
@@ -75,7 +76,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true })
   } catch (error: any) {
-    console.error('Error deleting category:', error)
+    logger.error('error_deleting_category', { error: error })
     return NextResponse.json(
       { error: 'Erro ao excluir categoria' },
       { status: 500 }

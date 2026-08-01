@@ -1,23 +1,36 @@
 import { ArrowRight } from 'lucide-react'
 import { DashboardCardPreview } from '@/components/dashboards/DashboardCardPreview'
 import { DashboardVisitLink } from '@/components/dashboards/DashboardVisitLink'
+import { FavoriteButton } from '@/components/FavoriteButton'
+import { DashboardLastUpdateBadge } from '@/components/dashboards/DashboardLastUpdateBadge'
 import type { PublicDashboard } from '@/components/dashboards/DashboardGallery'
 
-function ShowcaseCard({ item, tall }: { item: PublicDashboard; tall?: boolean }) {
+function ShowcaseCard({ item, tall, favoriteIds }: { item: PublicDashboard; tall?: boolean; favoriteIds?: Set<string> }) {
   return (
     <article className="db-showcase-card">
-      <DashboardCardPreview
-        title={item.name}
-        url={item.dashboardUrl}
-        previewImagePath={item.previewImagePath}
-        featured={tall}
-        large={!tall}
-      />
+      <div className="db-gallery-card-thumb-wrap">
+        <DashboardCardPreview
+          title={item.name}
+          url={item.dashboardUrl}
+          previewImagePath={item.previewImagePath}
+          featured={tall}
+          large={!tall}
+        />
+        <FavoriteButton
+          entityType="dashboard"
+          entityId={item.id}
+          initialFavorited={favoriteIds?.has(String(item.id)) ?? false}
+          className="db-favorite-btn-overlay"
+        />
+      </div>
       <div className="db-showcase-card-body">
-        <span className="db-showcase-card-tag">{item.category || 'Portal de Dados'}</span>
+        <span className="db-showcase-card-tag">
+          {item.category || 'Portal de Dados'}
+          <DashboardLastUpdateBadge date={item.lastDataUpdate} />
+        </span>
         <h3 className="db-showcase-card-title">{item.name}</h3>
         {item.description ? <p className="db-showcase-card-desc">{item.description}</p> : null}
-        <DashboardVisitLink id={item.id} href={item.dashboardUrl} className="db-feat-card-cta">
+        <DashboardVisitLink id={item.id} href={item.dashboardUrl} title={item.name} className="db-feat-card-cta">
           Ver mais
           <ArrowRight className="size-4" aria-hidden />
         </DashboardVisitLink>
@@ -26,7 +39,13 @@ function ShowcaseCard({ item, tall }: { item: PublicDashboard; tall?: boolean })
   )
 }
 
-export function DashboardStaticSections({ dashboards }: { dashboards: PublicDashboard[] }) {
+export function DashboardStaticSections({
+  dashboards,
+  favoriteIds,
+}: {
+  dashboards: PublicDashboard[]
+  favoriteIds?: Set<string>
+}) {
   if (dashboards.length === 0) return null
 
   const byViews = [...dashboards].sort((a, b) => (b.views ?? 0) - (a.views ?? 0))
@@ -43,7 +62,7 @@ export function DashboardStaticSections({ dashboards }: { dashboards: PublicDash
               <div className="db-section-eyebrow">Catálogo nacional</div>
               <h2 className="db-section-title">Dados alfanuméricos e geoespaciais num só portal.</h2>
               <p className="db-section-lede">
-                Cada dashboard está ligado a datasets publicados no Data Portal — indicadores de saúde,
+                Cada dashboard está ligado a datasets publicados no Data Portal: indicadores de saúde,
                 educação, economia e território, com acesso directo à fonte oficial e metadados
                 harmonizados.
               </p>
@@ -53,7 +72,7 @@ export function DashboardStaticSections({ dashboards }: { dashboards: PublicDash
                 <li>Filtros por sector, organização e palavras-chave</li>
               </ul>
             </div>
-            {catalogItem && <ShowcaseCard item={catalogItem} tall />}
+            {catalogItem && <ShowcaseCard item={catalogItem} tall favoriteIds={favoriteIds} />}
           </div>
         </div>
       </section>
@@ -61,7 +80,7 @@ export function DashboardStaticSections({ dashboards }: { dashboards: PublicDash
       <section className="db-showcase db-showcase-muted">
         <div className="db-section-inner">
           <div className="db-showcase-grid db-showcase-grid-reverse">
-            {shareItem && <ShowcaseCard item={shareItem} tall />}
+            {shareItem && <ShowcaseCard item={shareItem} tall favoriteIds={favoriteIds} />}
             <div className="db-showcase-copy">
               <div className="db-section-eyebrow">Partilha institucional</div>
               <h2 className="db-section-title">Dashboards oficiais, citados e actualizados.</h2>
@@ -87,12 +106,12 @@ export function DashboardStaticSections({ dashboards }: { dashboards: PublicDash
               <div className="db-section-eyebrow">Indicadores em foco</div>
               <h2 className="db-section-title">Os dashboards mais consultados pela comunidade.</h2>
               <p className="db-section-lede">
-                A secção em destaque reflecte o interesse real dos utilizadores — ideal para
+                A secção em destaque reflecte o interesse real dos utilizadores, ideal para
                 acompanhar emprego juvenil, cobertura vacinal, produção agrícola e outros temas
                 prioritários para Moçambique.
               </p>
             </div>
-            {liveItem && <ShowcaseCard item={liveItem} tall />}
+            {liveItem && <ShowcaseCard item={liveItem} tall favoriteIds={favoriteIds} />}
           </div>
         </div>
       </section>

@@ -1,8 +1,9 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, Calendar, Download, FileText, Globe, Users } from 'lucide-react'
+import { ArrowLeft, Calendar, Download, ExternalLink, FileText, Globe, Users } from 'lucide-react'
 import { findReportById } from '@/lib/db'
 import { ReportRequestButton } from '@/components/ReportRequestButton'
+import { RecordRecentlyViewed } from '@/components/RecordRecentlyViewed'
 import '../../reports-catalog.css'
 
 export const dynamic = 'force-dynamic'
@@ -23,11 +24,18 @@ export default async function RelatorioDetalhesPage({
   }
 
   const hasFile = Boolean(report.filePath?.trim())
+  const isPdf = hasFile && report.filePath!.toLowerCase().endsWith('.pdf')
 
   return (
     <div className="rpt-page">
       <div className="rpt-main">
         <div className="rpt-inner rpt-inner-narrow">
+          <RecordRecentlyViewed
+            id={report.id}
+            title={report.title}
+            href={`/relatorios/${report.id}`}
+            dataType="report"
+          />
           <Link href="/relatorios" className="rpt-detail-back" prefetch={false}>
             <span className="rpt-detail-back-icon" aria-hidden>
               <ArrowLeft className="size-4" />
@@ -78,17 +86,17 @@ export default async function RelatorioDetalhesPage({
 
               <div className="rpt-detail-actions">
                 {hasFile ? (
-                  <a
-                    href={report.filePath!}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="rpt-btn rpt-btn-outline"
-                    download
-                  >
-                    <Download className="size-4" aria-hidden />
-                    Descarregar ficheiro
-                    {report.fileSize ? ` (${report.fileSize})` : ''}
-                  </a>
+                  <>
+                    <a href={report.filePath!} target="_blank" rel="noreferrer" className="rpt-btn rpt-btn-outline">
+                      <ExternalLink className="size-4" aria-hidden />
+                      Abrir ficheiro
+                    </a>
+                    <a href={report.filePath!} className="rpt-btn rpt-btn-outline" download>
+                      <Download className="size-4" aria-hidden />
+                      Descarregar
+                      {report.fileSize ? ` (${report.fileSize})` : ''}
+                    </a>
+                  </>
                 ) : null}
                 <ReportRequestButton
                   report={{
@@ -102,6 +110,12 @@ export default async function RelatorioDetalhesPage({
                   className="rpt-btn rpt-btn-primary"
                 />
               </div>
+
+              {isPdf && (
+                <div className="rpt-detail-pdf-preview">
+                  <iframe src={report.filePath!} title={`Pré-visualização: ${report.title}`} loading="lazy" />
+                </div>
+              )}
             </div>
           </article>
         </div>

@@ -61,7 +61,7 @@ export function TermsConsentModal() {
               <p className="text-[15px] font-semibold text-gray-900 leading-tight">
                 Termos e condições
               </p>
-              <p className="text-xs text-gray-400 mt-0.5">
+              <p className="text-xs text-gray-500 mt-0.5">
                 Ao continuar, confirma que leu e aceita os nossos termos.
               </p>
             </div>

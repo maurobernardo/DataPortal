@@ -18,6 +18,11 @@ interface GeoInfiniteListProps {
   yearFrom?: string
   yearTo?: string
   sortOrder?: string
+  favoriteIds?: Set<number>
+  selectionMode?: boolean
+  selectedForBatch?: Set<number>
+  onToggleBatch?: (id: number) => void
+  onDatasetsChange?: (datasets: GeoDataset[]) => void
 }
 
 export function GeoInfiniteList({
@@ -33,6 +38,11 @@ export function GeoInfiniteList({
   yearFrom,
   yearTo,
   sortOrder,
+  favoriteIds,
+  selectionMode,
+  selectedForBatch,
+  onToggleBatch,
+  onDatasetsChange,
 }: GeoInfiniteListProps) {
   const [datasets, setDatasets] = useState<GeoDataset[]>(initialDatasets)
   const [loadedCount, setLoadedCount] = useState(() => Math.min(10, initialDatasets.length))
@@ -42,7 +52,6 @@ export function GeoInfiniteList({
     const show = Math.min(10, n)
     return show < n || n < totalCount
   })
-  const loadTriggerRef = useRef<HTMLDivElement | null>(null)
   const listStateRef = useRef({ loadedCount: Math.min(10, initialDatasets.length), datasets: initialDatasets, totalCount })
 
   listStateRef.current = { loadedCount, datasets, totalCount }
@@ -80,6 +89,11 @@ export function GeoInfiniteList({
     setHasMore(loadedCount < datasets.length || datasets.length < totalCount)
   }, [loadedCount, datasets.length, totalCount])
 
+  useEffect(() => {
+    onDatasetsChange?.(datasets)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [datasets])
+
   const loadMore = async () => {
     if (isLoading || !hasMore) return
     setIsLoading(true)
@@ -107,19 +121,6 @@ export function GeoInfiniteList({
 
   const displayedDatasets = datasets.slice(0, loadedCount)
 
-  useEffect(() => {
-    const node = loadTriggerRef.current
-    if (!node) return
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasMore && !isLoading) loadMore()
-      },
-      { rootMargin: '300px 0px' }
-    )
-    observer.observe(node)
-    return () => observer.disconnect()
-  }, [hasMore, isLoading, loadedCount, datasets.length, category, search, source, format, year, yearFrom, yearTo, sortOrder])
-
   return (
     <div>
       <div className="geo-layer-grid">
@@ -131,6 +132,11 @@ export function GeoInfiniteList({
             selected={selectedId === dataset.id}
             onSelect={() => onSelect(dataset)}
             highlight={search}
+            isFavorited={favoriteIds?.has(dataset.id)}
+            bestMatch={!!search?.trim() && index === 0}
+            selectionMode={selectionMode}
+            checked={selectedForBatch?.has(dataset.id)}
+            onToggleCheck={onToggleBatch ? () => onToggleBatch(dataset.id) : undefined}
           />
         ))}
       </div>
@@ -172,8 +178,6 @@ export function GeoInfiniteList({
           ))}
         </div>
       )}
-
-      <div ref={loadTriggerRef} className="h-1" aria-hidden />
     </div>
   )
 }

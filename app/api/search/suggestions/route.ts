@@ -6,6 +6,7 @@ import {
   searchPortalSections,
   type PortalSearchEntry,
 } from '@/lib/portal-search'
+import { logger } from '@/lib/logger'
 
 function levenshtein(a: string, b: string) {
   const dp = Array.from({ length: a.length + 1 }, () => Array(b.length + 1).fill(0))
@@ -204,7 +205,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ suggestions, entries, corrected })
   } catch (error) {
-    console.error('Error loading search suggestions:', error)
+    logger.error('error_loading_search_suggestions', { error: error })
     return NextResponse.json({ suggestions: [], entries: [], corrected: null })
   }
 }

@@ -3,6 +3,7 @@ import { generateOtp, generateToken } from '@/lib/auth'
 import { findUserByEmail, setUserOtp, setUserVerification } from '@/lib/db'
 import { hasAuthMailConfig, sendRegistrationVerificationEmail } from '@/lib/mailer'
 import { isValidEmail, normalizeEmail, rateLimit } from '@/lib/security'
+import { logger } from '@/lib/logger'
 
 export async function POST(request: Request) {
   try {
@@ -17,7 +18,7 @@ export async function POST(request: Request) {
     const email = normalizeEmail(body?.email)
 
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
-    const rl = rateLimit(`resend-verification:${ip}:${email}`, 5, 15 * 60 * 1000)
+    const rl = await rateLimit(`resend-verification:${ip}:${email}`, 5, 15 * 60 * 1000)
     if (!rl.allowed) {
       return NextResponse.json(
         { error: 'Muitas tentativas. Tente novamente em instantes.' },
@@ -57,7 +58,7 @@ export async function POST(request: Request) {
       message: 'Novo código enviado para o seu email.',
     })
   } catch (error) {
-    console.error('Resend verification error:', error)
+    logger.error('resend_verification_error', { error: error })
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
   }
 }

@@ -1,12 +1,16 @@
 'use client'
 
 import { Suspense, useEffect, useMemo, useState } from 'react'
+import { CheckSquare } from 'lucide-react'
 import { CatalogFilters } from '@/components/CatalogFilters'
 import { GeoActiveFilters } from '@/components/geo/GeoActiveFilters'
 import { AlfCatalogToolbar } from '@/components/alf/AlfCatalogToolbar'
 import { AlfInfiniteList, AlfEmptyState } from '@/components/alf/AlfInfiniteList'
 import { AlfDataDetailPanel } from '@/components/alf/AlfDataDetailPanel'
+import { BatchActionBar } from '@/components/geo/BatchActionBar'
 import { pickMostPopular } from '@/components/geo/geo-utils'
+import { Breadcrumbs } from '@/components/Breadcrumbs'
+import { RecentlyViewedRail } from '@/components/RecentlyViewedRail'
 import type { GeoDataset } from '@/components/geo/types'
 
 type Category = {
@@ -36,6 +40,9 @@ export function AlfCatalogClient({
 }) {
   const defaultSelected = useMemo(() => pickMostPopular(datasets), [datasets])
   const [selected, setSelected] = useState<GeoDataset | null>(defaultSelected)
+  const [favoriteIds, setFavoriteIds] = useState<Set<number>>(new Set())
+  const [selectionMode, setSelectionMode] = useState(false)
+  const [selectedForBatch, setSelectedForBatch] = useState<Set<number>>(new Set())
 
   useEffect(() => {
     setSelected((prev) => {
@@ -43,6 +50,29 @@ export function AlfCatalogClient({
       return pickMostPopular(datasets)
     })
   }, [datasets])
+
+  useEffect(() => {
+    let alive = true
+    fetch('/api/favorites/ids')
+      .then((r) => r.json())
+      .then((data) => {
+        if (!alive) return
+        setFavoriteIds(new Set(Array.isArray(data?.ids) ? data.ids : []))
+      })
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [])
+
+  function toggleBatch(id: number) {
+    setSelectedForBatch((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
 
   const sp = searchParams
   const search = typeof sp.search === 'string' ? sp.search : undefined
@@ -57,18 +87,25 @@ export function AlfCatalogClient({
   const hasFilters = !!(search || category || source || format || year || yearFrom || yearTo)
   const orgCount = availableSources.length
   const initialVisible = Math.min(10, datasets.length)
+  const activeCategory = category ? categories.find((c) => String(c.id) === category) : undefined
 
   return (
     <>
       <section className="geo-catalog-header alf-catalog-header">
         <div className="geo-ch-inner">
+          <Breadcrumbs
+            items={[
+              { label: 'Dados Alfanuméricos', href: activeCategory ? '/dados-alfanumericos' : undefined },
+              ...(activeCategory ? [{ label: activeCategory.name }] : []),
+            ]}
+          />
           <div className="geo-ch-row">
             <div>
               <div className="geo-ch-eyebrow alf-ch-eyebrow">Conjuntos de dados tabulares</div>
               <h1 className="geo-ch-title">Dados Alfanuméricos</h1>
               <p className="geo-ch-lede">
                 Explore séries temporais, indicadores sectoriais e registos administrativos em CSV, Excel,
-                JSON e outros formatos — com esquema, tipos de coluna e amostra antes de descarregar.
+                JSON e outros formatos, com esquema, tipos de coluna e amostra antes de descarregar.
               </p>
             </div>
             <div className="geo-ch-stats">
@@ -117,6 +154,8 @@ export function AlfCatalogClient({
             <GeoActiveFilters categories={categories} />
           </Suspense>
 
+          <RecentlyViewedRail dataType="alfanumerico" />
+
           <div className="geo-results-meta">
             <div>
               <strong>
@@ -124,12 +163,25 @@ export function AlfCatalogClient({
               </strong>
               {search ? ' correspondem à pesquisa' : ' no catálogo'}
             </div>
-            {totalCount > 0 && (
-              <div className="geo-results-meta-hint">
-                A mostrar {initialVisible.toLocaleString('pt-PT')} de {totalCount.toLocaleString('pt-PT')} ·
-                desça ou use «Ver mais»
-              </div>
-            )}
+            <div className="geo-results-meta-actions">
+              {totalCount > 0 && (
+                <span className="geo-results-meta-hint">
+                  A mostrar {initialVisible.toLocaleString('pt-PT')} de {totalCount.toLocaleString('pt-PT')} ·
+                  desça ou use «Ver mais»
+                </span>
+              )}
+              <button
+                type="button"
+                className={`geo-view-toggle-btn geo-selection-toggle-btn${selectionMode ? ' active' : ''}`}
+                onClick={() => {
+                  setSelectionMode((v) => !v)
+                  if (selectionMode) setSelectedForBatch(new Set())
+                }}
+              >
+                <CheckSquare className="size-3.5" aria-hidden />
+                Selecionar
+              </button>
+            </div>
           </div>
 
           <div className="geo-split alf-split">
@@ -148,9 +200,20 @@ export function AlfCatalogClient({
                   yearFrom={yearFrom}
                   yearTo={yearTo}
                   sortOrder={sortOrder}
+                  favoriteIds={favoriteIds}
+                  selectionMode={selectionMode}
+                  selectedForBatch={selectedForBatch}
+                  onToggleBatch={toggleBatch}
                 />
               ) : (
                 <AlfEmptyState hasFilters={hasFilters} />
+              )}
+
+              {selectionMode && (
+                <BatchActionBar
+                  selectedIds={Array.from(selectedForBatch)}
+                  onClear={() => setSelectedForBatch(new Set())}
+                />
               )}
             </div>
 

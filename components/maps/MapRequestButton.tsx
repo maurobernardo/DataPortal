@@ -2,7 +2,7 @@
 
 import { Mail } from 'lucide-react'
 import { useState } from 'react'
-import { buildMapRequestMailto } from '@/lib/site'
+import { RequestInfoModal } from '@/components/RequestInfoModal'
 
 type MapRequestButtonProps = {
   map: {
@@ -20,30 +20,44 @@ export function MapRequestButton({
   className = 'mp-btn mp-btn-primary',
   label = 'Solicitar acesso',
 }: MapRequestButtonProps) {
-  const [loading, setLoading] = useState(false)
+  const [open, setOpen] = useState(false)
 
-  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault()
-    if (loading) return
-    setLoading(true)
+  async function handleSubmit(data: { name: string; email: string; message: string }) {
     try {
-      const { href } = buildMapRequestMailto(map)
-      window.location.href = href
-    } finally {
-      setLoading(false)
+      const res = await fetch('/api/map-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug: map.slug, ...data }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        return { ok: false, error: body?.error }
+      }
+      return { ok: true }
+    } catch {
+      return { ok: false, error: 'Falha de ligação. Tente novamente.' }
     }
   }
 
   return (
-    <button
-      type="button"
-      onClick={handleClick}
-      disabled={loading}
-      className={className}
-      aria-label={`Pedido relacionado com o mapa: ${map.title}`}
-    >
-      <Mail className="size-4 shrink-0" aria-hidden />
-      {loading ? 'A abrir…' : label}
-    </button>
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className={className}
+        aria-label={`Pedido relacionado com o mapa: ${map.title}`}
+      >
+        <Mail className="size-4 shrink-0" aria-hidden />
+        {label}
+      </button>
+      {open && (
+        <RequestInfoModal
+          title={`Pedido: ${map.title}`}
+          subtitle={map.coverage}
+          onSubmit={handleSubmit}
+          onClose={() => setOpen(false)}
+        />
+      )}
+    </>
   )
 }

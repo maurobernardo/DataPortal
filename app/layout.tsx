@@ -6,6 +6,7 @@ import { ConditionalFooter } from '@/components/ConditionalFooter'
 import { TermsConsentModal } from '@/components/TermsConsentModal'
 import { ContactModalProvider } from '@/components/ContactModalProvider'
 import { ContactFloatingButton } from '@/components/ContactFloatingButton'
+import { GoogleTranslate } from '@/components/GoogleTranslate'
 import React from 'react'
 
 const inter = Inter({
@@ -35,6 +36,7 @@ export default function RootLayout({
         className={`${inter.className} bg-gradient-to-br from-slate-50 via-green-50 to-yellow-50/30 min-h-screen antialiased`}
       >
         <ContactModalProvider>
+          <GoogleTranslate />
           <ConditionalNavigation />
           <TermsConsentModal />
           <main className="min-h-screen overflow-x-clip">

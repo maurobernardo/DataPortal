@@ -2,12 +2,14 @@ import Link from 'next/link'
 import {
   ArrowRight,
   BarChart3,
+  Eye,
   Globe,
   LayoutDashboard,
   Map,
   MapPinned,
 } from 'lucide-react'
 import { MapRequestButton } from '@/components/maps/MapRequestButton'
+import { FavoriteButton } from '@/components/FavoriteButton'
 import {
   MAP_EXPERIENCE_LABELS,
   type MapExperienceType,
@@ -20,7 +22,15 @@ const EXPERIENCE_ICONS: Record<MapExperienceType, typeof Map> = {
   'map-dashboard': Map,
 }
 
-export function MapCard({ map }: { map: PublicMapDashboard }) {
+export function MapCard({
+  map,
+  isFavorited = false,
+  viewCount,
+}: {
+  map: PublicMapDashboard
+  isFavorited?: boolean
+  viewCount?: number
+}) {
   const exp = MAP_EXPERIENCE_LABELS[map.experienceType]
   const ExpIcon = EXPERIENCE_ICONS[map.experienceType]
   const highlights = (map.highlights ?? []).slice(0, 2)
@@ -40,6 +50,12 @@ export function MapCard({ map }: { map: PublicMapDashboard }) {
           ))}
         </div>
       </div>
+      <FavoriteButton
+        entityType="map"
+        entityId={map.slug}
+        initialFavorited={isFavorited}
+        className="mp-card-favorite"
+      />
 
       <div className="mp-card-body">
         <div className="mp-card-head">
@@ -71,6 +87,12 @@ export function MapCard({ map }: { map: PublicMapDashboard }) {
             <Globe className="size-3.5 shrink-0" aria-hidden />
             <span>{map.coverage}</span>
           </li>
+          {typeof viewCount === 'number' && viewCount > 0 && (
+            <li>
+              <Eye className="size-3.5 shrink-0" aria-hidden />
+              <span>{viewCount.toLocaleString('pt-PT')} visualizações</span>
+            </li>
+          )}
         </ul>
 
         <div className="mp-card-actions">

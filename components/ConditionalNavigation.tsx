@@ -6,10 +6,12 @@ import { Navigation } from './Navigation'
 export function ConditionalNavigation() {
   const pathname = usePathname()
   
-  // Não mostrar navegação no dashboard, admin ou visualização full-screen de mapas
+  // Não mostrar navegação no dashboard, admin, visualização full-screen de mapas
+  // ou páginas de partilha de análises de IA (pensadas para embed/iframe)
   const isMainDashboard = pathname === '/dashboard' || pathname?.startsWith('/dashboard/')
   const isMapViewer = pathname?.startsWith('/maps/') && pathname !== '/maps'
-  if (isMainDashboard || pathname?.startsWith('/admin') || isMapViewer) {
+  const isAiShare = pathname?.startsWith('/ai-insights/share/')
+  if (isMainDashboard || pathname?.startsWith('/admin') || isMapViewer || isAiShare) {
     return null
   }
   

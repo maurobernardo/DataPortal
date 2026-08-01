@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
-import { Loader2 } from 'lucide-react'
+import { ChevronDown, Loader2, Search, Sparkles } from 'lucide-react'
 import { SearchSuggestionsPopover } from '@/components/SearchSuggestionsPopover'
 import { HERO_TRY_SUGGESTIONS } from '@/lib/portal-search'
 
@@ -286,7 +286,9 @@ export function HeroSection({
               }}
             >
               <div className="pd-hero-search" ref={searchBarRef}>
-                <span className="pd-hero-search-icon">⌕</span>
+                <span className="pd-hero-search-icon">
+                  <Search className="w-[18px] h-[18px]" />
+                </span>
                 <input
                   type="text"
                   value={query}
@@ -305,7 +307,9 @@ export function HeroSection({
                   />
                 )}
                 <button type="button" className="pd-search-mode">
-                  ✦ Modo IA ⌄
+                  <Sparkles className="w-3.5 h-3.5" />
+                  Modo IA
+                  <ChevronDown className="w-3.5 h-3.5" />
                 </button>
                 <button type="submit" className="pd-btn-search">
                   Procurar

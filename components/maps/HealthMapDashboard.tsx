@@ -11,6 +11,7 @@ import {
   colourScale,
   fmt,
   getRadius,
+  humanizeVarKey,
   type VarMeta,
 } from '@/components/maps/health-map-utils'
 import '@/app/maps/health-map.css'
@@ -51,7 +52,7 @@ type TileKey = (typeof TILE_KEYS)[number]
 
 export function HealthMapDashboard({
   geojsonPath,
-  title = 'Data4Moz — Mapa Inteligente de Saúde',
+  title = 'Data4Moz: Mapa Inteligente de Saúde',
   subtitle = 'Postos administrativos ADM3 · Moçambique',
   badges = ['204 Postos Admin.', '20 Variáveis', '11 Províncias'],
 }: {
@@ -114,7 +115,7 @@ export function HealthMapDashboard({
       ${p.post_name}</div>
     <div style="color:#8b949e;font-size:10px;margin-bottom:4px">${p.district} · ${p.province}</div>
     <div style="background:#21262d;padding:4px 6px;border-radius:4px;margin-bottom:4px">
-      <div style="color:${ACCENT_LIGHT};font-size:10px;font-weight:700">${mv ? mv.label : currentVar}</div>
+      <div style="color:${ACCENT_LIGHT};font-size:10px;font-weight:700">${mv ? mv.label : humanizeVarKey(currentVar)}</div>
       <div style="color:#e6edf3;font-size:16px;font-weight:700">${fmt(cv, mv ? mv.unit : '')}</div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;font-size:10px">
@@ -135,7 +136,7 @@ export function HealthMapDashboard({
     (p: Adm3Props) => {
       const mv = VAR_META[currentVar]
       const cv = p[currentVar]
-      setInfoTitle(`${p.post_name} — ${p.district}`)
+      setInfoTitle(`${p.post_name}, ${p.district}`)
       const rows: { section?: string; k?: string; v?: string; bar?: boolean; t?: number; col?: string }[] = [
         { section: 'Localização' },
         { k: 'Província', v: p.province },
@@ -213,7 +214,7 @@ export function HealthMapDashboard({
 
   const renderLegend = useCallback((varKey: string) => {
     const mv: VarMeta = VAR_META[varKey] || {
-      label: varKey,
+      label: humanizeVarKey(varKey),
       min: 0,
       max: 10,
       hi: 'bad',

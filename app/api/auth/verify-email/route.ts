@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { clearUserOtp, findUserByEmail, findUserByVerificationToken, markEmailVerified } from '@/lib/db'
 import { isValidEmail, normalizeEmail, normalizeText, rateLimit } from '@/lib/security'
+import { logger } from '@/lib/logger'
 
 export async function GET(request: NextRequest) {
   try {
@@ -30,7 +31,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ success: true, message: 'Email confirmado com sucesso.' })
   } catch (error) {
-    console.error('Verify email error:', error)
+    logger.error('verify_email_error', { error: error })
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
   }
 }
@@ -42,7 +43,7 @@ export async function POST(request: Request) {
     const code = normalizeText(body?.code, 6)
 
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
-    const rl = rateLimit(`verify-email:${ip}:${email}`, 10, 15 * 60 * 1000)
+    const rl = await rateLimit(`verify-email:${ip}:${email}`, 10, 15 * 60 * 1000)
     if (!rl.allowed) {
       return NextResponse.json(
         { error: 'Muitas tentativas. Tente novamente em instantes.' },
@@ -86,7 +87,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, message: 'Email confirmado com sucesso! Já pode entrar.' })
   } catch (error) {
-    console.error('Verify email POST error:', error)
+    logger.error('verify_email_post_error', { error: error })
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
   }
 }

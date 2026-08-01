@@ -13,6 +13,11 @@ export type GeoDataset = {
   geometry?: string | null
   coverage?: string | null
   minimumUnit?: string | null
+  previewAvailable?: number | boolean | null
+  bboxMinX?: number | null
+  bboxMinY?: number | null
+  bboxMaxX?: number | null
+  bboxMaxY?: number | null
   category: {
     id: number
     name: string

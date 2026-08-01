@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createReport, findAllReports } from '@/lib/db'
 import { getCurrentAdmin } from '@/lib/auth'
+import { notifyUsersOfNewContent } from '@/lib/notifications'
+import { logger } from '@/lib/logger'
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,7 +21,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(reports)
   } catch (error) {
-    console.error('Error fetching reports:', error)
+    logger.error('error_fetching_reports', { error: error })
     return NextResponse.json(
       { error: 'Erro ao buscar relatórios' },
       { status: 500 }
@@ -54,9 +56,15 @@ export async function POST(request: NextRequest) {
       detailsText: data.detailsText || null,
     })
 
+    if (report) {
+      notifyUsersOfNewContent('relatorio', report.title, `/relatorios/${report.id}`).catch((error) => {
+        logger.error('error_notifying_users_of_new_report', { error, reportId: report.id })
+      })
+    }
+
     return NextResponse.json(report)
   } catch (error: any) {
-    console.error('Error creating report:', error)
+    logger.error('error_creating_report', { error: error })
     return NextResponse.json(
       { error: 'Erro ao criar relatório' },
       { status: 500 }

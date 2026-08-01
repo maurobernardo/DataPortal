@@ -31,6 +31,8 @@ import {
 } from 'lucide-react'
 
 import { DatasetPreview } from '@/components/DatasetPreview'
+import { Breadcrumbs } from '@/components/Breadcrumbs'
+import { RecordRecentlyViewed } from '@/components/RecordRecentlyViewed'
 
 
 
@@ -66,7 +68,7 @@ type DatasetDetail = {
 
   filePath: string | null
 
-  category: { name: string }
+  category: { id: number; name: string }
 
 }
 
@@ -83,6 +85,23 @@ export function GeoDatasetDetailView({ dataset }: { dataset: DatasetDetail }) {
     <div className="geo-detail-page">
 
       <div className="geo-detail-inner">
+
+        <RecordRecentlyViewed
+          id={dataset.id}
+          title={dataset.title}
+          href={`/dataset/${dataset.id}`}
+          dataType="geoespacial"
+        />
+
+        <Breadcrumbs
+          items={[
+            { label: 'Dados Geoespaciais', href: '/dados-espaciais' },
+            ...(dataset.category?.name
+              ? [{ label: dataset.category.name, href: `/dados-espaciais?category=${dataset.category.id}` }]
+              : []),
+            { label: dataset.title },
+          ]}
+        />
 
         <Link href="/dados-espaciais" className="geo-detail-back">
 
@@ -109,7 +128,7 @@ export function GeoDatasetDetailView({ dataset }: { dataset: DatasetDetail }) {
             ) : (
               <div className="geo-detail-preview-card">
                 <p className="text-sm text-[var(--pd-ink-500)] text-center py-10 px-4">
-                  Pré-visualização indisponível — ficheiro não associado
+                  Pré-visualização indisponível: ficheiro não associado
                 </p>
               </div>
             )}
@@ -284,8 +303,6 @@ export function GeoDatasetDetailView({ dataset }: { dataset: DatasetDetail }) {
                   )}
 
                 </div>
-
-
 
                 <div className="geo-detail-stats">
 

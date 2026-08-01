@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { clearUserOtp, findUserById } from '@/lib/db'
 import { getSessionCookieOptions, SESSION_COOKIE_NAME, signSessionToken } from '@/lib/auth'
 import { normalizeText, rateLimit } from '@/lib/security'
+import { logger } from '@/lib/logger'
 
 export async function POST(request: Request) {
   try {
@@ -11,7 +12,7 @@ export async function POST(request: Request) {
     const code = normalizeText(body?.code, 6)
 
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
-    const rl = rateLimit(`verify-2fa:${ip}:${userId}`, 10, 15 * 60 * 1000)
+    const rl = await rateLimit(`verify-2fa:${ip}:${userId}`, 10, 15 * 60 * 1000)
     if (!rl.allowed) {
       return NextResponse.json(
         { error: 'Muitas tentativas. Tente novamente em instantes.' },
@@ -58,7 +59,7 @@ export async function POST(request: Request) {
       },
     })
   } catch (error) {
-    console.error('Verify 2FA error:', error)
+    logger.error('verify_2fa_error', { error: error })
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
   }
 }

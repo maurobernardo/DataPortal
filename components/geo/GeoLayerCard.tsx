@@ -4,15 +4,19 @@ import Link from 'next/link'
 import {
   ArrowRight,
   Calendar,
+  Check,
   Database,
   Eye,
   FileText,
+  ImageOff,
   Package,
-  TrendingUp,
+  Sparkles,
 } from 'lucide-react'
 import type { GeoDataset } from '@/components/geo/types'
 import { GeoLayerThumb } from '@/components/geo/GeoLayerThumb'
 import { AlfLayerThumb } from '@/components/alf/AlfLayerThumb'
+import { getPopularityTier } from '@/components/geo/geo-utils'
+import { FavoriteButton } from '@/components/FavoriteButton'
 
 const formatChipClass: Record<string, string> = {
   SHP: 'bg-[var(--pd-green-50)] text-[var(--pd-green-900)] border-[#CFE3D6]',
@@ -53,6 +57,11 @@ export function GeoLayerCard({
   highlight,
   thumbVariant = 'geo',
   selectLabel = 'Pré-visualizar camada',
+  isFavorited = false,
+  bestMatch = false,
+  selectionMode = false,
+  checked = false,
+  onToggleCheck,
 }: {
   dataset: GeoDataset
   index: number
@@ -61,15 +70,36 @@ export function GeoLayerCard({
   highlight?: string
   thumbVariant?: 'geo' | 'alf'
   selectLabel?: string
+  isFavorited?: boolean
+  bestMatch?: boolean
+  selectionMode?: boolean
+  checked?: boolean
+  onToggleCheck?: () => void
 }) {
   const keywords = dataset.keywords?.split(',').slice(0, 3).map((k) => k.trim()).filter(Boolean) ?? []
-  const isPopular = dataset.downloads > 10 || dataset.views > 50
+  const popularityTier = getPopularityTier(dataset.views)
   const formatClass =
     formatChipClass[dataset.format] ??
     'bg-[var(--pd-surface-100)] text-[var(--pd-ink-700)] border-[var(--pd-ink-100)]'
+  const previewKnownUnavailable = dataset.previewAvailable === 0 || dataset.previewAvailable === false
 
   return (
-    <article className={`geo-layer-card${selected ? ' selected' : ''}`}>
+    <article className={`geo-layer-card${selected ? ' selected' : ''}${checked ? ' batch-checked' : ''}`}>
+      {selectionMode && (
+        <button
+          type="button"
+          className={`geo-layer-batch-checkbox${checked ? ' checked' : ''}`}
+          aria-pressed={checked}
+          aria-label={checked ? 'Remover da seleção' : 'Adicionar à seleção'}
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            onToggleCheck?.()
+          }}
+        >
+          {checked && <Check className="size-3.5" aria-hidden />}
+        </button>
+      )}
       <button
         type="button"
         className="geo-layer-card-main"
@@ -79,13 +109,23 @@ export function GeoLayerCard({
       >
         <div className="geo-layer-thumb">
           <span className="geo-layer-thumb-format">{dataset.format}</span>
-          {isPopular && (
-            <span className="geo-layer-popular">
-              <TrendingUp className="size-3" aria-hidden />
-              Popular
+          {popularityTier && (
+            <span className={`geo-layer-popular geo-layer-popular--${popularityTier.key}`}>
+              <popularityTier.icon className="size-3" aria-hidden />
+              {popularityTier.label}
             </span>
           )}
-          {thumbVariant === 'alf' ? <AlfLayerThumb index={index} /> : <GeoLayerThumb index={index} />}
+          {previewKnownUnavailable && (
+            <span className="geo-layer-preview-unavailable" title="Pré-visualização indisponível para este ficheiro">
+              <ImageOff className="size-3" aria-hidden />
+              Sem pré-visualização
+            </span>
+          )}
+          {thumbVariant === 'alf' ? (
+            <AlfLayerThumb index={index} datasetId={dataset.id} />
+          ) : (
+            <GeoLayerThumb index={index} datasetId={dataset.id} />
+          )}
         </div>
 
         <div className="geo-layer-body">
@@ -145,16 +185,26 @@ export function GeoLayerCard({
         </div>
       </button>
 
+      {bestMatch && (
+        <span className="geo-layer-best-match">
+          <Sparkles className="size-3" aria-hidden />
+          Melhor correspondência
+        </span>
+      )}
+
       <div className="geo-layer-footer">
         <span className="geo-layer-downloads">↓ {dataset.downloads.toLocaleString('pt-BR')} downloads</span>
-        <Link
-          href={`/dataset/${dataset.id}`}
-          className="geo-layer-details-btn"
-          onClick={(e) => e.stopPropagation()}
-        >
-          Ver detalhes
-          <ArrowRight className="size-4" aria-hidden />
-        </Link>
+        <div className="geo-layer-footer-actions">
+          <FavoriteButton datasetId={dataset.id} initialFavorited={isFavorited} />
+          <Link
+            href={`/dataset/${dataset.id}`}
+            className="geo-layer-details-btn"
+            onClick={(e) => e.stopPropagation()}
+          >
+            Ver detalhes
+            <ArrowRight className="size-4" aria-hidden />
+          </Link>
+        </div>
       </div>
     </article>
   )

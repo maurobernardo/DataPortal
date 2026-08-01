@@ -3,9 +3,10 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
-import { Menu, X, Database, FileText, BarChart3, Map, MapPinned, Home, Sparkles, LogIn, UserPlus } from 'lucide-react'
+import { Menu, X, Database, FileText, BarChart3, Map, MapPinned, Home, LogIn, UserPlus } from 'lucide-react'
 import Image from 'next/image'
 import { NavUserMenu } from '@/components/NavUserMenu'
+import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 
 type SessionUser = {
   id: number
@@ -24,7 +25,6 @@ export function Navigation() {
   const pathname = usePathname()
   const [scrolled, setScrolled] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [aiInsightsSoonOpen, setAiInsightsSoonOpen] = useState(false)
   const [compactNav, setCompactNav] = useState(false)
   const [sessionUser, setSessionUser] = useState<SessionUser | null>(null)
 
@@ -59,43 +59,41 @@ export function Navigation() {
     }
   }, [pathname])
 
-  useEffect(() => {
-    if (!aiInsightsSoonOpen) return
-    const onEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setAiInsightsSoonOpen(false)
-    }
-    document.addEventListener('keydown', onEsc)
-    const prevOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.removeEventListener('keydown', onEsc)
-      document.body.style.overflow = prevOverflow
-    }
-  }, [aiInsightsSoonOpen])
-
-  const openAiInsightsSoon = () => {
-    setMobileMenuOpen(false)
-    setAiInsightsSoonOpen(true)
+  const renderNavLink = ({
+    href,
+    label,
+    compactLabel,
+    icon: Icon,
+  }: {
+    href: string
+    label: string
+    compactLabel: string
+    icon: typeof Home
+  }) => {
+    const active = isNavLinkActive(pathname, href)
+    const displayLabel = compactNav ? compactLabel : label
+    return (
+      <Link
+        key={href}
+        href={href}
+        className={`pd-nav-link${active ? ' active' : ''}${href === '/maps' ? ' pd-nav-link--maps' : ''}`}
+        aria-current={active ? 'page' : undefined}
+        title={label}
+      >
+        {!compactNav ? <Icon size={15} strokeWidth={2} aria-hidden /> : null}
+        <span className="pd-nav-link-label">{displayLabel}</span>
+      </Link>
+    )
   }
 
-  const navGroups = [
-    {
-      links: [
-        { href: '/', label: 'Início', compactLabel: 'Início', icon: Home },
-        { href: '/dados-espaciais', label: 'Geoespaciais', compactLabel: 'Geo', icon: Map },
-        { href: '/dados-alfanumericos', label: 'Alfanuméricos', compactLabel: 'Alfanum.', icon: Database },
-      ],
-    },
-    {
-      links: [
-        { href: '/dashboards-alfanumericos', label: 'Dashboards', compactLabel: 'Dash.', icon: BarChart3 },
-        { href: '/maps', label: 'Mapas Inteligentes', compactLabel: 'Mapas', icon: MapPinned },
-        { href: '/relatorios', label: 'Relatórios', compactLabel: 'Relat.', icon: FileText },
-      ],
-    },
+  const navLinks = [
+    { href: '/', label: 'Início', compactLabel: 'Início', icon: Home },
+    { href: '/dados-espaciais', label: 'Geoespaciais', compactLabel: 'Geo', icon: Map },
+    { href: '/dados-alfanumericos', label: 'Alfanuméricos', compactLabel: 'Alfanum.', icon: Database },
+    { href: '/dashboards-alfanumericos', label: 'Dashboards', compactLabel: 'Dash.', icon: BarChart3 },
+    { href: '/maps', label: 'Mapas Inteligentes', compactLabel: 'Mapas', icon: MapPinned },
+    { href: '/relatorios', label: 'Relatórios', compactLabel: 'Relat.', icon: FileText },
   ]
-
-  const navLinks = navGroups.flatMap((g) => g.links)
 
   return (
     <>
@@ -117,28 +115,15 @@ export function Navigation() {
 
           <div className="pd-nav-right">
             <div className="pd-nav-links">
-              {navGroups.map((group, gi) => (
-                <div key={gi} className="pd-nav-link-group">
-                  {group.links.map(({ href, label, compactLabel, icon: Icon }) => {
-                    const active = isNavLinkActive(pathname, href)
-                    const displayLabel = compactNav ? compactLabel : label
-                    return (
-                      <Link
-                        key={href}
-                        href={href}
-                        className={`pd-nav-link${active ? ' active' : ''}${href === '/maps' ? ' pd-nav-link--maps' : ''}`}
-                        aria-current={active ? 'page' : undefined}
-                        title={label}
-                      >
-                        {!compactNav ? <Icon size={15} strokeWidth={2} aria-hidden /> : null}
-                        <span className="pd-nav-link-label">{displayLabel}</span>
-                      </Link>
-                    )
-                  })}
-                </div>
-              ))}
+              {navLinks.slice(0, 3).map(renderNavLink)}
+              <Link href="/ai-insights" className="pd-nav-link-ai notranslate" title="AI Insights">
+                AI
+                <span className="pd-pill-new">NEW</span>
+              </Link>
+              {navLinks.slice(3).map(renderNavLink)}
             </div>
             <div className="pd-nav-actions" aria-label="Acções">
+              <LanguageSwitcher compact={compactNav} />
               {sessionUser ? (
                 <NavUserMenu
                   name={sessionUser.name}
@@ -159,15 +144,6 @@ export function Navigation() {
                   </Link>
                 </div>
               )}
-              <button
-                type="button"
-                className="pd-nav-link-ai"
-                title="AI Insights — em breve"
-                onClick={openAiInsightsSoon}
-              >
-                AI
-                <span className="pd-pill-new">NEW</span>
-              </button>
             </div>
           </div>
 
@@ -182,7 +158,7 @@ export function Navigation() {
         </div>
 
         <div className={`pd-mobile-menu${mobileMenuOpen ? ' open' : ''}`}>
-          {navLinks.map(({ href, label, icon: Icon }) => {
+          {navLinks.slice(0, 3).map(({ href, label, icon: Icon }) => {
             const active = isNavLinkActive(pathname, href)
             return (
               <Link
@@ -197,12 +173,35 @@ export function Navigation() {
               </Link>
             )
           })}
-          <button type="button" className="pd-mobile-link-ai" onClick={openAiInsightsSoon}>
+          <Link
+            href="/ai-insights"
+            className="pd-mobile-link-ai"
+            onClick={() => setMobileMenuOpen(false)}
+          >
             AI Insights
             <span className="pd-pill-new">NEW</span>
-          </button>
+          </Link>
+          {navLinks.slice(3).map(({ href, label, icon: Icon }) => {
+            const active = isNavLinkActive(pathname, href)
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={`pd-mobile-link${active ? ' active' : ''}`}
+                aria-current={active ? 'page' : undefined}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <Icon size={18} strokeWidth={2} />
+                {label}
+              </Link>
+            )
+          })}
 
           <div className="pd-mobile-divider" />
+
+          <div className="px-1 mb-2">
+            <LanguageSwitcher />
+          </div>
 
           <div className="pd-mobile-cta">
             {sessionUser ? (
@@ -246,41 +245,6 @@ export function Navigation() {
           </div>
         </div>
       </nav>
-
-      {aiInsightsSoonOpen ? (
-        <div
-          className="fixed inset-0 z-[110] flex items-center justify-center bg-black/55 p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="ai-insights-soon-title"
-        >
-          <button
-            type="button"
-            className="absolute inset-0 cursor-default"
-            aria-label="Fechar"
-            onClick={() => setAiInsightsSoonOpen(false)}
-          />
-          <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-            <div className="mb-4 flex size-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#6B4FBB] to-[#064E2C] text-white">
-              <Sparkles className="size-6" aria-hidden />
-            </div>
-            <h2 id="ai-insights-soon-title" className="text-xl font-bold text-gray-900 mb-2">
-              Em breve
-            </h2>
-            <p className="text-sm text-gray-600 leading-relaxed mb-6">
-              O módulo <strong>AI Insights</strong> está em desenvolvimento e será disponibilizado em breve no
-              Portal de Dados. Fique atento às novidades.
-            </p>
-            <button
-              type="button"
-              className="w-full rounded-xl bg-[#064E2C] px-4 py-3 text-sm font-semibold text-white hover:bg-[#04361F] transition"
-              onClick={() => setAiInsightsSoonOpen(false)}
-            >
-              Entendido
-            </button>
-          </div>
-        </div>
-      ) : null}
     </>
   )
 }

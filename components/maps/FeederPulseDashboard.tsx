@@ -184,7 +184,7 @@ function FeederDetailPanel({
       </div>
       {feeder.status === 'maintenance' && (
         <div className="fp-maintenance-note">
-          <b>Manutenção</b> — sem cronograma público de retorno ao serviço.
+          <b>Manutenção</b>: sem cronograma público de retorno ao serviço.
         </div>
       )}
     </>
@@ -378,7 +378,7 @@ export default function FeederPulseDashboard({ dataPath, title, subtitle, badges
             >
               Em 25 alimentadores de amostra em cinco províncias prioritárias,{' '}
               <b>93 130 clientes</b> dependem de infraestrutura com idade média de{' '}
-              <b>16 anos</b> — com <b>43%</b> expostos a risco ciclónico elevado ou extremo.
+              <b>16 anos</b>, com <b>43%</b> expostos a risco ciclónico elevado ou extremo.
               {badges?.length ? ` ${badges.join(' · ')}.` : ''}
             </p>
             <p style={{ marginTop: 8, fontSize: 14, opacity: 0.7 }}>{subtitle}</p>
@@ -431,7 +431,7 @@ export default function FeederPulseDashboard({ dataPath, title, subtitle, badges
         {/* Map */}
         <section className="fp-section fp-section--surface" id="intelligence">
           <div className="fp-container">
-            <div className="fp-eyebrow">Secção 01 — O mapa</div>
+            <div className="fp-eyebrow">Secção 01: O mapa</div>
             <h2 className="fp-section-h fp-display">
               Onde a electricidade de Moçambique realmente flui
             </h2>
@@ -450,7 +450,7 @@ export default function FeederPulseDashboard({ dataPath, title, subtitle, badges
 
             <div className="fp-insights-grid">
               <div className="fp-insight-badge">
-                <b>Beira</b> concentra os alimentadores urbanos mais expostos — Manga & Munhava (16
+                <b>Beira</b> concentra os alimentadores urbanos mais expostos: Manga & Munhava (16
                 160 clientes, score 8.4)
               </div>
               <div className="fp-insight-badge">
@@ -466,7 +466,7 @@ export default function FeederPulseDashboard({ dataPath, title, subtitle, badges
         {/* Charts */}
         <section className="fp-section fp-section--muted">
           <div className="fp-container">
-            <div className="fp-eyebrow">Secção 02 — Padrões</div>
+            <div className="fp-eyebrow">Secção 02: Padrões</div>
             <h2 className="fp-section-h fp-display">Quatro dimensões de inteligência de rede</h2>
             <p className="fp-section-sub">
               Onde estão os clientes, onde está o risco, onde a infraestrutura envelhece e onde o
@@ -477,7 +477,7 @@ export default function FeederPulseDashboard({ dataPath, title, subtitle, badges
               <div className="fp-data-card">
                 <div className="fp-card-title">Clientes por província</div>
                 <div className="fp-card-takeaway">
-                  Sofala (Beira) lidera — mas 95% desses clientes estão em risco extremo
+                  Sofala (Beira) lidera, mas 95% desses clientes estão em risco extremo
                 </div>
                 <ResponsiveContainer width="100%" height={280}>
                   <BarChart
@@ -546,7 +546,7 @@ export default function FeederPulseDashboard({ dataPath, title, subtitle, badges
               <div className="fp-data-card">
                 <div className="fp-card-title">Composição por tensão</div>
                 <div className="fp-card-takeaway">
-                  Linhas 110 kV servem corredores LNG/mineração — poucos clientes residenciais
+                  Linhas 110 kV servem sobretudo corredores LNG/mineração, com poucos clientes residenciais
                 </div>
                 <ResponsiveContainer width="100%" height={280}>
                   <PieChart>
@@ -609,7 +609,7 @@ export default function FeederPulseDashboard({ dataPath, title, subtitle, badges
         {/* Opportunity */}
         <section className="fp-section fp-section--surface" id="opportunity">
           <div className="fp-container">
-            <div className="fp-eyebrow">Secção 03 — Oportunidade</div>
+            <div className="fp-eyebrow">Secção 03: Oportunidade</div>
             <h2 className="fp-section-h fp-display">
               10 alimentadores. ~USD 180M de investimento justificado.
             </h2>
@@ -667,17 +667,17 @@ export default function FeederPulseDashboard({ dataPath, title, subtitle, badges
                 {
                   meta: 'Investidor',
                   title: 'Corredores mineração & LNG',
-                  body: 'Metoro (110 kV, Cabo Delgado), Nacala Porto (110 kV, Nampula), Moatize (110 kV, Tete) — alimentadores backbone para indústrias exportadoras.',
+                  body: 'Metoro (110 kV, Cabo Delgado), Nacala Porto (110 kV, Nampula), Moatize (110 kV, Tete): alimentadores backbone para indústrias exportadoras.',
                 },
                 {
                   meta: 'Doadores',
                   title: 'CAPEX resiliência ciclónica',
-                  body: 'Beira (Manga, Munhava), Dondo, Quelimane — 24 200 clientes no corredor de maior exposição do país.',
+                  body: 'Beira (Manga, Munhava), Dondo, Quelimane: 24 200 clientes no corredor de maior exposição do país.',
                 },
                 {
                   meta: 'Utility',
                   title: 'Manutenção predictiva',
-                  body: 'Costa do Sol (Maputo, 8 240 clientes, 27 anos) no núcleo urbano envelhecido — substituição de transformadores quando os dados existem.',
+                  body: 'Costa do Sol (Maputo, 8 240 clientes, 27 anos) no núcleo urbano envelhecido: substituição de transformadores quando os dados existem.',
                 },
                 {
                   meta: 'Regulador',
@@ -710,7 +710,7 @@ export default function FeederPulseDashboard({ dataPath, title, subtitle, badges
         <section className="fp-section fp-section--dark" id="service">
           <div className="fp-container fp-service-grid">
             <div>
-              <div className="fp-eyebrow">Secção 04 — DATA4MOZ</div>
+              <div className="fp-eyebrow">Secção 04: DATA4MOZ</div>
               <h2 className="fp-section-h fp-display">Inteligência sectorial como serviço.</h2>
               <p style={{ fontSize: 17, lineHeight: 1.6, opacity: 0.85, marginTop: 16 }}>
                 O que vê nesta página é uma amostra de 25 alimentadores de um dataset muito maior.
@@ -727,7 +727,7 @@ export default function FeederPulseDashboard({ dataPath, title, subtitle, badges
                   <div key={t} className="fp-step-row">
                     <div className="fp-step-num">{i + 1}</div>
                     <div>
-                      <b>{t}</b> — {d}
+                      <b>{t}</b>: {d}
                     </div>
                   </div>
                 ))}
@@ -761,7 +761,7 @@ export default function FeederPulseDashboard({ dataPath, title, subtitle, badges
         <section className="fp-section fp-section--surface">
           <div className="fp-container">
             <div className="fp-section-intro">
-              <div className="fp-eyebrow">Secção 05 — Impacto</div>
+              <div className="fp-eyebrow">Secção 05: Impacto</div>
               <h2 className="fp-section-h fp-display">O que esta inteligência desbloqueia</h2>
               <p className="fp-section-sub fp-section-sub--center">
                 O build completo FeederPulse-MZ (~2.200 alimentadores) estima-se que entregue:
@@ -792,9 +792,9 @@ export default function FeederPulseDashboard({ dataPath, title, subtitle, badges
           style={{ textAlign: 'center' }}
         >
           <div className="fp-container" style={{ maxWidth: 800 }}>
-            <div className="fp-eyebrow">Secção 06 — Contacto</div>
+            <div className="fp-eyebrow">Secção 06: Contacto</div>
             <h2 className="fp-section-h fp-display" style={{ fontSize: 'clamp(28px, 4vw, 48px)' }}>
-              Se toma decisões sobre o sector energético de Moçambique — devíamos conversar.
+              Se toma decisões sobre o sector energético de Moçambique, devíamos conversar.
             </h2>
             <p style={{ fontSize: 17, opacity: 0.85, lineHeight: 1.6, marginTop: 16 }}>
               DATA4MOZ constrói a camada de inteligência que transforma dados públicos fragmentados

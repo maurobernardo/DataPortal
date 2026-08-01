@@ -140,7 +140,8 @@
 }
 
 @media (min-width: 768px) {
-  .rpt-filters-grid { grid-template-columns: repeat(3, 1fr); }
+  .rpt-filters-grid { grid-template-columns: repeat(4, 1fr); }
+  .rpt-field-search { grid-column: span 4; }
 }
 
 .rpt-field label {
@@ -149,6 +150,42 @@
   font-weight: 600;
   color: var(--pd-ink-700);
   margin-bottom: 6px;
+}
+
+.rpt-search-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid #E2E8E5;
+  border-radius: 10px;
+  background: var(--pd-surface-50);
+  color: var(--pd-ink-500);
+}
+
+.rpt-search-input input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+  color: var(--pd-ink-900);
+  font-family: inherit;
+}
+
+.rpt-search-input:focus-within {
+  border-color: var(--pd-green-700);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--pd-green-700) 15%, transparent);
+}
+
+.rpt-results-meta {
+  font-size: 13px;
+  color: var(--pd-ink-500);
+  margin: 20px 0 12px;
+}
+
+.rpt-results-meta strong {
+  color: var(--pd-ink-900);
 }
 
 .rpt-field select {
@@ -255,6 +292,7 @@
 }
 
 .rpt-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   background: var(--pd-surface-0);
@@ -262,6 +300,26 @@
   border-radius: 14px;
   overflow: hidden;
   transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+
+.rpt-card-favorite {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 4;
+  background: color-mix(in srgb, var(--pd-ink-900) 55%, transparent);
+  color: white;
+  border-color: transparent;
+}
+
+.rpt-card-favorite:hover {
+  color: #fff;
+  background: color-mix(in srgb, #DC2626 70%, var(--pd-ink-900));
+}
+
+.rpt-card-favorite.active {
+  background: #DC2626;
+  color: white;
 }
 
 .rpt-card:hover {
@@ -329,6 +387,11 @@
 }
 
 .rpt-card-title a:hover { color: var(--pd-green-700); }
+.rpt-card-title a:focus-visible {
+  outline: 2px solid var(--pd-green-700);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
 
 .rpt-card-desc {
   font-size: 13px;
@@ -541,6 +604,20 @@
   margin-top: 24px;
   padding-top: 24px;
   border-top: 1px solid #E2E8E5;
+}
+
+.rpt-detail-pdf-preview {
+  margin-top: 20px;
+  border: 1px solid #E2E8E5;
+  border-radius: 14px;
+  overflow: hidden;
+  height: min(75vh, 800px);
+}
+
+.rpt-detail-pdf-preview iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
 }
 
 .rpt-detail-author {

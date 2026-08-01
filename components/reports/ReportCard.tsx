@@ -1,15 +1,22 @@
 import Link from 'next/link'
 import { ArrowRight, Calendar, FileText, Globe, Users } from 'lucide-react'
 import { ReportRequestButton } from '@/components/ReportRequestButton'
+import { FavoriteButton } from '@/components/FavoriteButton'
 import type { PublicReport } from '@/components/reports/types'
 
-export function ReportCard({ report }: { report: PublicReport }) {
+export function ReportCard({ report, isFavorited }: { report: PublicReport; isFavorited?: boolean }) {
   return (
     <article className="rpt-card">
       <div className="rpt-card-thumb" aria-hidden>
         <FileText className="rpt-card-thumb-icon" />
         <span className="rpt-card-year">{report.year}</span>
       </div>
+      <FavoriteButton
+        entityType="report"
+        entityId={report.id}
+        initialFavorited={isFavorited ?? false}
+        className="rpt-card-favorite"
+      />
 
       <div className="rpt-card-body">
         <span className="rpt-card-coverage">{report.coverage}</span>

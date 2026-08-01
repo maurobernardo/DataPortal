@@ -122,7 +122,7 @@ export function FeaturedCatalogSection({ datasets }: { datasets: FeaturedDataset
             <Link
               key={d.id}
               href={`/dataset/${d.id}`}
-              className="group relative flex flex-col overflow-hidden rounded-2xl border border-[#CFE3D6] bg-white p-6 shadow-[0_4px_18px_rgba(11,27,20,0.07)] transition duration-300 hover:-translate-y-0.5 hover:border-[#064E2C] hover:shadow-[0_16px_40px_rgba(6,78,44,0.14)]"
+              className="group relative flex flex-col overflow-hidden rounded-2xl border border-[#CFE3D6] bg-white p-6 shadow-[0_4px_18px_rgba(11,27,20,0.07)] transition duration-300 hover:-translate-y-0.5 hover:border-[#064E2C] hover:shadow-[0_16px_40px_rgba(6,78,44,0.14)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#064E2C] focus-visible:ring-offset-2"
             >
               <span
                 className="absolute left-0 right-0 top-0 h-1 bg-gradient-to-r from-[#064E2C] via-[#0a6b45] to-[#064E2C] opacity-90 transition-opacity group-hover:opacity-100"

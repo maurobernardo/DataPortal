@@ -18,7 +18,7 @@ export function buildMapRequestMailto(map: {
   description?: string
 }) {
   const siteUrl = getSiteUrl()
-  const subject = `Pedido — Mapa interativo: ${map.title}`
+  const subject = `Pedido de mapa interativo: ${map.title}`
   const body =
     `Olá,\n\n` +
     `Gostaria de solicitar mais informação ou acesso relacionado com o mapa interativo.\n\n` +

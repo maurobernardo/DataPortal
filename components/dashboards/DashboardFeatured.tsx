@@ -1,5 +1,7 @@
 import { DashboardCardPreview } from '@/components/dashboards/DashboardCardPreview'
 import { DashboardVisitLink } from '@/components/dashboards/DashboardVisitLink'
+import { FavoriteButton } from '@/components/FavoriteButton'
+import { DashboardLastUpdateBadge } from '@/components/dashboards/DashboardLastUpdateBadge'
 import type { PublicDashboard } from '@/components/dashboards/DashboardGallery'
 
 const FEATURED_COUNT = 2
@@ -7,9 +9,11 @@ const FEATURED_COUNT = 2
 export function DashboardFeatured({
   dashboards,
   totalCount,
+  favoriteIds,
 }: {
   dashboards: PublicDashboard[]
   totalCount: number
+  favoriteIds?: Set<string>
 }) {
   const items = dashboards.slice(0, FEATURED_COUNT)
   if (items.length === 0) return null
@@ -41,8 +45,17 @@ export function DashboardFeatured({
                 previewImagePath={item.previewImagePath}
                 large
               />
+              <FavoriteButton
+                entityType="dashboard"
+                entityId={item.id}
+                initialFavorited={favoriteIds?.has(String(item.id)) ?? false}
+                className="db-favorite-btn-overlay"
+              />
               <div className="db-feat-card-overlay">
-                <span className="db-feat-card-tag">{item.category || 'Dashboard'}</span>
+                <span className="db-feat-card-tag">
+                  {item.category || 'Dashboard'}
+                  <DashboardLastUpdateBadge date={item.lastDataUpdate} />
+                </span>
                 <h3 className="db-feat-card-title">{item.name}</h3>
                 {item.description && <p className="db-feat-card-desc">{item.description}</p>}
                 {typeof item.views === 'number' && item.views > 0 && (
@@ -50,7 +63,7 @@ export function DashboardFeatured({
                     {item.views.toLocaleString('pt-PT')} clique{item.views !== 1 ? 's' : ''} em «Ver mais»
                   </p>
                 )}
-                <DashboardVisitLink id={item.id} href={item.dashboardUrl} className="db-feat-card-cta" />
+                <DashboardVisitLink id={item.id} href={item.dashboardUrl} title={item.name} className="db-feat-card-cta" />
               </div>
             </article>
           ))}

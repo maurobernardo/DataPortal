@@ -24,7 +24,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     <AuthCard
       icon={Lock}
       title="Entrar"
-      subtitle="Aceda ao painel de administração do Data Portal"
+      subtitle="Aceda à sua conta Data Portal"
     >
       <Suspense fallback={<div className="text-center text-sm text-gray-500">A carregar...</div>}>
         <LoginForm />

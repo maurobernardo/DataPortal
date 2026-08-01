@@ -4,6 +4,10 @@ import { useEffect, useState } from 'react'
 import { Loader2, Table2, Map as MapIcon, AlertTriangle } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { labelFromKey } from '@/lib/geo-preview-interactive'
+import { getCachedPreview, setCachedPreview } from '@/lib/preview-cache'
+import { GeoInsightsCard } from '@/components/geo/GeoInsightsCard'
+import { RelatedDatasets } from '@/components/RelatedDatasets'
+import type { GeoInsights } from '@/lib/geo-intelligence'
 
 const DatasetMapPreview = dynamic(() => import('./DatasetMapPreview'), {
   ssr: false,
@@ -28,7 +32,7 @@ const InteractiveGeoMapPreview = dynamic(
 
 type PreviewResponse =
   | { type: 'table'; columns: string[]; rows: string[][]; delimiter?: string }
-  | { type: 'geo'; geojson: any; bbox?: [number, number, number, number] | null; featureCount?: number }
+  | { type: 'geo'; geojson: any; bbox?: [number, number, number, number] | null; featureCount?: number; insights?: GeoInsights | null }
   | { type: 'none' }
   | { error: string }
 
@@ -54,11 +58,17 @@ export function DatasetPreview({
 
   useEffect(() => {
     let alive = true
+    const cached = getCachedPreview<PreviewResponse>(datasetId)
+    if (cached) {
+      setState({ loading: false, data: cached })
+      return
+    }
     setState({ loading: true })
     fetch(`/api/datasets/${datasetId}/preview`)
       .then((r) => r.json())
       .then((data) => {
         if (!alive) return
+        setCachedPreview(datasetId, data)
         setState({ loading: false, data })
       })
       .catch(() => {
@@ -229,14 +239,22 @@ export function DatasetPreview({
         </div>
       )}
       {isCatalog ? (
-        <InteractiveGeoMapPreview
-          geojson={data.geojson}
-          bbox={data.bbox}
-          featureCount={data.featureCount}
-          className={`geo-interactive-map geo-interactive-map--catalog${mapLayout === 'detail' ? ' geo-interactive-map--detail' : ''}`}
-          previewLayout={mapLayout}
-          splitDetailCards={splitDetailCards}
-        />
+        <>
+          <InteractiveGeoMapPreview
+            geojson={data.geojson}
+            bbox={data.bbox}
+            featureCount={data.featureCount}
+            className={`geo-interactive-map geo-interactive-map--catalog${mapLayout === 'detail' ? ' geo-interactive-map--detail' : ''}`}
+            previewLayout={mapLayout}
+            splitDetailCards={splitDetailCards}
+          />
+          {mapLayout === 'detail' && (
+            <div className="geo-layer-detail-panel mt-4">
+              <GeoInsightsCard insights={data.insights ?? null} />
+              <RelatedDatasets datasetId={datasetId} />
+            </div>
+          )}
+        </>
       ) : (
         <>
           <DatasetMapPreview geojson={data.geojson} bbox={data.bbox} />

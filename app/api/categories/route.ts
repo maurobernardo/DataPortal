@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createCategory, findAllCategories } from '@/lib/db'
 import { getCurrentAdmin } from '@/lib/auth'
+import { logger } from '@/lib/logger'
 
 export async function GET() {
   try {
@@ -8,7 +9,7 @@ export async function GET() {
 
     return NextResponse.json(categories)
   } catch (error) {
-    console.error('Error fetching categories:', error)
+    logger.error('error_fetching_categories', { error: error })
     return NextResponse.json(
       { error: 'Erro ao buscar categorias' },
       { status: 500 }
@@ -40,7 +41,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(category)
   } catch (error: any) {
-    console.error('Error creating category:', error)
+    logger.error('error_creating_category', { error: error })
     if (error?.code === 'ER_DUP_ENTRY') {
       return NextResponse.json(
         { error: 'Já existe uma categoria com este nome para este tipo de dados.' },

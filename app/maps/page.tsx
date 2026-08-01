@@ -1,16 +1,28 @@
-import { MAP_CATALOG } from '@/lib/maps-catalog'
-import { MapCard } from '@/components/maps/MapCard'
+import { applyMapOverrides, MAP_CATALOG } from '@/lib/maps-catalog'
 import { MapCatalogHeroVisual } from '@/components/maps/MapCatalogHeroVisual'
+import { MapsCatalogGrid } from '@/components/maps/MapsCatalogGrid'
+import { RecentlyViewedRail } from '@/components/RecentlyViewedRail'
+import { getCurrentUser } from '@/lib/auth'
+import { findAllMapOverrides, findEntityFavoriteIds, getMapViewCounts } from '@/lib/db'
 import '../maps-catalog.css'
+
+export const dynamic = 'force-dynamic'
 
 export const metadata = {
   title: 'Mapas inteligentes | Portal de Dados',
   description:
-    'Catálogo de mapas interactivos e dashboards analíticos do Portal de Dados — exploração territorial, KPIs e filtros em Moçambique.',
+    'Catálogo de mapas interactivos e dashboards analíticos do Portal de Dados: exploração territorial, KPIs e filtros em Moçambique.',
 }
 
-export default function MapsCatalogPage() {
-  const maps = MAP_CATALOG
+export default async function MapsCatalogPage() {
+  const session = await getCurrentUser()
+  const [favoriteIds, viewCounts, overrides] = await Promise.all([
+    session ? findEntityFavoriteIds(session.userId, 'map') : Promise.resolve([]),
+    getMapViewCounts(),
+    findAllMapOverrides(),
+  ])
+  const favoriteIdSet = new Set(favoriteIds)
+  const maps = applyMapOverrides(MAP_CATALOG, overrides)
   const heroMap = maps.find((m) => m.featured) ?? maps[0]
   const mapDashboardCount = maps.filter((m) => m.experienceType === 'map-dashboard').length
 
@@ -25,7 +37,7 @@ export default function MapsCatalogPage() {
             </h1>
             <p className="mp-hero-lede">
               Não são apenas mapas: cada publicação combina exploração geográfica com painéis
-              analíticos — KPIs, gráficos, filtros cruzados e detalhe por unidade territorial.
+              analíticos: KPIs, gráficos, filtros cruzados e detalhe por unidade territorial.
             </p>
             <div className="mp-hero-stats">
               <div>
@@ -58,15 +70,12 @@ export default function MapsCatalogPage() {
           <div className="mp-gallery-head">
             <h2>Mapas inteligentes disponíveis</h2>
             <p>
-              Cada card indica o tipo de experiência — mapa interactivo, dashboard ou ambos —
+              Cada card indica o tipo de experiência (mapa interactivo, dashboard ou ambos)
               antes de abrir a exploração completa.
             </p>
           </div>
-          <div className="mp-gallery-grid">
-            {maps.map((map) => (
-              <MapCard key={map.slug} map={map} />
-            ))}
-          </div>
+          <RecentlyViewedRail dataType="map" />
+          <MapsCatalogGrid maps={maps} favoriteIds={favoriteIdSet} viewCounts={viewCounts} />
         </div>
       </section>
     </div>

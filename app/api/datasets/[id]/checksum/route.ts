@@ -4,6 +4,7 @@ import { readFile } from 'fs/promises'
 import { existsSync } from 'fs'
 import { join } from 'path'
 import { createHash } from 'crypto'
+import { logger } from '@/lib/logger'
 
 export async function GET(_request: Request, { params }: { params: { id: string } }) {
   try {
@@ -26,7 +27,7 @@ export async function GET(_request: Request, { params }: { params: { id: string 
     const sha256 = createHash('sha256').update(buf).digest('hex')
     return NextResponse.json({ sha256 })
   } catch (error) {
-    console.error('Error computing checksum:', error)
+    logger.error('error_computing_checksum', { error: error })
     return NextResponse.json({ error: 'Erro ao calcular checksum' }, { status: 500 })
   }
 }

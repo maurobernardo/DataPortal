@@ -1,7 +1,9 @@
 import './load-env'
+import crypto from 'crypto'
 import mysql from 'mysql2/promise'
 import { normalizeRole } from '@/lib/session'
 import { normalizeEmail } from '@/lib/security'
+import { logger } from '@/lib/logger'
 
 if (!process.env.DATABASE_URL?.trim()) {
   throw new Error(
@@ -18,7 +20,34 @@ export const db = globalForDb.db ?? mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
+  // Evita ligações presas indefinidamente (ex.: servidor aceita TCP mas nunca completa o
+  // handshake MySQL) — falha rápido em vez de bloquear pedidos sem limite de tempo.
+  connectTimeout: 10_000,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 10_000,
 })
+
+// A pool emite 'error' para falhas assíncronas em ligações ociosas (ex.: servidor
+// reiniciado, ligação caída). Sem este listener, o processo Node derruba com um
+// unhandled error; com ele, apenas regista e deixa a pool recuperar na próxima query.
+// (mysql2 emite este evento em runtime, mas os tipos de `Pool` não o declaram.)
+;(db as unknown as { on(event: 'error', listener: (err: Error) => void): void }).on('error', (err) => {
+  logger.error('db.pool.error', { error: err })
+})
+
+export async function checkDatabaseHealth(): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const conn = await db.getConnection()
+    try {
+      await conn.query('SELECT 1')
+      return { ok: true }
+    } finally {
+      conn.release()
+    }
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : String(error) }
+  }
+}
 
 if (process.env.NODE_ENV !== 'production') globalForDb.db = db
 
@@ -37,7 +66,7 @@ export async function ensureCategoryCompositeUnique(): Promise<void> {
       await db.execute('ALTER TABLE Category DROP INDEX Category_name_key')
     }
   } catch (e) {
-    console.warn('[db] Category index migration (drop name-only unique):', e)
+    logger.warn('db.category_index_migration_drop_name_only_unique', { error: e })
   }
   try {
     await db.execute(
@@ -90,6 +119,75 @@ export async function ensureUsersTable(): Promise<void> {
     )
   } catch {
     /* coluna role já existe */
+  }
+
+  try {
+    await db.execute(`ALTER TABLE users ADD COLUMN reset_code VARCHAR(6) NULL`)
+  } catch {
+    /* coluna já existe */
+  }
+
+  try {
+    await db.execute(`ALTER TABLE users ADD COLUMN reset_expires DATETIME(3) NULL`)
+  } catch {
+    /* coluna já existe */
+  }
+
+  try {
+    await db.execute(`ALTER TABLE users ADD COLUMN oauth_provider VARCHAR(20) NULL`)
+  } catch {
+    /* coluna já existe */
+  }
+
+  try {
+    await db.execute(`ALTER TABLE users ADD COLUMN oauth_id VARCHAR(191) NULL`)
+  } catch {
+    /* coluna já existe */
+  }
+
+  try {
+    await db.execute(`ALTER TABLE users MODIFY COLUMN password_hash VARCHAR(255) NULL`)
+  } catch {
+    /* já nullable ou ambiente sem permissão */
+  }
+
+  try {
+    await db.execute(
+      `ALTER TABLE users ADD UNIQUE INDEX users_oauth_provider_id_key (oauth_provider, oauth_id)`
+    )
+  } catch {
+    /* índice já existe */
+  }
+
+  try {
+    await db.execute(`ALTER TABLE users ADD COLUMN pending_email VARCHAR(254) NULL`)
+  } catch {
+    /* coluna já existe */
+  }
+  try {
+    await db.execute(`ALTER TABLE users ADD COLUMN pending_email_code VARCHAR(6) NULL`)
+  } catch {
+    /* coluna já existe */
+  }
+  try {
+    await db.execute(`ALTER TABLE users ADD COLUMN pending_email_expires DATETIME(3) NULL`)
+  } catch {
+    /* coluna já existe */
+  }
+  try {
+    await db.execute(`ALTER TABLE users ADD COLUMN totp_secret VARCHAR(64) NULL`)
+  } catch {
+    /* coluna já existe */
+  }
+  try {
+    await db.execute(`ALTER TABLE users ADD COLUMN totp_enabled TINYINT(1) NOT NULL DEFAULT 0`)
+  } catch {
+    /* coluna já existe */
+  }
+  try {
+    await db.execute(`ALTER TABLE users ADD COLUMN totp_backup_codes TEXT NULL`)
+  } catch {
+    /* coluna já existe */
   }
 
   try {
@@ -271,6 +369,177 @@ export async function deleteAuthUser(userId: number) {
   await db.execute('DELETE FROM users WHERE id = ?', [userId])
 }
 
+/** Elimina os dados pessoais do utilizador (análises de IA guardadas, conta) e anonimiza estatísticas de uso. */
+export async function deleteUserAccountData(userId: number) {
+  await ensureUsersTable()
+  try {
+    await db.execute('DELETE FROM AIInsightTile WHERE userId = ?', [userId])
+  } catch {
+    /* tabela pode não existir ainda */
+  }
+  try {
+    await db.execute('DELETE FROM DatasetUpdateSubscription WHERE userId = ?', [userId])
+  } catch {
+    /* tabela pode não existir ainda */
+  }
+  try {
+    await db.execute('UPDATE Statistic SET userId = NULL WHERE userId = ?', [userId])
+  } catch {
+    /* coluna/tabela pode não existir */
+  }
+  await deleteAuthUser(userId)
+}
+
+export async function getUserExportData(userId: number) {
+  await ensureUsersTable()
+  const user = await findUserById(userId)
+  if (!user) return null
+
+  let tiles: any[] = []
+  try {
+    const [rows] = (await db.execute(
+      'SELECT title, question, datasetIds, shareToken, createdAt FROM AIInsightTile WHERE userId = ? ORDER BY createdAt DESC',
+      [userId]
+    )) as [any[], unknown]
+    tiles = rows
+  } catch {
+    /* tabela pode não existir */
+  }
+
+  return {
+    perfil: {
+      nome: user.name,
+      email: user.email,
+      funcao: user.role,
+      emailVerificado: Boolean(user.emailVerified),
+      criadaEm: user.created_at,
+    },
+    analisesGuardadas: tiles,
+  }
+}
+
+export async function setUserResetCode(userId: number, code: string, expires: Date) {
+  await ensureUsersTable()
+  await db.execute('UPDATE users SET reset_code = ?, reset_expires = ? WHERE id = ?', [
+    code,
+    expires,
+    userId,
+  ])
+}
+
+export async function clearUserResetCode(userId: number) {
+  await ensureUsersTable()
+  await db.execute('UPDATE users SET reset_code = NULL, reset_expires = NULL WHERE id = ?', [userId])
+}
+
+export async function updateUserPassword(userId: number, passwordHash: string) {
+  await ensureUsersTable()
+  await db.execute('UPDATE users SET password_hash = ? WHERE id = ?', [passwordHash, userId])
+}
+
+export async function updateUserName(userId: number, name: string) {
+  await ensureUsersTable()
+  await db.execute('UPDATE users SET name = ? WHERE id = ?', [name, userId])
+}
+
+export async function setPendingEmailChange(
+  userId: number,
+  newEmail: string,
+  code: string,
+  expiresAt: Date
+) {
+  await ensureUsersTable()
+  await db.execute(
+    'UPDATE users SET pending_email = ?, pending_email_code = ?, pending_email_expires = ? WHERE id = ?',
+    [newEmail, code, expiresAt, userId]
+  )
+}
+
+export async function clearPendingEmailChange(userId: number) {
+  await ensureUsersTable()
+  await db.execute(
+    'UPDATE users SET pending_email = NULL, pending_email_code = NULL, pending_email_expires = NULL WHERE id = ?',
+    [userId]
+  )
+}
+
+export async function confirmPendingEmailChange(userId: number, newEmail: string) {
+  await ensureUsersTable()
+  await db.execute(
+    'UPDATE users SET email = ?, pending_email = NULL, pending_email_code = NULL, pending_email_expires = NULL WHERE id = ?',
+    [newEmail, userId]
+  )
+}
+
+export async function setUserTotpSecret(userId: number, secret: string, backupCodes: string[]) {
+  await ensureUsersTable()
+  await db.execute('UPDATE users SET totp_secret = ?, totp_backup_codes = ?, totp_enabled = 0 WHERE id = ?', [
+    secret,
+    JSON.stringify(backupCodes),
+    userId,
+  ])
+}
+
+export async function enableUserTotp(userId: number) {
+  await ensureUsersTable()
+  await db.execute('UPDATE users SET totp_enabled = 1 WHERE id = ?', [userId])
+}
+
+export async function disableUserTotp(userId: number) {
+  await ensureUsersTable()
+  await db.execute(
+    'UPDATE users SET totp_enabled = 0, totp_secret = NULL, totp_backup_codes = NULL WHERE id = ?',
+    [userId]
+  )
+}
+
+export async function consumeUserTotpBackupCode(userId: number, remainingCodes: string[]) {
+  await ensureUsersTable()
+  await db.execute('UPDATE users SET totp_backup_codes = ? WHERE id = ?', [
+    JSON.stringify(remainingCodes),
+    userId,
+  ])
+}
+
+export async function findUserByOAuth(provider: string, oauthId: string) {
+  await ensureUsersTable()
+  const [rows] = (await db.execute(
+    'SELECT * FROM users WHERE oauth_provider = ? AND oauth_id = ? LIMIT 1',
+    [provider, oauthId]
+  )) as [any[], unknown]
+  const row = rows[0]
+  if (!row) return null
+  return {
+    ...row,
+    password: row.password_hash,
+    emailVerified: Boolean(row.email_verified),
+    role: normalizeRole(row.role),
+  }
+}
+
+export async function createOAuthUser(data: {
+  name: string
+  email: string
+  provider: string
+  oauthId: string
+}) {
+  await ensureUsersTable()
+  const [result] = (await db.execute(
+    `INSERT INTO users (name, email, password_hash, email_verified, role, oauth_provider, oauth_id)
+     VALUES (?, ?, NULL, 1, 'user', ?, ?)`,
+    [data.name, data.email, data.provider, data.oauthId]
+  )) as [{ insertId: number }, unknown]
+  return findUserById(result.insertId)
+}
+
+export async function linkOAuthToUser(userId: number, provider: string, oauthId: string) {
+  await ensureUsersTable()
+  await db.execute(
+    'UPDATE users SET oauth_provider = ?, oauth_id = ?, email_verified = 1 WHERE id = ?',
+    [provider, oauthId, userId]
+  )
+}
+
 // ==================== CATEGORY ====================
 export async function findAllCategories() {
   await ensureCategoryCompositeUnique()
@@ -312,6 +581,47 @@ export async function deleteCategory(id: number) {
   await db.execute('DELETE FROM Category WHERE id = ?', [id])
 }
 
+// ==================== DATASET PREVIEW METADATA (badge, miniatura, mapa geral) ====================
+let datasetPreviewColumnsEnsured = false
+
+export async function ensureDatasetPreviewColumns(): Promise<void> {
+  if (datasetPreviewColumnsEnsured) return
+  datasetPreviewColumnsEnsured = true
+  const columns: [string, string][] = [
+    ['previewAvailable', 'TINYINT(1) NULL'],
+    ['bboxMinX', 'DOUBLE NULL'],
+    ['bboxMinY', 'DOUBLE NULL'],
+    ['bboxMaxX', 'DOUBLE NULL'],
+    ['bboxMaxY', 'DOUBLE NULL'],
+  ]
+  for (const [name, def] of columns) {
+    try {
+      await db.execute(`ALTER TABLE Dataset ADD COLUMN ${name} ${def}`)
+    } catch {
+      /* coluna já existe */
+    }
+  }
+}
+
+export async function setDatasetPreviewMeta(
+  id: number,
+  meta: { previewAvailable: boolean; bbox?: [number, number, number, number] | null }
+) {
+  await ensureDatasetPreviewColumns()
+  await db.execute(
+    `UPDATE Dataset SET previewAvailable = ?, bboxMinX = ?, bboxMinY = ?, bboxMaxX = ?, bboxMaxY = ? WHERE id = ?`,
+    [
+      meta.previewAvailable ? 1 : 0,
+      meta.bbox?.[0] ?? null,
+      meta.bbox?.[1] ?? null,
+      meta.bbox?.[2] ?? null,
+      meta.bbox?.[3] ?? null,
+      id,
+    ]
+  )
+  clearDatasetsCache()
+}
+
 // ==================== DATASET ====================
 export async function findDatasets(params: {
   dataType?: string
@@ -326,6 +636,7 @@ export async function findDatasets(params: {
   offset?: number
   take?: number
 }) {
+  await ensureDatasetPreviewColumns()
   const cacheKey = getDatasetsCacheKey(params as Record<string, unknown>)
   const cached = datasetsQueryCache.get(cacheKey)
   if (cached && cached.expiresAt > Date.now()) {
@@ -353,8 +664,8 @@ export async function findDatasets(params: {
   const order = sortOrder === 'oldest' ? 'ORDER BY d.year ASC'
     : sortOrder === 'newest' ? 'ORDER BY d.year DESC'
     : hasSearch
-    ? 'ORDER BY relevance DESC, d.downloads DESC, d.views DESC'
-    : 'ORDER BY d.downloads DESC, d.views DESC'
+    ? 'ORDER BY relevance DESC, d.views DESC, d.downloads DESC'
+    : 'ORDER BY d.views DESC, d.downloads DESC'
 
   const selectRelevance = hasSearch
     ? `, (
@@ -394,7 +705,41 @@ export async function findDatasets(params: {
   return mapped
 }
 
+/**
+ * Datasets relacionados para sugestão no preview: prioriza a mesma categoria (mais provável de
+ * ser cruzável/comparável) e completa com o mesmo tipo de dados quando a categoria tem poucos
+ * outros datasets, ordenado por popularidade.
+ */
+export async function findRelatedDatasets(dataset: { id: number; categoryId?: number | null; dataType: string }, limit = 4) {
+  const sameCategory = dataset.categoryId
+    ? ((await db.execute(
+        `SELECT d.id, d.title, d.format, d.dataType, c.name as cat_name
+         FROM Dataset d LEFT JOIN Category c ON d.categoryId = c.id
+         WHERE d.categoryId = ? AND d.id != ?
+         ORDER BY d.views DESC, d.downloads DESC LIMIT ?`,
+        [dataset.categoryId, dataset.id, limit]
+      )) as any)[0]
+    : []
+
+  let related = sameCategory as any[]
+  if (related.length < limit) {
+    const excludeIds = [dataset.id, ...related.map((r) => r.id)]
+    const placeholders = excludeIds.map(() => '?').join(',')
+    const [rows] = (await db.execute(
+      `SELECT d.id, d.title, d.format, d.dataType, c.name as cat_name
+       FROM Dataset d LEFT JOIN Category c ON d.categoryId = c.id
+       WHERE d.dataType = ? AND d.id NOT IN (${placeholders})
+       ORDER BY d.views DESC, d.downloads DESC LIMIT ?`,
+      [dataset.dataType, ...excludeIds, limit - related.length]
+    )) as any
+    related = [...related, ...rows]
+  }
+
+  return related.map((r) => ({ id: r.id, title: r.title, format: r.format, dataType: r.dataType, category: r.cat_name }))
+}
+
 export async function findDatasetById(id: number) {
+  await ensureDatasetPreviewColumns()
   const [rows] = await db.execute(
     `SELECT d.*, c.id as cat_id, c.name as cat_name, c.description as cat_desc, c.dataType as cat_dataType
      FROM Dataset d LEFT JOIN Category c ON d.categoryId = c.id WHERE d.id = ? LIMIT 1`,
@@ -442,9 +787,183 @@ export async function incrementDatasetDownloads(id: number) {
   await db.execute('UPDATE Dataset SET downloads = downloads + 1 WHERE id = ?', [id])
 }
 
+// ==================== ESTATÍSTICA DIÁRIA DO PORTAL (alertas de limiar aos admins) ====================
+let dailyUsageTableEnsured = false
+async function ensureDailyUsageTable() {
+  if (dailyUsageTableEnsured) return
+  dailyUsageTableEnsured = true
+  await db.execute(
+    `CREATE TABLE IF NOT EXISTS DailyUsageStat (
+      date DATE NOT NULL,
+      views INT NOT NULL DEFAULT 0,
+      downloads INT NOT NULL DEFAULT 0,
+      viewsAlertedThreshold INT NOT NULL DEFAULT 0,
+      downloadsAlertedThreshold INT NOT NULL DEFAULT 0,
+      PRIMARY KEY (date)
+    )`
+  )
+}
+
+/** Incrementa o contador diário do portal (visualizações ou downloads, agregados de todos os
+ * datasets) e devolve o total do dia e o último limiar já alertado, para o chamador decidir se
+ * cruzou um novo limiar. */
+export async function incrementDailyUsage(
+  kind: 'views' | 'downloads'
+): Promise<{ count: number; alertedThreshold: number } | null> {
+  await ensureDailyUsageTable()
+
+  if (kind === 'views') {
+    await db.execute(
+      `INSERT INTO DailyUsageStat (date, views) VALUES (CURDATE(), 1)
+       ON DUPLICATE KEY UPDATE views = views + 1`
+    )
+  } else {
+    await db.execute(
+      `INSERT INTO DailyUsageStat (date, downloads) VALUES (CURDATE(), 1)
+       ON DUPLICATE KEY UPDATE downloads = downloads + 1`
+    )
+  }
+
+  const [rows] = (await db.execute(
+    `SELECT views, downloads, viewsAlertedThreshold, downloadsAlertedThreshold FROM DailyUsageStat WHERE date = CURDATE()`
+  )) as [any[], unknown]
+  const row = rows[0]
+  if (!row) return null
+
+  return kind === 'views'
+    ? { count: Number(row.views), alertedThreshold: Number(row.viewsAlertedThreshold) }
+    : { count: Number(row.downloads), alertedThreshold: Number(row.downloadsAlertedThreshold) }
+}
+
+export async function markDailyUsageAlerted(kind: 'views' | 'downloads', threshold: number) {
+  await ensureDailyUsageTable()
+  if (kind === 'views') {
+    await db.execute('UPDATE DailyUsageStat SET viewsAlertedThreshold = ? WHERE date = CURDATE()', [threshold])
+  } else {
+    await db.execute('UPDATE DailyUsageStat SET downloadsAlertedThreshold = ? WHERE date = CURDATE()', [threshold])
+  }
+}
+
 export async function countDatasets() {
   const [rows] = await db.execute('SELECT COUNT(*) as total FROM Dataset') as any
   return rows[0].total
+}
+
+export async function findDatasetsByIds(ids: number[]) {
+  if (ids.length === 0) return []
+  await ensureDatasetPreviewColumns()
+  const placeholders = ids.map(() => '?').join(',')
+  const [rows] = await db.execute(
+    `SELECT d.*, c.id as cat_id, c.name as cat_name, c.description as cat_desc, c.dataType as cat_dataType
+     FROM Dataset d LEFT JOIN Category c ON d.categoryId = c.id WHERE d.id IN (${placeholders})`,
+    ids
+  ) as any
+  return rows.map((r: any) => ({
+    ...r,
+    category: { id: r.cat_id, name: r.cat_name, description: r.cat_desc, dataType: r.cat_dataType },
+  }))
+}
+
+/** Bbox em cache (colunas bboxMinX/Y/MaxX/Y) para os datasets geoespaciais que já a têm calculada. */
+export async function findGeoDatasetFootprints(params: {
+  categoryId?: number
+  search?: string
+  source?: string
+  format?: string
+  year?: number
+  yearFrom?: number
+  yearTo?: number
+}) {
+  await ensureDatasetPreviewColumns()
+  const { categoryId, search, source, format, year, yearFrom, yearTo } = params
+  const conditions: string[] = ["d.dataType = 'geoespacial'", 'd.bboxMinX IS NOT NULL']
+  const values: any[] = []
+  if (categoryId) { conditions.push('d.categoryId = ?'); values.push(categoryId) }
+  if (format) { conditions.push('d.format = ?'); values.push(format) }
+  if (source) { conditions.push('d.source = ?'); values.push(source) }
+  if (year) { conditions.push('d.year = ?'); values.push(year) }
+  if (yearFrom) { conditions.push('d.year >= ?'); values.push(yearFrom) }
+  if (yearTo) { conditions.push('d.year <= ?'); values.push(yearTo) }
+  if (search) {
+    conditions.push('(d.title LIKE ? OR d.description LIKE ? OR d.keywords LIKE ?)')
+    values.push(`%${search}%`, `%${search}%`, `%${search}%`)
+  }
+  const [rows] = await db.execute(
+    `SELECT d.id, d.title, d.format, d.bboxMinX, d.bboxMinY, d.bboxMaxX, d.bboxMaxY,
+            c.name as cat_name
+     FROM Dataset d LEFT JOIN Category c ON d.categoryId = c.id
+     WHERE ${conditions.join(' AND ')}
+     LIMIT 500`,
+    values
+  ) as any
+  return rows as {
+    id: number
+    title: string
+    format: string
+    bboxMinX: number
+    bboxMinY: number
+    bboxMaxX: number
+    bboxMaxY: number
+    cat_name: string
+  }[]
+}
+
+// ==================== DATASET FAVORITES ====================
+let datasetFavoritesTableEnsured = false
+async function ensureDatasetFavoritesTable() {
+  if (datasetFavoritesTableEnsured) return
+  await db.execute(
+    `CREATE TABLE IF NOT EXISTS DatasetFavorite (
+      id INT NOT NULL AUTO_INCREMENT,
+      userId INT NOT NULL,
+      datasetId INT NOT NULL,
+      createdAt DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+      PRIMARY KEY (id),
+      UNIQUE KEY DatasetFavorite_user_dataset_key (userId, datasetId),
+      INDEX DatasetFavorite_userId_idx (userId)
+    ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
+  )
+  datasetFavoritesTableEnsured = true
+}
+
+export async function addDatasetFavorite(userId: number, datasetId: number) {
+  await ensureDatasetFavoritesTable()
+  await db.execute(
+    'INSERT IGNORE INTO DatasetFavorite (userId, datasetId) VALUES (?, ?)',
+    [userId, datasetId]
+  )
+}
+
+export async function removeDatasetFavorite(userId: number, datasetId: number) {
+  await ensureDatasetFavoritesTable()
+  await db.execute('DELETE FROM DatasetFavorite WHERE userId = ? AND datasetId = ?', [userId, datasetId])
+}
+
+export async function findFavoriteDatasetIds(userId: number): Promise<number[]> {
+  await ensureDatasetFavoritesTable()
+  const [rows] = (await db.execute('SELECT datasetId FROM DatasetFavorite WHERE userId = ?', [
+    userId,
+  ])) as [{ datasetId: number }[], unknown]
+  return rows.map((r) => r.datasetId)
+}
+
+export async function findFavoriteDatasets(userId: number) {
+  await ensureDatasetFavoritesTable()
+  await ensureDatasetPreviewColumns()
+  const [rows] = await db.execute(
+    `SELECT d.*, c.id as cat_id, c.name as cat_name, c.description as cat_desc, c.dataType as cat_dataType,
+            f.createdAt as favoritedAt
+     FROM DatasetFavorite f
+     INNER JOIN Dataset d ON d.id = f.datasetId
+     LEFT JOIN Category c ON d.categoryId = c.id
+     WHERE f.userId = ?
+     ORDER BY f.createdAt DESC`,
+    [userId]
+  ) as any
+  return rows.map((r: any) => ({
+    ...r,
+    category: { id: r.cat_id, name: r.cat_name, description: r.cat_desc, dataType: r.cat_dataType },
+  }))
 }
 
 // ==================== STATISTIC ====================
@@ -531,11 +1050,14 @@ export async function deleteReport(id: number) {
   await db.execute('DELETE FROM Report WHERE id = ?', [id])
 }
 
-export async function createReportRequest(reportId: number) {
+export async function createReportRequest(
+  reportId: number,
+  contact?: { name?: string | null; email?: string | null; message?: string | null }
+) {
   await ensureReportRequestTable()
   await db.execute(
-    'INSERT INTO ReportRequest (reportId, createdAt) VALUES (?, NOW())',
-    [reportId]
+    'INSERT INTO ReportRequest (reportId, name, email, message, createdAt) VALUES (?, ?, ?, ?, NOW())',
+    [reportId, contact?.name || null, contact?.email || null, contact?.message || null]
   )
 }
 
@@ -552,7 +1074,263 @@ async function ensureReportRequestTable() {
       INDEX ReportRequest_createdAt_idx (createdAt)
     ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
   )
+  for (const [name, def] of [
+    ['name', 'VARCHAR(120) NULL'],
+    ['email', 'VARCHAR(254) NULL'],
+    ['message', 'TEXT NULL'],
+  ] as [string, string][]) {
+    try {
+      await db.execute(`ALTER TABLE ReportRequest ADD COLUMN ${name} ${def}`)
+    } catch {
+      /* coluna já existe */
+    }
+  }
   reportRequestTableEnsured = true
+}
+
+// ==================== ENTITY FAVORITES (dashboards, relatórios, mapas) ====================
+export type EntityType = 'dashboard' | 'report' | 'map'
+
+let entityFavoriteTableEnsured = false
+async function ensureEntityFavoriteTable() {
+  if (entityFavoriteTableEnsured) return
+  await db.execute(
+    `CREATE TABLE IF NOT EXISTS EntityFavorite (
+      id INT NOT NULL AUTO_INCREMENT,
+      userId INT NOT NULL,
+      entityType VARCHAR(20) NOT NULL,
+      entityId VARCHAR(64) NOT NULL,
+      createdAt DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+      PRIMARY KEY (id),
+      UNIQUE KEY EntityFavorite_user_entity_key (userId, entityType, entityId),
+      INDEX EntityFavorite_userId_idx (userId)
+    ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
+  )
+  entityFavoriteTableEnsured = true
+}
+
+export async function addEntityFavorite(userId: number, entityType: EntityType, entityId: string) {
+  await ensureEntityFavoriteTable()
+  await db.execute(
+    'INSERT IGNORE INTO EntityFavorite (userId, entityType, entityId) VALUES (?, ?, ?)',
+    [userId, entityType, entityId]
+  )
+}
+
+export async function removeEntityFavorite(userId: number, entityType: EntityType, entityId: string) {
+  await ensureEntityFavoriteTable()
+  await db.execute('DELETE FROM EntityFavorite WHERE userId = ? AND entityType = ? AND entityId = ?', [
+    userId,
+    entityType,
+    entityId,
+  ])
+}
+
+export async function findEntityFavoriteIds(userId: number, entityType: EntityType): Promise<string[]> {
+  await ensureEntityFavoriteTable()
+  const [rows] = (await db.execute(
+    'SELECT entityId FROM EntityFavorite WHERE userId = ? AND entityType = ?',
+    [userId, entityType]
+  )) as [{ entityId: string }[], unknown]
+  return rows.map((r) => r.entityId)
+}
+
+/** Objectos completos apenas para os tipos com tabela própria (dashboard/report); 'map' devolve só os ids (o catálogo é estático). */
+export async function findEntityFavorites(userId: number, entityType: EntityType) {
+  await ensureEntityFavoriteTable()
+  if (entityType === 'dashboard') {
+    await ensureAlphanumericDashboardTable()
+    const [rows] = await db.execute(
+      `SELECT d.* FROM EntityFavorite f
+       INNER JOIN AlphanumericDashboard d ON d.id = f.entityId
+       WHERE f.userId = ? AND f.entityType = 'dashboard'
+       ORDER BY f.createdAt DESC`,
+      [userId]
+    ) as any
+    return rows
+  }
+  if (entityType === 'report') {
+    const [rows] = await db.execute(
+      `SELECT r.* FROM EntityFavorite f
+       INNER JOIN Report r ON r.id = f.entityId
+       WHERE f.userId = ? AND f.entityType = 'report'
+       ORDER BY f.createdAt DESC`,
+      [userId]
+    ) as any
+    return rows
+  }
+  return findEntityFavoriteIds(userId, 'map')
+}
+
+// ==================== MAPAS INTELIGENTES (catálogo estático — só estatísticas) ====================
+let mapStatTableEnsured = false
+async function ensureMapStatTable() {
+  if (mapStatTableEnsured) return
+  await db.execute(
+    `CREATE TABLE IF NOT EXISTS MapStat (
+      id INT NOT NULL AUTO_INCREMENT,
+      slug VARCHAR(80) NOT NULL,
+      type VARCHAR(20) NOT NULL,
+      userId INT NULL,
+      createdAt DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+      PRIMARY KEY (id),
+      INDEX MapStat_slug_idx (slug),
+      INDEX MapStat_slug_type_idx (slug, type)
+    ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
+  )
+  mapStatTableEnsured = true
+}
+
+export async function recordMapStat(slug: string, type: 'view' | 'request', userId?: number | null) {
+  await ensureMapStatTable()
+  await db.execute('INSERT INTO MapStat (slug, type, userId) VALUES (?, ?, ?)', [slug, type, userId ?? null])
+}
+
+export async function getMapViewCounts(): Promise<Record<string, number>> {
+  await ensureMapStatTable()
+  const [rows] = (await db.execute(
+    `SELECT slug, COUNT(*) as total FROM MapStat WHERE type = 'view' GROUP BY slug`
+  )) as [{ slug: string; total: number }[], unknown]
+  const out: Record<string, number> = {}
+  for (const r of rows) out[r.slug] = Number(r.total)
+  return out
+}
+
+let mapRequestTableEnsured = false
+async function ensureMapRequestTable() {
+  if (mapRequestTableEnsured) return
+  await db.execute(
+    `CREATE TABLE IF NOT EXISTS MapRequest (
+      id INT NOT NULL AUTO_INCREMENT,
+      slug VARCHAR(80) NOT NULL,
+      name VARCHAR(120) NULL,
+      email VARCHAR(254) NULL,
+      message TEXT NULL,
+      createdAt DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+      PRIMARY KEY (id),
+      INDEX MapRequest_slug_idx (slug)
+    ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
+  )
+  mapRequestTableEnsured = true
+}
+
+export async function createMapRequest(data: {
+  slug: string
+  name?: string | null
+  email?: string | null
+  message?: string | null
+}) {
+  await ensureMapRequestTable()
+  await db.execute('INSERT INTO MapRequest (slug, name, email, message) VALUES (?, ?, ?, ?)', [
+    data.slug,
+    data.name || null,
+    data.email || null,
+    data.message || null,
+  ])
+}
+
+/**
+ * Sobreposição editável (via admin) dos metadados dos mapas estáticos definidos em
+ * lib/maps-catalog.ts. Não permite criar novos "tipos" de mapa (cada um tem um componente
+ * de dashboard próprio) — só editar título/descrição/badges/etc. dos 4 mapas existentes,
+ * sem precisar de um novo deploy.
+ */
+export type MapOverrideRow = {
+  slug: string
+  title: string | null
+  subtitle: string | null
+  description: string | null
+  coverage: string | null
+  category: string | null
+  badgesJson: string | null
+  highlightsJson: string | null
+  featured: number | null
+  heroStatValue: string | null
+  heroStatLabel: string | null
+  updatedAt: string
+}
+
+let mapOverrideTableEnsured = false
+async function ensureMapOverrideTable() {
+  if (mapOverrideTableEnsured) return
+  await db.execute(
+    `CREATE TABLE IF NOT EXISTS MapOverride (
+      slug VARCHAR(80) NOT NULL,
+      title VARCHAR(255) NULL,
+      subtitle VARCHAR(255) NULL,
+      description TEXT NULL,
+      coverage VARCHAR(255) NULL,
+      category VARCHAR(120) NULL,
+      badgesJson TEXT NULL,
+      highlightsJson TEXT NULL,
+      featured TINYINT(1) NULL,
+      heroStatValue VARCHAR(40) NULL,
+      heroStatLabel VARCHAR(80) NULL,
+      updatedAt DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+      PRIMARY KEY (slug)
+    ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
+  )
+  mapOverrideTableEnsured = true
+}
+
+export async function findAllMapOverrides(): Promise<MapOverrideRow[]> {
+  await ensureMapOverrideTable()
+  const [rows] = (await db.execute('SELECT * FROM MapOverride')) as [MapOverrideRow[], unknown]
+  return rows
+}
+
+export async function findMapOverride(slug: string): Promise<MapOverrideRow | null> {
+  await ensureMapOverrideTable()
+  const [rows] = (await db.execute('SELECT * FROM MapOverride WHERE slug = ? LIMIT 1', [slug])) as [
+    MapOverrideRow[],
+    unknown
+  ]
+  return rows[0] || null
+}
+
+export async function upsertMapOverride(
+  slug: string,
+  data: {
+    title?: string | null
+    subtitle?: string | null
+    description?: string | null
+    coverage?: string | null
+    category?: string | null
+    badgesJson?: string | null
+    highlightsJson?: string | null
+    featured?: boolean | null
+    heroStatValue?: string | null
+    heroStatLabel?: string | null
+  }
+) {
+  await ensureMapOverrideTable()
+  await db.execute(
+    `INSERT INTO MapOverride (slug, title, subtitle, description, coverage, category, badgesJson, highlightsJson, featured, heroStatValue, heroStatLabel)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     ON DUPLICATE KEY UPDATE
+       title = VALUES(title), subtitle = VALUES(subtitle), description = VALUES(description),
+       coverage = VALUES(coverage), category = VALUES(category), badgesJson = VALUES(badgesJson),
+       highlightsJson = VALUES(highlightsJson), featured = VALUES(featured),
+       heroStatValue = VALUES(heroStatValue), heroStatLabel = VALUES(heroStatLabel)`,
+    [
+      slug,
+      data.title ?? null,
+      data.subtitle ?? null,
+      data.description ?? null,
+      data.coverage ?? null,
+      data.category ?? null,
+      data.badgesJson ?? null,
+      data.highlightsJson ?? null,
+      data.featured == null ? null : data.featured ? 1 : 0,
+      data.heroStatValue ?? null,
+      data.heroStatLabel ?? null,
+    ]
+  )
+}
+
+export async function deleteMapOverride(slug: string) {
+  await ensureMapOverrideTable()
+  await db.execute('DELETE FROM MapOverride WHERE slug = ?', [slug])
 }
 
 export async function countReportRequests(): Promise<number> {
@@ -567,6 +1345,37 @@ export async function createContactMessage(data: { name: string; email: string; 
     'INSERT INTO ContactMessage (name, email, subject, message, createdAt) VALUES (?, ?, ?, ?, NOW())',
     [data.name, data.email, data.subject, data.message]
   )
+}
+
+export async function findAllContactMessages(limit = 100) {
+  const safeLimit = Math.max(1, Math.min(500, Math.floor(limit)))
+  const [rows] = await db.execute(
+    `SELECT * FROM ContactMessage ORDER BY createdAt DESC LIMIT ${safeLimit}`
+  ) as any
+  return rows
+}
+
+// ==================== ADMIN: LISTAGEM DE SOLICITAÇÕES ====================
+export async function findAllReportRequestsWithDetails(limit = 100) {
+  await ensureReportRequestTable()
+  const safeLimit = Math.max(1, Math.min(500, Math.floor(limit)))
+  const [rows] = await db.execute(
+    `SELECT rr.id, rr.reportId, rr.name, rr.email, rr.message, rr.createdAt, r.title as reportTitle, r.year as reportYear
+     FROM ReportRequest rr
+     LEFT JOIN Report r ON r.id = rr.reportId
+     ORDER BY rr.createdAt DESC
+     LIMIT ${safeLimit}`
+  ) as any
+  return rows
+}
+
+export async function findAllMapRequests(limit = 100) {
+  await ensureMapRequestTable()
+  const safeLimit = Math.max(1, Math.min(500, Math.floor(limit)))
+  const [rows] = await db.execute(
+    `SELECT * FROM MapRequest ORDER BY createdAt DESC LIMIT ${safeLimit}`
+  ) as any
+  return rows
 }
 
 // ==================== ALPHANUMERIC DASHBOARD ====================
@@ -600,6 +1409,11 @@ async function ensureAlphanumericDashboardTable() {
   } catch {
     // Coluna já existe em ambientes atualizados.
   }
+  try {
+    await db.execute('ALTER TABLE AlphanumericDashboard ADD COLUMN lastDataUpdate DATE NULL')
+  } catch {
+    // Coluna já existe em ambientes atualizados.
+  }
   alphaDashboardTableEnsured = true
 }
 
@@ -611,6 +1425,7 @@ export type AlphanumericDashboardRecord = {
   previewImagePath: string | null
   category: string | null
   views: number
+  lastDataUpdate: string | null
   createdAt: string
   updatedAt: string
 }
@@ -654,16 +1469,18 @@ export async function createAlphanumericDashboard(data: {
   description?: string | null
   previewImagePath?: string | null
   category?: string | null
+  lastDataUpdate?: string | null
 }) {
   await ensureAlphanumericDashboardTable()
   const [result] = await db.execute(
-    'INSERT INTO AlphanumericDashboard (name, dashboardUrl, description, previewImagePath, category, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, NOW(), NOW())',
+    'INSERT INTO AlphanumericDashboard (name, dashboardUrl, description, previewImagePath, category, lastDataUpdate, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())',
     [
       data.name,
       data.dashboardUrl,
       data.description || null,
       data.previewImagePath || null,
       data.category || null,
+      data.lastDataUpdate || null,
     ]
   ) as any
   return findAlphanumericDashboardById(result.insertId)
@@ -677,17 +1494,19 @@ export async function updateAlphanumericDashboard(
     description?: string | null
     previewImagePath?: string | null
     category?: string | null
+    lastDataUpdate?: string | null
   }
 ) {
   await ensureAlphanumericDashboardTable()
   await db.execute(
-    'UPDATE AlphanumericDashboard SET name=?, dashboardUrl=?, description=?, previewImagePath=?, category=?, updatedAt=NOW() WHERE id=?',
+    'UPDATE AlphanumericDashboard SET name=?, dashboardUrl=?, description=?, previewImagePath=?, category=?, lastDataUpdate=?, updatedAt=NOW() WHERE id=?',
     [
       data.name,
       data.dashboardUrl,
       data.description || null,
       data.previewImagePath || null,
       data.category || null,
+      data.lastDataUpdate || null,
       id,
     ]
   )
@@ -697,4 +1516,216 @@ export async function updateAlphanumericDashboard(
 export async function deleteAlphanumericDashboard(id: number) {
   await ensureAlphanumericDashboardTable()
   await db.execute('DELETE FROM AlphanumericDashboard WHERE id = ?', [id])
+}
+
+// ==================== AI INSIGHT TILES (dashboards guardados) ====================
+let aiInsightTilesTableEnsured = false
+async function ensureAiInsightTilesTable() {
+  if (aiInsightTilesTableEnsured) return
+  await db.execute(
+    `CREATE TABLE IF NOT EXISTS AIInsightTile (
+      id INT NOT NULL AUTO_INCREMENT,
+      userId INT NOT NULL,
+      title VARCHAR(191) NOT NULL,
+      question TEXT NOT NULL,
+      datasetIds TEXT NOT NULL,
+      resultJson LONGTEXT NOT NULL,
+      shareToken VARCHAR(64) NOT NULL,
+      createdAt DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+      PRIMARY KEY (id),
+      UNIQUE KEY AIInsightTile_shareToken_key (shareToken),
+      INDEX AIInsightTile_userId_idx (userId)
+    ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
+  )
+  aiInsightTilesTableEnsured = true
+}
+
+export type AIInsightTileRow = {
+  id: number
+  userId: number
+  title: string
+  question: string
+  datasetIds: string
+  resultJson: string
+  shareToken: string
+  createdAt: string
+}
+
+export async function createAiInsightTile(data: {
+  userId: number
+  title: string
+  question: string
+  datasetIds: number[]
+  result: unknown
+}) {
+  await ensureAiInsightTilesTable()
+  const shareToken = crypto.randomBytes(16).toString('hex')
+  const [result] = (await db.execute(
+    'INSERT INTO AIInsightTile (userId, title, question, datasetIds, resultJson, shareToken) VALUES (?, ?, ?, ?, ?, ?)',
+    [
+      data.userId,
+      data.title,
+      data.question,
+      JSON.stringify(data.datasetIds),
+      JSON.stringify(data.result),
+      shareToken,
+    ]
+  )) as [{ insertId: number }, unknown]
+  return findAiInsightTileById(result.insertId, data.userId)
+}
+
+export async function findAiInsightTilesByUser(userId: number): Promise<AIInsightTileRow[]> {
+  await ensureAiInsightTilesTable()
+  const [rows] = (await db.execute(
+    'SELECT * FROM AIInsightTile WHERE userId = ? ORDER BY createdAt DESC',
+    [userId]
+  )) as [AIInsightTileRow[], unknown]
+  return rows
+}
+
+export async function findAiInsightTileById(id: number, userId: number): Promise<AIInsightTileRow | null> {
+  await ensureAiInsightTilesTable()
+  const [rows] = (await db.execute('SELECT * FROM AIInsightTile WHERE id = ? AND userId = ? LIMIT 1', [
+    id,
+    userId,
+  ])) as [AIInsightTileRow[], unknown]
+  return rows[0] || null
+}
+
+export async function findAiInsightTileByShareToken(token: string): Promise<AIInsightTileRow | null> {
+  await ensureAiInsightTilesTable()
+  const [rows] = (await db.execute('SELECT * FROM AIInsightTile WHERE shareToken = ? LIMIT 1', [
+    token,
+  ])) as [AIInsightTileRow[], unknown]
+  return rows[0] || null
+}
+
+export async function deleteAiInsightTile(id: number, userId: number) {
+  await ensureAiInsightTilesTable()
+  await db.execute('DELETE FROM AIInsightTile WHERE id = ? AND userId = ?', [id, userId])
+}
+
+// ==================== AI INSIGHT QUERIES (registo de utilização) ====================
+let aiInsightQueriesTableEnsured = false
+async function ensureAiInsightQueriesTable() {
+  if (aiInsightQueriesTableEnsured) return
+  await db.execute(
+    `CREATE TABLE IF NOT EXISTS AIInsightQuery (
+      id INT NOT NULL AUTO_INCREMENT,
+      userId INT NOT NULL,
+      question TEXT NOT NULL,
+      datasetIds TEXT NOT NULL,
+      confidence VARCHAR(20) NULL,
+      createdAt DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+      PRIMARY KEY (id),
+      INDEX AIInsightQuery_userId_idx (userId),
+      INDEX AIInsightQuery_createdAt_idx (createdAt)
+    ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
+  )
+  aiInsightQueriesTableEnsured = true
+}
+
+export async function logAiInsightQuery(data: {
+  userId: number
+  question: string
+  datasetIds: number[]
+  confidence?: string | null
+}) {
+  await ensureAiInsightQueriesTable()
+  await db.execute(
+    'INSERT INTO AIInsightQuery (userId, question, datasetIds, confidence) VALUES (?, ?, ?, ?)',
+    [data.userId, data.question, JSON.stringify(data.datasetIds), data.confidence || null]
+  )
+}
+
+export async function getAiInsightUsageSummary() {
+  await ensureAiInsightQueriesTable()
+
+  const [totals] = (await db.execute(
+    `SELECT
+       COUNT(*) as totalQueries,
+       COUNT(DISTINCT userId) as totalUsers,
+       SUM(CASE WHEN createdAt >= DATE(NOW()) THEN 1 ELSE 0 END) as todayQueries
+     FROM AIInsightQuery`
+  )) as [{ totalQueries: number; totalUsers: number; todayQueries: number }[], unknown]
+
+  const [byUser] = (await db.execute(
+    `SELECT u.id as userId, u.name, u.email,
+       COUNT(q.id) as totalQueries,
+       SUM(CASE WHEN q.createdAt >= DATE(NOW()) THEN 1 ELSE 0 END) as todayQueries,
+       MAX(q.createdAt) as lastQueryAt
+     FROM AIInsightQuery q
+     JOIN users u ON u.id = q.userId
+     GROUP BY u.id, u.name, u.email
+     ORDER BY totalQueries DESC
+     LIMIT 50`
+  )) as [any[], unknown]
+
+  const [recent] = (await db.execute(
+    `SELECT q.id, q.question, q.datasetIds, q.confidence, q.createdAt, u.name, u.email
+     FROM AIInsightQuery q
+     JOIN users u ON u.id = q.userId
+     ORDER BY q.createdAt DESC
+     LIMIT 30`
+  )) as [any[], unknown]
+
+  return {
+    totals: totals[0] ?? { totalQueries: 0, totalUsers: 0, todayQueries: 0 },
+    byUser,
+    recent,
+  }
+}
+
+// ==================== DATASET UPDATE SUBSCRIPTIONS (alertas) ====================
+let datasetUpdateSubscriptionTableEnsured = false
+async function ensureDatasetUpdateSubscriptionTable() {
+  if (datasetUpdateSubscriptionTableEnsured) return
+  await db.execute(
+    `CREATE TABLE IF NOT EXISTS DatasetUpdateSubscription (
+      id INT NOT NULL AUTO_INCREMENT,
+      userId INT NOT NULL,
+      datasetId INT NOT NULL,
+      createdAt DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+      PRIMARY KEY (id),
+      UNIQUE KEY DatasetUpdateSubscription_user_dataset_key (userId, datasetId),
+      INDEX DatasetUpdateSubscription_datasetId_idx (datasetId)
+    ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
+  )
+  datasetUpdateSubscriptionTableEnsured = true
+}
+
+export async function subscribeToDatasetUpdates(userId: number, datasetId: number) {
+  await ensureDatasetUpdateSubscriptionTable()
+  await db.execute('INSERT IGNORE INTO DatasetUpdateSubscription (userId, datasetId) VALUES (?, ?)', [
+    userId,
+    datasetId,
+  ])
+}
+
+export async function unsubscribeFromDatasetUpdates(userId: number, datasetId: number) {
+  await ensureDatasetUpdateSubscriptionTable()
+  await db.execute('DELETE FROM DatasetUpdateSubscription WHERE userId = ? AND datasetId = ?', [
+    userId,
+    datasetId,
+  ])
+}
+
+export async function isSubscribedToDatasetUpdates(userId: number, datasetId: number): Promise<boolean> {
+  await ensureDatasetUpdateSubscriptionTable()
+  const [rows] = (await db.execute(
+    'SELECT id FROM DatasetUpdateSubscription WHERE userId = ? AND datasetId = ? LIMIT 1',
+    [userId, datasetId]
+  )) as [{ id: number }[], unknown]
+  return rows.length > 0
+}
+
+export async function findDatasetUpdateSubscriberEmails(datasetId: number): Promise<string[]> {
+  await ensureDatasetUpdateSubscriptionTable()
+  const [rows] = (await db.execute(
+    `SELECT u.email FROM DatasetUpdateSubscription s
+     JOIN users u ON u.id = s.userId
+     WHERE s.datasetId = ?`,
+    [datasetId]
+  )) as [{ email: string }[], unknown]
+  return rows.map((r) => r.email)
 }

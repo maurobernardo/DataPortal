@@ -2,6 +2,7 @@
 
 import { Mail } from 'lucide-react'
 import { useState } from 'react'
+import { RequestInfoModal } from '@/components/RequestInfoModal'
 
 interface ReportRequestButtonProps {
   report: {
@@ -12,66 +13,51 @@ interface ReportRequestButtonProps {
     author?: string | null
     partners?: string | null
   }
-  email?: string
   className?: string
 }
 
 export function ReportRequestButton({
   report,
-  email = 'portaldedados@data4moz.com',
   className = 'inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 text-white font-medium hover:bg-green-700 transition disabled:opacity-60 disabled:cursor-not-allowed',
 }: ReportRequestButtonProps) {
-  const [loading, setLoading] = useState(false)
+  const [open, setOpen] = useState(false)
 
-  const handleClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault()
-    if (loading) return
-    setLoading(true)
-
+  async function handleSubmit(data: { name: string; email: string; message: string }) {
     try {
-      // Registra o request no backend (melhor esforço, sem bloquear o e-mail)
-      fetch('/api/report-requests', {
+      const res = await fetch('/api/report-requests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reportId: report.id }),
-      }).catch(() => {
-        // silencioso; não bloqueia o e-mail
+        body: JSON.stringify({ reportId: report.id, ...data }),
       })
-
-      const subject = `Request - Relatório completo: ${report.title} (${report.year})`
-      const body =
-        `Olá,\n\n` +
-        `Gostaria de solicitar o relatório completo por e-mail.\n\n` +
-        `Estudo: ${report.title}\n` +
-        `Ano: ${report.year}\n` +
-        `Cobertura: ${report.coverage}` +
-        `${report.author ? `\nAutor: ${report.author}` : ''}` +
-        `${report.partners ? `\nParceiro(s): ${report.partners}` : ''}\n\n` +
-        `Obrigado.`
-
-      const mailtoUrl = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(
-        subject
-      )}&body=${encodeURIComponent(body)}`
-
-      window.location.href = mailtoUrl
-    } finally {
-      setLoading(false)
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        return { ok: false, error: body?.error }
+      }
+      return { ok: true }
+    } catch {
+      return { ok: false, error: 'Falha de ligação. Tente novamente.' }
     }
   }
 
   return (
-    <button
-      type="button"
-      onClick={handleClick}
-      disabled={loading}
-      className={className}
-      aria-label={`Request do relatório completo: ${report.title}`}
-    >
-      <Mail className="w-4 h-4" />
-      {loading ? 'A enviar…' : 'Solicitar relatório'}
-    </button>
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className={className}
+        aria-label={`Pedido do relatório completo: ${report.title}`}
+      >
+        <Mail className="w-4 h-4" />
+        Solicitar relatório
+      </button>
+      {open && (
+        <RequestInfoModal
+          title={`Pedido: ${report.title}`}
+          subtitle={`${report.year} · ${report.coverage}`}
+          onSubmit={handleSubmit}
+          onClose={() => setOpen(false)}
+        />
+      )}
+    </>
   )
 }
-
-
-

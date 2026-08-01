@@ -12,6 +12,7 @@ interface AlphanumericDashboard {
   description?: string | null
   previewImagePath?: string | null
   category?: string | null
+  lastDataUpdate?: string | null
 }
 
 export function AlphanumericDashboardForm() {
@@ -27,6 +28,7 @@ export function AlphanumericDashboardForm() {
     description: '',
     previewImagePath: '',
     category: 'Outros',
+    lastDataUpdate: '',
   })
   const previewUploadSeqRef = useRef(0)
   const [categoryOptions, setCategoryOptions] = useState<string[]>(() =>
@@ -104,7 +106,7 @@ export function AlphanumericDashboardForm() {
       if (!response.ok) throw new Error('Erro ao salvar dashboard')
 
       previewUploadSeqRef.current++
-      setFormData({ name: '', dashboardUrl: '', description: '', previewImagePath: '', category: 'Outros' })
+      setFormData({ name: '', dashboardUrl: '', description: '', previewImagePath: '', category: 'Outros', lastDataUpdate: '' })
       setEditingId(null)
       await loadItems()
       router.refresh()
@@ -124,6 +126,7 @@ export function AlphanumericDashboardForm() {
       description: item.description || '',
       previewImagePath: item.previewImagePath || '',
       category: item.category || 'Outros',
+      lastDataUpdate: item.lastDataUpdate ? String(item.lastDataUpdate).slice(0, 10) : '',
     })
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -196,6 +199,18 @@ export function AlphanumericDashboardForm() {
             </p>
           </div>
           <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Dados actualizados até (opcional)</label>
+            <input
+              type="date"
+              value={formData.lastDataUpdate}
+              onChange={(e) => setFormData({ ...formData, lastDataUpdate: e.target.value })}
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Mostrado no portal como «Actualizado em». Deixe em branco se não souber.
+            </p>
+          </div>
+          <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Link do Dashboard *</label>
             <input
               type="url"
@@ -252,7 +267,7 @@ export function AlphanumericDashboardForm() {
                 type="button"
                 onClick={() => {
                   setEditingId(null)
-                  setFormData({ name: '', dashboardUrl: '', description: '', previewImagePath: '', category: 'Outros' })
+                  setFormData({ name: '', dashboardUrl: '', description: '', previewImagePath: '', category: 'Outros', lastDataUpdate: '' })
                 }}
                 className="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-semibold"
               >

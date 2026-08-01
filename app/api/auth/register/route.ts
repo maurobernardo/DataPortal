@@ -2,7 +2,9 @@ import { NextResponse } from 'next/server'
 import { generateOtp, generateToken, hashPassword } from '@/lib/auth'
 import { createAuthUser, deleteAuthUser, findUserByEmail, setUserOtp } from '@/lib/db'
 import { hasAuthMailConfig, sendRegistrationVerificationEmail } from '@/lib/mailer'
+import { notifyAdminsOfNewUser } from '@/lib/notifications'
 import { isStrongPassword, isValidEmail, normalizeEmail, normalizeText, rateLimit } from '@/lib/security'
+import { logger } from '@/lib/logger'
 
 export async function POST(request: Request) {
   try {
@@ -19,7 +21,7 @@ export async function POST(request: Request) {
     const password = normalizeText(body?.password, 256)
 
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
-    const rl = rateLimit(`register:${ip}:${email}`, 5, 15 * 60 * 1000)
+    const rl = await rateLimit(`register:${ip}:${email}`, 5, 15 * 60 * 1000)
     if (!rl.allowed) {
       return NextResponse.json(
         { error: 'Muitas tentativas. Tente novamente em instantes.' },
@@ -83,12 +85,16 @@ export async function POST(request: Request) {
       await sendRegistrationVerificationEmail(email, verificationCode, verificationToken)
     } catch (mailError) {
       await deleteAuthUser(user.id)
-      console.error('Register mail error:', mailError)
+      logger.error('register_mail_error', { error: mailError })
       return NextResponse.json(
         { error: 'Não foi possível enviar o email de confirmação. Tente novamente mais tarde.' },
         { status: 503 }
       )
     }
+
+    notifyAdminsOfNewUser({ name, email }).catch((error) => {
+      logger.error('error_notifying_admins_of_new_user', { error, email })
+    })
 
     return NextResponse.json({
       success: true,
@@ -97,7 +103,7 @@ export async function POST(request: Request) {
         'Registo concluído! Enviámos um código de 6 dígitos para o seu email. Introduza-o para activar a conta.',
     })
   } catch (error) {
-    console.error('Register error:', error)
+    logger.error('register_error', { error: error })
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
   }
 }

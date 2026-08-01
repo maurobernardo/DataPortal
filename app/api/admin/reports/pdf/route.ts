@@ -4,6 +4,7 @@ import { db, findUserByEmail } from '@/lib/db'
 import { buildDatasetFilterSql, buildStatisticDateFilterSql } from '@/lib/report-filters'
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { logger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic';
 
@@ -404,7 +405,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Erro ao gerar relatório PDF:', error);
+    logger.error('erro_ao_gerar_relat_rio_pdf', { error: error });
     return new Response(JSON.stringify({ error: 'Erro ao gerar relatório PDF' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },

@@ -716,12 +716,12 @@ export function InteractiveGeoMapPreview({
       onPointerDown={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
     >
-      <label className="geo-interactive-map__ctrl">
-        <span className="geo-interactive-map__ctrl-label">Visualização</span>
+      <label className="geo-interactive-map__ctrl geo-interactive-map__ctrl--primary">
+        <span className="geo-interactive-map__ctrl-label">Alterar Visualização</span>
         <select
           value={colorMode}
           onChange={(e) => setColorMode(e.target.value as ColorMode)}
-          className="geo-interactive-map__select"
+          className="geo-interactive-map__select geo-interactive-map__select--primary"
         >
           <option value="atributo" disabled={numericFields.length === 0}>
             Gradiente numérico

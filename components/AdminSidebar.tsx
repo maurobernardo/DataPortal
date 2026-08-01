@@ -4,12 +4,15 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   BarChart3,
+  Brain,
   Database,
   Home,
   Settings,
   LogOut,
   FolderOpen,
   Mail,
+  MapPinned,
+  MessageSquare,
   FileText,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -20,9 +23,11 @@ interface AdminSidebarProps {
     email: string
     name?: string
   }
+  /** Aba activa em /admin (ex.: 'requests', 'maps') — vem do searchParams da página servidor. */
+  activeTab?: string
 }
 
-export function AdminSidebar({ user }: AdminSidebarProps) {
+export function AdminSidebar({ user, activeTab }: AdminSidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
 
@@ -37,7 +42,25 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
       icon: Database,
       label: 'Cadastrar Dados',
       href: '/admin',
-      active: pathname === '/admin',
+      active: pathname === '/admin' && !activeTab,
+    },
+    {
+      icon: MessageSquare,
+      label: 'Solicitações',
+      href: '/admin?tab=requests',
+      active: pathname === '/admin' && activeTab === 'requests',
+    },
+    {
+      icon: MapPinned,
+      label: 'Mapas Inteligentes',
+      href: '/admin?tab=maps',
+      active: pathname === '/admin' && activeTab === 'maps',
+    },
+    {
+      icon: Brain,
+      label: 'Utilização de IA',
+      href: '/dashboard/ia-utilizacao',
+      active: pathname === '/dashboard/ia-utilizacao',
     },
   ]
   const mainLinks = [
@@ -45,6 +68,7 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
     { icon: FolderOpen, label: 'Geoespaciais', href: '/dados-espaciais' },
     { icon: Database, label: 'Alfanuméricos', href: '/dados-alfanumericos' },
     { icon: BarChart3, label: 'Dashboard', href: '/dashboards-alfanumericos' },
+    { icon: MapPinned, label: 'Mapas Inteligentes', href: '/maps' },
     { icon: FileText, label: 'Relatórios', href: '/relatorios' },
   ]
 

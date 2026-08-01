@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAlphanumericDashboard, findAllAlphanumericDashboards } from '@/lib/db'
 import { getCurrentAdmin } from '@/lib/auth'
+import { notifyUsersOfNewContent } from '@/lib/notifications'
+import { logger } from '@/lib/logger'
 
 export async function GET() {
   try {
     const dashboards = await findAllAlphanumericDashboards()
     return NextResponse.json(dashboards)
   } catch (error) {
-    console.error('Error fetching alphanumeric dashboards:', error)
+    logger.error('error_fetching_alphanumeric_dashboards', { error: error })
     return NextResponse.json({ error: 'Erro ao buscar dashboards alfanuméricos' }, { status: 500 })
   }
 }
@@ -30,11 +32,18 @@ export async function POST(request: NextRequest) {
       description: data.description ? String(data.description) : null,
       previewImagePath: data.previewImagePath ? String(data.previewImagePath) : null,
       category: data.category ? String(data.category) : null,
+      lastDataUpdate: data.lastDataUpdate ? String(data.lastDataUpdate) : null,
     })
+
+    if (dashboard) {
+      notifyUsersOfNewContent('dashboard', dashboard.name, '/dashboards-alfanumericos').catch((error) => {
+        logger.error('error_notifying_users_of_new_dashboard', { error, dashboardId: dashboard.id })
+      })
+    }
 
     return NextResponse.json(dashboard)
   } catch (error) {
-    console.error('Error creating alphanumeric dashboard:', error)
+    logger.error('error_creating_alphanumeric_dashboard', { error: error })
     return NextResponse.json({ error: 'Erro ao criar dashboard alfanumérico' }, { status: 500 })
   }
 }

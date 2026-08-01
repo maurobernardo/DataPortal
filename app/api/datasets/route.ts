@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createDataset, findCategoryById, findDatasets } from '@/lib/db'
+import { createDataset, findCategoryById, findDatasets, setDatasetPreviewMeta } from '@/lib/db'
 import { getCurrentAdmin } from '@/lib/auth'
+import { getDatasetPreview } from '@/lib/dataset-preview'
+import { notifyUsersOfNewContent } from '@/lib/notifications'
+import { logger } from '@/lib/logger'
 
 const ALLOWED_DATA_TYPES = new Set(['geoespacial', 'alfanumerico'])
 
@@ -43,7 +46,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(datasets);
   } catch (error) {
-    console.error('Error fetching datasets:', error);
+    logger.error('error_fetching_datasets', { error: error });
     return NextResponse.json(
       { error: 'Erro ao buscar datasets' },
       { status: 500 }
@@ -115,9 +118,24 @@ export async function POST(request: NextRequest) {
       dataType,
     })
 
+    if (dataset) {
+      try {
+        const preview = await getDatasetPreview(dataset)
+        const available = 'type' in preview && (preview.type === 'table' || preview.type === 'geo')
+        const bbox = 'type' in preview && preview.type === 'geo' ? preview.bbox : null
+        await setDatasetPreviewMeta(dataset.id, { previewAvailable: available, bbox })
+      } catch (error) {
+        logger.error('error_computing_preview_meta_on_create', { error, datasetId: dataset.id })
+      }
+
+      notifyUsersOfNewContent('dataset', dataset.title, `/dataset/${dataset.id}`).catch((error) => {
+        logger.error('error_notifying_users_of_new_dataset', { error, datasetId: dataset.id })
+      })
+    }
+
     return NextResponse.json(dataset)
   } catch (error: any) {
-    console.error('Error creating dataset:', error)
+    logger.error('error_creating_dataset', { error: error })
     return NextResponse.json(
       { error: 'Erro ao criar dataset' },
       { status: 500 }

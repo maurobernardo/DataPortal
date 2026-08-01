@@ -3,6 +3,7 @@ import { generateOtp } from '@/lib/auth'
 import { findUserById, setUserOtp } from '@/lib/db'
 import { sendOtpEmail } from '@/lib/mailer'
 import { isValidEmail, normalizeEmail, rateLimit } from '@/lib/security'
+import { logger } from '@/lib/logger'
 
 export async function POST(request: Request) {
   try {
@@ -11,7 +12,7 @@ export async function POST(request: Request) {
     const email = normalizeEmail(body?.email)
 
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
-    const rl = rateLimit(`otp-resend:${ip}:${email}`, 5, 15 * 60 * 1000)
+    const rl = await rateLimit(`otp-resend:${ip}:${email}`, 5, 15 * 60 * 1000)
     if (!rl.allowed) {
       return NextResponse.json(
         { error: 'Muitas tentativas. Tente novamente em instantes.' },
@@ -44,7 +45,7 @@ export async function POST(request: Request) {
       message: 'Novo código enviado para o seu email.',
     })
   } catch (error) {
-    console.error('Resend OTP error:', error)
+    logger.error('resend_otp_error', { error: error })
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
   }
 }

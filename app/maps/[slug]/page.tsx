@@ -1,13 +1,19 @@
 import { notFound } from 'next/navigation'
-import { findMapBySlug } from '@/lib/maps-catalog'
+import { applyMapOverrides, findMapBySlug } from '@/lib/maps-catalog'
+import { findMapOverride } from '@/lib/db'
 import { HealthMapDashboard } from '@/components/maps/HealthMapDashboard'
 import PolesMapDashboard from '@/components/maps/PolesMapDashboard'
 import MalariaMapDashboard from '@/components/maps/MalariaMapDashboard'
 import FeederPulseDashboard from '@/components/maps/FeederPulseDashboard'
 import { MapDetailToolbar } from '@/components/maps/MapDetailToolbar'
+import { RecordMapView } from '@/components/maps/RecordMapView'
 import '../../maps-catalog.css'
 
 type PageProps = { params: { slug: string } }
+
+// Metadados podem ser editados via admin (MapOverride) — revalida periodicamente em vez de
+// forçar renderização dinâmica por pedido, mantendo o benefício do generateStaticParams.
+export const revalidate = 60
 
 export function generateStaticParams() {
   return [
@@ -18,8 +24,16 @@ export function generateStaticParams() {
   ]
 }
 
+async function getMapWithOverride(slug: string) {
+  const base = findMapBySlug(slug)
+  if (!base) return null
+  const override = await findMapOverride(slug)
+  if (!override) return base
+  return applyMapOverrides([base], [override])[0]
+}
+
 export async function generateMetadata({ params }: PageProps) {
-  const map = findMapBySlug(params.slug)
+  const map = await getMapWithOverride(params.slug)
   if (!map) return { title: 'Mapa não encontrado' }
   return {
     title: `${map.title} | Portal de Dados`,
@@ -27,12 +41,13 @@ export async function generateMetadata({ params }: PageProps) {
   }
 }
 
-export default function MapDetailPage({ params }: PageProps) {
-  const map = findMapBySlug(params.slug)
+export default async function MapDetailPage({ params }: PageProps) {
+  const map = await getMapWithOverride(params.slug)
   if (!map) notFound()
 
   return (
     <div className="mp-map-page">
+      <RecordMapView slug={map.slug} title={map.title} />
       <MapDetailToolbar
         map={{
           title: map.title,

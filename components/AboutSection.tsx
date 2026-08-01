@@ -72,7 +72,7 @@ export function AboutSection() {
             <span className="text-[#064E2C]">decisões que importam</span>
           </h2>
           <p className="text-[15px] md:text-[17px] text-gray-600 leading-relaxed">
-            Plataforma aberta da Data4Moz para dados, indicadores e inteligência territorial — com
+            Plataforma aberta da Data4Moz para dados, indicadores e inteligência territorial, com
             pesquisa unificada, metadados e acesso aberto a todos os módulos do portal.
           </p>
         </div>
@@ -123,7 +123,7 @@ export function AboutSection() {
             <p className="text-[15px] text-gray-600 leading-[1.8]">
               Com esta iniciativa, a Data4Moz reforça o seu compromisso de tornar os dados mais
               acessíveis, comparáveis e úteis, contribuindo para um ecossistema de dados abertos mais
-              robusto em Moçambique.
+              completo em Moçambique.
             </p>
           </div>
 
@@ -145,9 +145,9 @@ export function AboutSection() {
 
             <div className="border-l-[3px] border-[#064E2C] bg-white rounded-r-xl px-5 py-4">
               <p className="text-sm text-gray-600 leading-relaxed italic">
-                &ldquo;Do catálogo ao mapa analítico — dados e decisão no mesmo fluxo.&rdquo;
+                &ldquo;Do catálogo ao mapa analítico: dados e decisão no mesmo fluxo.&rdquo;
               </p>
-              <cite className="block mt-2 text-xs text-gray-400 not-italic font-medium">
+              <cite className="block mt-2 text-xs text-gray-500 not-italic font-medium">
                 Equipa Data4Moz
               </cite>
             </div>
@@ -175,7 +175,7 @@ export function AboutSection() {
             </div>
             <div>
               <p className="text-sm font-bold text-gray-900">Data4Moz</p>
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-gray-500">
                 Geoespacial · Alfanumérico · Dashboards · Mapas inteligentes · Relatórios
               </p>
             </div>
@@ -209,7 +209,7 @@ export function AboutSection() {
               target="_blank"
               rel="noopener noreferrer"
               className="group inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-2 border-[#E2E8E5] bg-white text-[#0A66C2] shadow-sm transition-all duration-200 hover:border-[#0A66C2] hover:bg-[#E8F4FC] hover:shadow-[0_8px_24px_rgba(10,102,194,0.18)] hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A66C2] focus-visible:ring-offset-2"
-              aria-label="Data4Moz no LinkedIn — publicações da empresa"
+              aria-label="Data4Moz no LinkedIn: publicações da empresa"
             >
               <Linkedin className="h-5 w-5 transition-transform group-hover:scale-105" strokeWidth={2} />
             </a>

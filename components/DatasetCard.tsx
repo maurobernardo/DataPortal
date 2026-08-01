@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { Calendar, Package, Eye, Download, ArrowRight, MapPin, Database, FileText } from 'lucide-react'
 
@@ -25,11 +26,21 @@ interface DatasetCardProps {
 }
 
 export function DatasetCard({ dataset, index }: DatasetCardProps) {
+  const [animate, setAnimate] = useState(false)
+  const hasAnimated = useRef(false)
+
+  useEffect(() => {
+    if (!hasAnimated.current) {
+      hasAnimated.current = true
+      setAnimate(true)
+    }
+  }, [])
+
   return (
     <Link
       href={`/dataset/${dataset.id}`}
-      className="group bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100 hover:border-green-300 transition-all duration-300 hover-lift animate-slide-up"
-      style={{ animationDelay: `${index * 0.05}s` }}
+      className={`group bg-white rounded-[14px] border border-[#E2E8E5] hover:border-[#CFE3D6] shadow-[var(--pd-shadow-sm)] hover:shadow-[var(--pd-shadow-md)] hover:-translate-y-0.5 transition-all duration-200 overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#064E2C] focus-visible:ring-offset-2 ${animate ? 'animate-slide-up' : ''}`}
+      style={animate ? { animationDelay: `${index * 0.05}s` } : undefined}
     >
       {/* Header do Card com Gradiente */}
       <div className="bg-gradient-to-br from-green-500 via-green-600 to-red-500 p-6 text-white relative overflow-hidden">

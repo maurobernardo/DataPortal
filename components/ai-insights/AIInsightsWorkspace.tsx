@@ -94,7 +94,7 @@ export function AIInsightsWorkspace() {
           </h1>
           <p className="text-[15px] text-gray-600 leading-relaxed">
             Pesquise em linguagem natural no catálogo do portal. Os resultados ligam directamente a
-            datasets, mapas analíticos, dashboards alfanuméricos e relatórios — já disponíveis hoje.
+            datasets, mapas analíticos, dashboards alfanuméricos e relatórios, já disponíveis hoje.
             Análise generativa avançada chega numa fase seguinte.
           </p>
         </div>

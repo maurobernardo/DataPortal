@@ -106,7 +106,7 @@ const mainFeatures: {
     icon: MapPinned,
     title: 'Mapas com análise integrada',
     description:
-      'Experiências geoespaciais com KPIs, gráficos, filtros cruzados e exportação — além do mapa base.',
+      'Experiências geoespaciais com KPIs, gráficos, filtros cruzados e exportação, além do mapa base.',
     tag: 'Mapas',
     num: '08',
     variant: 'amber',

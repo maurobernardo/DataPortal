@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import {
@@ -12,6 +13,7 @@ import {
   Database,
   FileText,
   Filter,
+  Loader2,
   Download as DownloadIcon
 } from 'lucide-react'
 import { TemporalChart, type TemporalGranularity } from './TemporalChart'
@@ -27,7 +29,7 @@ import {
   PointElement,
   LineElement,
 } from 'chart.js'
-import { DashboardSidebar } from './DashboardSidebar'
+import { AdminSidebar } from './AdminSidebar'
 import { DashboardHeader } from './DashboardHeader'
 
 ChartJS.register(ArcElement, Tooltip, Legend, BarElement, CategoryScale, LinearScale, PointElement, LineElement)
@@ -133,6 +135,37 @@ interface ModernDashboardProps {
 type TemporalPeriod = '7' | '30' | 'month'
 
 export function ModernDashboard({ data, user }: ModernDashboardProps) {
+  const router = useRouter()
+  const [roleUpdatingId, setRoleUpdatingId] = useState<number | null>(null)
+
+  async function handleRoleToggle(targetId: number, currentRole: string) {
+    const nextRole = currentRole === 'admin' ? 'user' : 'admin'
+    const confirmMsg =
+      nextRole === 'admin'
+        ? 'Promover este utilizador a administrador?'
+        : 'Remover o acesso de administrador deste utilizador?'
+    if (!confirm(confirmMsg)) return
+
+    setRoleUpdatingId(targetId)
+    try {
+      const res = await fetch(`/api/admin/users/${targetId}/role`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: nextRole }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        alert(body?.error || 'Erro ao atualizar papel do utilizador')
+        return
+      }
+      router.refresh()
+    } catch {
+      alert('Erro ao atualizar papel do utilizador')
+    } finally {
+      setRoleUpdatingId(null)
+    }
+  }
+
   const [reportFilters, setReportFilters] = useState<ReportFilter>({
     startDate: '',
     endDate: '',
@@ -246,7 +279,7 @@ export function ModernDashboard({ data, user }: ModernDashboardProps) {
     <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar */}
       <div className="hidden md:block">
-        <DashboardSidebar user={user} />
+        <AdminSidebar user={user} />
       </div>
 
       {/* Main Content */}
@@ -627,7 +660,33 @@ export function ModernDashboard({ data, user }: ModernDashboardProps) {
                               {u.emailVerified ? 'Confirmado' : 'Pendente'}
                             </span>
                           </td>
-                          <td className="py-3 pr-4 capitalize text-gray-600">{u.role}</td>
+                          <td className="py-3 pr-4">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold capitalize ${
+                                  u.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-600'
+                                }`}
+                              >
+                                {u.role}
+                              </span>
+                              {u.email !== user.email && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleRoleToggle(u.id, u.role)}
+                                  disabled={roleUpdatingId === u.id}
+                                  className="text-xs font-semibold text-green-700 hover:underline disabled:opacity-50 disabled:no-underline whitespace-nowrap"
+                                >
+                                  {roleUpdatingId === u.id ? (
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin inline" />
+                                  ) : u.role === 'admin' ? (
+                                    'Remover admin'
+                                  ) : (
+                                    'Promover'
+                                  )}
+                                </button>
+                              )}
+                            </div>
+                          </td>
                           <td className="py-3 text-gray-500 whitespace-nowrap">
                             {format(new Date(u.createdAt), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
                           </td>

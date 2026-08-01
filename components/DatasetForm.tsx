@@ -35,9 +35,11 @@ export function DatasetForm() {
   const [submitting, setSubmitting] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [uploadedFile, setUploadedFile] = useState<{ name: string; size: string; path: string } | null>(null)
+  const [legacyExcelWarning, setLegacyExcelWarning] = useState(false)
   const [dragActive, setDragActive] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
+  const [search, setSearch] = useState('')
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
   const [toastType, setToastType] = useState<'success' | 'error'>('success')
@@ -91,19 +93,20 @@ export function DatasetForm() {
     }
   }
 
-  async function loadData(page: number = 1) {
+  async function loadData(page: number = 1, searchTerm: string = search) {
     try {
       const take = 10;
       const offset = (page - 1) * take;
+      const searchQs = searchTerm ? `&search=${encodeURIComponent(searchTerm)}` : ''
       const [catsRes, datasetsRes] = await Promise.all([
         fetch('/api/categories'),
-        fetch(`/api/datasets?offset=${offset}&take=${take}`),
+        fetch(`/api/datasets?offset=${offset}&take=${take}${searchQs}`),
       ])
       const [cats, datasets] = await Promise.all([
         catsRes.json(),
         datasetsRes.json(),
       ])
-      
+
       // Filtrar categorias baseado no dataType selecionado
       if (formData.dataType) {
         const filteredCats = cats.filter((cat: Category) => cat.dataType === formData.dataType)
@@ -112,11 +115,11 @@ export function DatasetForm() {
         setCategories(cats)
       }
       setDatasets(datasets)
-      
+
       // Obter total de páginas
-      const countRes = await fetch('/api/datasets/count');
+      const countRes = await fetch(`/api/datasets/count${searchTerm ? `?search=${encodeURIComponent(searchTerm)}` : ''}`);
       let total = 0;
-      
+
       if (countRes.ok) {
         const countData = await countRes.json();
         total = countData.total;
@@ -126,8 +129,8 @@ export function DatasetForm() {
         const allDatasets = await allDatasetsRes.json();
         total = allDatasets.length;
       }
-      
-      setTotalPages(Math.ceil(total / take));
+
+      setTotalPages(Math.max(1, Math.ceil(total / take)));
       setCurrentPage(page);
     } catch (error) {
       console.error('Error loading data:', error)
@@ -136,11 +139,21 @@ export function DatasetForm() {
     }
   }
 
+  function handleSearchSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    loadData(1, search)
+  }
+
   async function uploadFile(file: File) {
     if (!file) return
 
     setUploading(true)
     setUploadedFile(null)
+
+    const ext = file.name.toLowerCase().slice(file.name.lastIndexOf('.'))
+    setLegacyExcelWarning(
+      formData.dataType === 'alfanumerico' && (ext === '.xls' || ext === '.ods')
+    )
 
     try {
       // Geoespacial: Shapefile deve ser ZIP (um .shp sozinho é incompleto)
@@ -592,7 +605,7 @@ export function DatasetForm() {
                         <span className="text-xs md:text-sm text-gray-500 text-center px-4">
                           ou arraste o arquivo aqui
                         </span>
-                        <span className="text-xs text-gray-400 mt-1 text-center px-4">
+                        <span className="text-xs text-gray-500 mt-1 text-center px-4">
                           {formData.dataType === 'geoespacial'
                             ? 'Formatos: Shapefile (.zip), GeoTiff (.tif/.tiff), GeoJSON (.geojson/.json) (máx. 100MB)'
                             : 'Aceita qualquer tipo de ficheiro (máx. 100MB)'}
@@ -600,6 +613,17 @@ export function DatasetForm() {
                       </>
                     )}
                   </label>
+                </div>
+              )}
+
+              {legacyExcelWarning && (
+                <div className="mt-3 bg-amber-50 border-2 border-amber-200 rounded-xl p-3 flex items-start gap-2 text-xs text-amber-800">
+                  <XCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <span>
+                    Ficheiros .xls/.ods antigos não têm pré-visualização no portal (só é suportado .xlsx). O upload
+                    e download continuam a funcionar normalmente. Se quiser pré-visualização, guarde o ficheiro
+                    como .xlsx antes de o carregar.
+                  </span>
                 </div>
               )}
 
@@ -742,12 +766,40 @@ export function DatasetForm() {
             </div>
           </div>
 
+          <form onSubmit={handleSearchSubmit} className="p-4 pb-0 flex gap-2">
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Pesquisar por título, descrição ou palavras-chave…"
+              className="flex-1 px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
+            />
+            <button
+              type="submit"
+              className="px-5 py-2.5 bg-green-600 text-white rounded-xl font-semibold text-sm hover:bg-green-700"
+            >
+              Pesquisar
+            </button>
+            {search && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearch('')
+                  loadData(1, '')
+                }}
+                className="px-4 py-2.5 bg-gray-100 text-gray-600 rounded-xl font-semibold text-sm hover:bg-gray-200"
+              >
+                Limpar
+              </button>
+            )}
+          </form>
+
           <div className="p-4 space-y-3 max-h-[700px] overflow-y-auto">
             {datasets.length === 0 ? (
               <div className="text-center py-12">
                 <Database className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                 <p className="text-gray-500">Nenhum dataset cadastrado ainda.</p>
-                <p className="text-gray-400 text-sm mt-2">Crie o primeiro dataset usando o formulário ao lado.</p>
+                <p className="text-gray-500 text-sm mt-2">Crie o primeiro dataset usando o formulário ao lado.</p>
               </div>
             ) : (
               <>

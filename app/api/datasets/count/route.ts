@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { logger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
 
@@ -33,7 +34,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ total });
   } catch (error) {
-    console.error('Error counting datasets:', error);
+    logger.error('error_counting_datasets', { error: error });
     return NextResponse.json(
       { error: 'Erro ao contar datasets' },
       { status: 500 }

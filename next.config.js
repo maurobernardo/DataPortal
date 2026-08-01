@@ -30,7 +30,7 @@ const nextConfig = {
           {
             key: 'Content-Security-Policy',
             value:
-              "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.tile.openstreetmap.org https://*.opentopomap.org https://*.basemaps.cartocdn.com https://server.arcgisonline.com https://*.arcgis.com https://unpkg.com; font-src 'self' data:; connect-src 'self' https://*.arcgis.com; frame-src 'self' https://*.arcgis.com https://*.maps.arcgis.com https://app.powerbi.com https://*.powerbi.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+              "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://translate.google.com https://translate.googleapis.com https://translate-pa.googleapis.com https://www.gstatic.com https://www.google.com; style-src 'self' 'unsafe-inline' https://www.gstatic.com https://fonts.googleapis.com; img-src 'self' data: blob: https://*.tile.openstreetmap.org https://*.opentopomap.org https://*.basemaps.cartocdn.com https://server.arcgisonline.com https://*.arcgis.com https://unpkg.com https://www.gstatic.com; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://*.arcgis.com https://translate.googleapis.com https://translate-pa.googleapis.com https://translate.google.com; frame-src 'self' https://*.arcgis.com https://*.maps.arcgis.com https://app.powerbi.com https://*.powerbi.com https://translate.google.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
           },
         ],
       },

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { Globe, Home, FolderOpen, Settings, Database, FileText, Menu, X, LogOut, BarChart3 } from 'lucide-react'
+import { Globe, Home, FolderOpen, Settings, Database, FileText, MapPinned, Menu, X, LogOut, BarChart3 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
@@ -80,6 +80,13 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
             >
               <BarChart3 className="w-4 h-4" />
               <span className="text-sm font-medium">Alfanuméricos</span>
+            </Link>
+            <Link
+              href="/maps"
+              className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition"
+            >
+              <MapPinned className="w-4 h-4" />
+              <span className="text-sm font-medium">Mapas Inteligentes</span>
             </Link>
             {user && (
               <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center text-white font-semibold ml-2">
@@ -176,6 +183,10 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
               <Link href="/dashboards-alfanumericos" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50">
                 <BarChart3 className="w-5 h-5" />
                 <span>Alfanuméricos</span>
+              </Link>
+              <Link href="/maps" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50">
+                <MapPinned className="w-5 h-5" />
+                <span>Mapas Inteligentes</span>
               </Link>
             </div>
             <div className="mt-6 pt-4 border-t border-gray-200">

@@ -1,5 +1,74 @@
-/** Miniatura decorativa SVG (sem dados fictícios — padrão visual por índice). */
-export function GeoLayerThumb({ index }: { index: number }) {
+'use client'
+
+import { useEffect, useState } from 'react'
+import { getCachedPreview, setCachedPreview } from '@/lib/preview-cache'
+
+type GeoThumbData = { type: 'geo'; bbox: [number, number, number, number]; paths: [number, number][][] }
+
+/** Miniatura real baseada na geometria do ficheiro (bbox + traçado simplificado). */
+export function GeoLayerThumb({ index, datasetId }: { index: number; datasetId?: number }) {
+  const [thumb, setThumb] = useState<GeoThumbData | null>(null)
+
+  useEffect(() => {
+    if (!datasetId) return
+    let alive = true
+    const cached = getCachedPreview<GeoThumbData>(datasetId, 'thumbnail')
+    if (cached && cached.type === 'geo') {
+      setThumb(cached)
+      return
+    }
+    fetch(`/api/datasets/${datasetId}/thumbnail`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (!alive) return
+        setCachedPreview(datasetId, data, 'thumbnail')
+        if (data?.type === 'geo' && Array.isArray(data.paths) && data.paths.length > 0) {
+          setThumb(data)
+        }
+      })
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [datasetId])
+
+  if (thumb) {
+    const [minX, minY, maxX, maxY] = thumb.bbox
+    const w = Math.max(maxX - minX, 1e-6)
+    const h = Math.max(maxY - minY, 1e-6)
+    const pad = 0.1
+    const vbX = minX - w * pad
+    const vbY = minY - h * pad
+    const vbW = w * (1 + pad * 2)
+    const vbH = h * (1 + pad * 2)
+    const strokeWidth = Math.max(vbW, vbH) / 180
+
+    return (
+      <svg viewBox={`${vbX} ${vbY} ${vbW} ${vbH}`} preserveAspectRatio="xMidYMid meet" aria-hidden>
+        <rect x={vbX} y={vbY} width={vbW} height={vbH} fill="color-mix(in srgb, var(--pd-green-50) 80%, white)" />
+        <g transform={`translate(0, ${2 * vbY + vbH}) scale(1, -1)`}>
+          {thumb.paths.map((path, i) => (
+            <polyline
+              key={i}
+              points={path.map(([x, y]) => `${x},${y}`).join(' ')}
+              fill="none"
+              stroke="var(--pd-green-700)"
+              strokeWidth={strokeWidth}
+              strokeLinejoin="round"
+              strokeLinecap="round"
+              opacity={0.85}
+            />
+          ))}
+        </g>
+      </svg>
+    )
+  }
+
+  return <GeoLayerThumbDecorative index={index} />
+}
+
+/** Miniatura decorativa (usada enquanto carrega a real, ou quando o dataset não tem geometria disponível). */
+function GeoLayerThumbDecorative({ index }: { index: number }) {
   const variant = index % 4
   if (variant === 0) {
     return (

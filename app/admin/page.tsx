@@ -4,7 +4,11 @@ import { AdminPanel } from '@/components/AdminPanel'
 import { AdminSidebar } from '@/components/AdminSidebar'
 import { AdminHeader } from '@/components/AdminHeader'
 
-export default async function AdminPage() {
+export default async function AdminPage({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined }
+}) {
   const user = await getCurrentUserProfile()
 
   if (!user) {
@@ -15,11 +19,13 @@ export default async function AdminPage() {
     redirect('/')
   }
 
+  const tab = typeof searchParams.tab === 'string' ? searchParams.tab : undefined
+
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar */}
       <div className="hidden md:block">
-        <AdminSidebar user={user} />
+        <AdminSidebar user={user} activeTab={tab} />
       </div>
 
       {/* Main Content */}
@@ -30,7 +36,7 @@ export default async function AdminPage() {
         {/* Content */}
         <div className="p-4 md:p-6">
           <div className="max-w-7xl mx-auto">
-            <AdminPanel />
+            <AdminPanel initialTab={tab} />
           </div>
         </div>
       </div>

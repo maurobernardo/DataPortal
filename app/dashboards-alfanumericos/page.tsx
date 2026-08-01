@@ -1,17 +1,22 @@
-import { findAllAlphanumericDashboards, findTopAlphanumericDashboardsByViews } from '@/lib/db'
+import { findAllAlphanumericDashboards, findTopAlphanumericDashboardsByViews, findEntityFavoriteIds } from '@/lib/db'
+import { getCurrentUser } from '@/lib/auth'
 import { DashboardFeatured } from '@/components/dashboards/DashboardFeatured'
 import { DashboardGallery } from '@/components/dashboards/DashboardGallery'
 import { DashboardStaticSections } from '@/components/dashboards/DashboardStaticSections'
 import { DashboardCardPreview } from '@/components/dashboards/DashboardCardPreview'
+import { RecentlyViewedRail } from '@/components/RecentlyViewedRail'
 import '../dashboards-catalog.css'
 
 export const dynamic = 'force-dynamic'
 
 export default async function AlphanumericDashboardsPage() {
-  const [dashboards, featured] = await Promise.all([
+  const session = await getCurrentUser()
+  const [dashboards, featured, favoriteIds] = await Promise.all([
     findAllAlphanumericDashboards(),
     findTopAlphanumericDashboardsByViews(2),
+    session ? findEntityFavoriteIds(session.userId, 'dashboard') : Promise.resolve([]),
   ])
+  const favoriteIdSet = new Set(favoriteIds)
   const heroItem = featured[0] ?? dashboards[0]
 
   const categoryCount = new Set(
@@ -28,7 +33,7 @@ export default async function AlphanumericDashboardsPage() {
               Dos dados oficiais às <span className="accent">decisões diárias.</span>
             </h1>
             <p className="db-hero-lede">
-              Painéis publicados por instituições nacionais — indicadores actualizados, pré-visualização
+              Painéis publicados por instituições nacionais: indicadores actualizados, pré-visualização
               integrada e acesso directo ao site oficial de cada dashboard.
             </p>
             <div className="db-hero-stats">
@@ -67,14 +72,18 @@ export default async function AlphanumericDashboardsPage() {
       </section>
 
       {featured.length > 0 && (
-        <DashboardFeatured dashboards={featured} totalCount={dashboards.length} />
+        <DashboardFeatured dashboards={featured} totalCount={dashboards.length} favoriteIds={favoriteIdSet} />
       )}
 
-      <div id="galeria-dashboards">
-        <DashboardGallery dashboards={dashboards} />
+      <div className="db-section-inner">
+        <RecentlyViewedRail dataType="dashboard" />
       </div>
 
-      <DashboardStaticSections dashboards={dashboards} />
+      <div id="galeria-dashboards">
+        <DashboardGallery dashboards={dashboards} favoriteIds={favoriteIdSet} />
+      </div>
+
+      <DashboardStaticSections dashboards={dashboards} favoriteIds={favoriteIdSet} />
     </div>
   )
 }

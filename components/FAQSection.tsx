@@ -30,7 +30,7 @@ const FAQ_ITEMS: { question: string; answer: ReactNode }[] = [
         <Link href="/maps" className="font-semibold text-[#064E2C] hover:underline">
           Mapas inteligentes
         </Link>{' '}
-        combinam mapa territorial com gráficos, filtros cruzados e exportação — não são apenas um mapa
+        combinam mapa territorial com gráficos, filtros cruzados e exportação, não são apenas um mapa
         estático.
       </>
     ),
@@ -89,7 +89,7 @@ export function FAQSection() {
             </span>
           </div>
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight mb-3">
-            FAQ — <span className="text-[#064E2C]">respostas rápidas</span>
+            FAQ: <span className="text-[#064E2C]">respostas rápidas</span>
           </h2>
           <p className="text-[15px] md:text-[16px] text-gray-600 leading-relaxed">
             Catálogos, dashboards, mapas analíticos, relatórios e pesquisa unificada. Ainda precisa de

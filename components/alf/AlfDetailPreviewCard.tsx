@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Table2 } from 'lucide-react'
 import { AlfPreviewInspector } from '@/components/alf/AlfPreviewInspector'
 import type { AlfTablePreview } from '@/components/alf/alf-preview-utils'
+import { getCachedPreview, setCachedPreview } from '@/lib/preview-cache'
 
 export function AlfDetailPreviewCard({
   datasetId,
@@ -28,6 +29,28 @@ export function AlfDetailPreviewCard({
     }
 
     let cancelled = false
+
+    const applyData = (data: any) => {
+      if (cancelled) return
+      if (data?.type === 'table' && Array.isArray(data.columns)) {
+        setPreview({
+          type: 'table',
+          columns: data.columns,
+          rows: Array.isArray(data.rows) ? data.rows : [],
+          delimiter: data.delimiter,
+        })
+      } else {
+        setPreview(null)
+        setError(data?.error || 'Formato sem pré-visualização tabular.')
+      }
+    }
+
+    const cached = getCachedPreview(datasetId)
+    if (cached) {
+      applyData(cached)
+      return
+    }
+
     setLoading(true)
     setError(null)
 
@@ -40,17 +63,8 @@ export function AlfDetailPreviewCard({
           setError(data?.error || 'Pré-visualização indisponível')
           return
         }
-        if (data.type === 'table' && Array.isArray(data.columns)) {
-          setPreview({
-            type: 'table',
-            columns: data.columns,
-            rows: Array.isArray(data.rows) ? data.rows : [],
-            delimiter: data.delimiter,
-          })
-        } else {
-          setPreview(null)
-          setError('Formato sem pré-visualização tabular.')
-        }
+        setCachedPreview(datasetId, data)
+        applyData(data)
       })
       .catch(() => {
         if (!cancelled) {
@@ -76,7 +90,7 @@ export function AlfDetailPreviewCard({
       <div className="geo-detail-preview-card-body alf-detail-preview-card-body">
         {!filePath ? (
           <p className="text-sm text-[var(--pd-ink-500)] text-center py-10 px-4">
-            Pré-visualização indisponível — ficheiro não associado
+            Pré-visualização indisponível: ficheiro não associado
           </p>
         ) : (
           <AlfPreviewInspector

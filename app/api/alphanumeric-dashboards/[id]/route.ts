@@ -5,6 +5,7 @@ import {
   updateAlphanumericDashboard,
 } from '@/lib/db'
 import { getCurrentAdmin } from '@/lib/auth'
+import { logger } from '@/lib/logger'
 
 export async function PUT(
   request: NextRequest,
@@ -28,6 +29,7 @@ export async function PUT(
       description: data.description ? String(data.description) : null,
       previewImagePath: data.previewImagePath ? String(data.previewImagePath) : null,
       category: data.category ? String(data.category) : null,
+      lastDataUpdate: data.lastDataUpdate ? String(data.lastDataUpdate) : null,
     })
 
     if (!updated) {
@@ -36,7 +38,7 @@ export async function PUT(
 
     return NextResponse.json(updated)
   } catch (error) {
-    console.error('Error updating alphanumeric dashboard:', error)
+    logger.error('error_updating_alphanumeric_dashboard', { error: error })
     return NextResponse.json({ error: 'Erro ao atualizar dashboard alfanumérico' }, { status: 500 })
   }
 }
@@ -60,7 +62,7 @@ export async function DELETE(
     await deleteAlphanumericDashboard(id)
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error deleting alphanumeric dashboard:', error)
+    logger.error('error_deleting_alphanumeric_dashboard', { error: error })
     return NextResponse.json({ error: 'Erro ao excluir dashboard alfanumérico' }, { status: 500 })
   }
 }

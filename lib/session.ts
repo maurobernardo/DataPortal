@@ -38,6 +38,21 @@ export function verifySessionToken(token: string): SessionPayload | null {
   }
 }
 
+/** Token de curta duração emitido depois da senha ser validada, quando o utilizador tem TOTP activo. */
+export function signPending2faToken(userId: number): string {
+  return jwt.sign({ userId, purpose: 'totp-pending' }, JWT_SECRET, { expiresIn: '5m' })
+}
+
+export function verifyPending2faToken(token: string): { userId: number } | null {
+  try {
+    const payload = jwt.verify(token, JWT_SECRET) as { userId?: number; purpose?: string }
+    if (payload.purpose !== 'totp-pending' || typeof payload.userId !== 'number') return null
+    return { userId: payload.userId }
+  } catch {
+    return null
+  }
+}
+
 export function getSessionCookieOptions() {
   const isProd = process.env.NODE_ENV === 'production'
   return {

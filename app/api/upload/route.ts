@@ -3,6 +3,26 @@ import { writeFile, mkdir } from 'fs/promises'
 import { existsSync } from 'fs'
 import { join } from 'path'
 import { getCurrentAdmin } from '@/lib/auth'
+import { logger } from '@/lib/logger'
+
+// Formatos aceites pelo portal: geoespaciais, alfanuméricos e imagens de pré-visualização.
+// Apenas extensões desta lista podem ser gravadas em disco.
+const ALLOWED_EXTENSIONS = new Set([
+  '.zip', '.geojson', '.json', '.tif', '.tiff', '.shp', '.shx', '.dbf', '.prj', '.kml', '.kmz', '.gpkg',
+  '.csv', '.xlsx', '.xls', '.ods', '.xml', '.txt', '.tsv',
+  '.png', '.jpg', '.jpeg', '.webp', '.gif',
+])
+
+/** Extrai e valida a extensão do nome original — rejeita qualquer coisa fora de `.[a-z0-9]{1,6}` para impedir path traversal via nome de ficheiro manipulado. */
+function getSafeExtension(originalName: string): string | null {
+  const lower = originalName.toLowerCase()
+  const dotIndex = lower.lastIndexOf('.')
+  if (dotIndex === -1) return null
+  const ext = lower.slice(dotIndex)
+  if (!/^\.[a-z0-9]{1,6}$/.test(ext)) return null
+  if (!ALLOWED_EXTENSIONS.has(ext)) return null
+  return ext
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,18 +50,23 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const fileExtension = getSafeExtension(file.name)
+    if (!fileExtension) {
+      return NextResponse.json(
+        { error: 'Tipo de ficheiro não suportado.' },
+        { status: 400 }
+      )
+    }
+
     // Criar diretório de uploads se não existir
     const uploadsDir = join(process.cwd(), 'public', 'uploads')
     if (!existsSync(uploadsDir)) {
       await mkdir(uploadsDir, { recursive: true })
     }
 
-    // Gerar nome único para o arquivo
+    // Gerar nome único para o arquivo (extensão já validada contra a allowlist acima)
     const timestamp = Date.now()
     const randomString = Math.random().toString(36).substring(2, 15)
-    const originalName = file.name.toLowerCase()
-    const dotIndex = originalName.lastIndexOf('.')
-    const fileExtension = dotIndex !== -1 ? originalName.substring(dotIndex) : ''
     const fileName = `${timestamp}-${randomString}${fileExtension}`
     const filePath = join(uploadsDir, fileName)
 
@@ -61,10 +86,10 @@ export async function POST(request: NextRequest) {
       fileSize: fileSize,
       originalSize: file.size,
     })
-  } catch (error: any) {
-    console.error('Error uploading file:', error)
+  } catch (error) {
+    logger.error('upload.failed', { error })
     return NextResponse.json(
-      { error: 'Erro ao fazer upload do arquivo: ' + error.message },
+      { error: 'Erro ao fazer upload do arquivo.' },
       { status: 500 }
     )
   }
@@ -77,16 +102,3 @@ function formatFileSize(bytes: number): string {
   const i = Math.floor(Math.log(bytes) / Math.log(k))
   return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

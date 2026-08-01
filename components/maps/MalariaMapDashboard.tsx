@@ -241,7 +241,7 @@ export default function MalariaMapDashboard({
           <div className="ml-header">
             <div>
               <div className="ml-eyebrow">Data4Moz · inteligência malária</div>
-              <h2 className="ml-title">Onde a malária se deslocou, não só se mudou.</h2>
+              <h2 className="ml-title">Onde a malária mudou de lugar entre 2015 e 2018.</h2>
               <p className="ml-subtitle">
                 Série temporal de prevalência em crianças 6–59 meses: IMASIDA 2015 e IIM 2018
                 por província. A média nacional quase não se moveu; a história provincial mudou
@@ -473,7 +473,7 @@ export default function MalariaMapDashboard({
 
           <p className="ml-footer">
             Fontes: IMASIDA 2015 Quadro 10.13; IIM 2018 Quadro 4.10 e Figura 4.5. Estimativas de
-            inquérito — não contagens mensais de HMIS. Para acção distrital, triangular com
+            inquérito, não contagens mensais de HMIS. Para acção distrital, triangular com
             SISMA/DHIS2, rutura de RDT, precipitação e acesso.
           </p>
         </div>

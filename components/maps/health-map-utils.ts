@@ -7,6 +7,15 @@ export type VarMeta = {
   desc: string
 }
 
+/** Salvaguarda: converte uma chave técnica (ex. "TECI_adm3") num rótulo legível, caso
+ * falte uma entrada em VAR_META para a variável seleccionada. */
+export function humanizeVarKey(key: string): string {
+  return key
+    .replace(/_adm\d+$/i, '')
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+}
+
 export const VAR_META: Record<string, VarMeta> = {
   HSSI_adm3: {
     label: 'Stress do sistema de saúde',

@@ -1,5 +1,13 @@
 import Link from 'next/link'
-import { Calendar, Package, MapPin, Eye, Download, ArrowRight, TrendingUp, Database, FileText } from 'lucide-react'
+import { Calendar, Package, MapPin, Eye, Download, ArrowRight, Database, FileText } from 'lucide-react'
+import { getPopularityTier } from '@/components/geo/geo-utils'
+
+const popularityTierClass: Record<string, string> = {
+  popular: 'bg-orange-50 text-orange-600 border-orange-100',
+  very: 'bg-blue-50 text-blue-600 border-blue-100',
+  super: 'bg-purple-50 text-purple-600 border-purple-100',
+  viral: 'bg-red-50 text-red-600 border-red-100',
+}
 
 interface Dataset {
   id: number
@@ -33,16 +41,13 @@ const formatColors: { [key: string]: string } = {
 export function DatasetCatalogCard({ dataset, highlight }: DatasetCatalogCardProps) {
   const keywords = dataset.keywords?.split(',').slice(0, 3) || []
   const formatColor = formatColors[dataset.format] || 'bg-gray-100 text-gray-700 border-gray-200'
-  const isPopular = dataset.downloads > 10 || dataset.views > 50
+  const popularityTier = getPopularityTier(dataset.views)
 
   return (
     <Link
       href={`/dataset/${dataset.id}`}
-      className="group block bg-white rounded-2xl border border-green-400 hover:shadow-2xl hover:shadow-green-100/50 transition-all duration-300 overflow-hidden hover:-translate-y-1 relative"
+      className="group block bg-white rounded-[14px] border border-[#E2E8E5] hover:border-[#CFE3D6] shadow-[var(--pd-shadow-sm)] hover:shadow-[var(--pd-shadow-md)] hover:-translate-y-0.5 transition-all duration-200 overflow-hidden relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#064E2C] focus-visible:ring-offset-2"
     >
-      {/* Top Gradient Bar */}
-      <div className="h-1.5 bg-gradient-to-r from-green-400 via-green-500 to-green-400"></div>
-
       <div className="p-5 sm:p-6">
         {/* Header with Icon and Popular Badge */}
         <div className="flex items-start justify-between gap-4 mb-4">
@@ -51,10 +56,12 @@ export function DatasetCatalogCard({ dataset, highlight }: DatasetCatalogCardPro
               <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-green-600 text-white flex items-center justify-center shadow-md group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
                 <Database className="w-5 h-5" />
               </div>
-              {isPopular && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-orange-50 text-orange-600 border border-orange-100 uppercase tracking-wide animate-pulse">
-                  <TrendingUp className="w-3 h-3" />
-                  Popular
+              {popularityTier && (
+                <span
+                  className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide animate-pulse ${popularityTierClass[popularityTier.key]}`}
+                >
+                  <popularityTier.icon className="w-3 h-3" />
+                  {popularityTier.label}
                 </span>
               )}
             </div>
@@ -96,7 +103,7 @@ export function DatasetCatalogCard({ dataset, highlight }: DatasetCatalogCardPro
               <Database className="w-4 h-4" />
             </div>
             <div className="min-w-0">
-              <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Fonte</div>
+              <div className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Fonte</div>
               <div className="text-sm font-semibold text-gray-700 truncate">{dataset.source}</div>
             </div>
           </div>
@@ -105,7 +112,7 @@ export function DatasetCatalogCard({ dataset, highlight }: DatasetCatalogCardPro
               <Calendar className="w-4 h-4" />
             </div>
             <div className="min-w-0">
-              <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Ano</div>
+              <div className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Ano</div>
               <div className="text-sm font-semibold text-gray-700">{dataset.year}</div>
             </div>
           </div>
@@ -114,7 +121,7 @@ export function DatasetCatalogCard({ dataset, highlight }: DatasetCatalogCardPro
               <Package className="w-4 h-4" />
             </div>
             <div className="min-w-0">
-              <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Formato</div>
+              <div className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Formato</div>
               <div className={`text-xs font-bold px-2 py-0.5 rounded-md ${formatColor.split(' ')[0]} ${formatColor.split(' ')[1]} inline-block`}>
                 {dataset.format}
               </div>
@@ -125,7 +132,7 @@ export function DatasetCatalogCard({ dataset, highlight }: DatasetCatalogCardPro
               <Eye className="w-4 h-4" />
             </div>
             <div className="min-w-0">
-              <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Acessos</div>
+              <div className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Acessos</div>
               <div className="text-sm font-semibold text-gray-700">{dataset.views}</div>
             </div>
           </div>
