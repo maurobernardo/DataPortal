@@ -5,44 +5,43 @@ import {
   BellRing,
   ChevronDown,
   ChevronUp,
-  Columns2,
   Eye,
   FileDown,
   HelpCircle,
   LayoutDashboard,
   MessageSquareText,
   MousePointerClick,
-  Sparkles,
+  LineChart,
 } from 'lucide-react'
 
 const STEPS = [
   {
-    icon: MousePointerClick,
-    title: 'Escolha os dados',
-    desc: 'Clique em "Seleccionar" em até 3 cards do catálogo. Combine um dataset geoespacial com um tabular para cruzar informação.',
-  },
-  {
     icon: MessageSquareText,
     title: 'Faça a pergunta',
-    desc: 'Escreva em português o que quer saber sobre os dados seleccionados.',
+    desc: 'Escreva em português o que quer saber, no topo desta página.',
   },
   {
-    icon: Sparkles,
+    icon: MousePointerClick,
+    title: 'Escolha os dados',
+    desc: 'Seleccione até 3 datasets nas categorias abaixo. Combine um geoespacial com um tabular para cruzar informação.',
+  },
+  {
+    icon: LineChart,
     title: 'Receba a análise',
-    desc: 'Em segundos: narrativa, gráfico, mapa ou previsão, sempre com as fontes oficiais citadas.',
+    desc: 'Normalmente em menos de um minuto: narrativa, gráficos e mapa, sempre com as fontes citadas.',
   },
   {
     icon: LayoutDashboard,
-    title: 'Guarde e organize',
-    desc: 'Cada análise guardada fica em "Meus dashboards", pronta a rever, comparar ou partilhar.',
+    title: 'Guarde e exporte',
+    desc: 'No dashboard gerado, guarde em "Minhas análises" ou descarregue em HTML/PDF.',
   },
 ] as const
 
 const DASHBOARD_FEATURES = [
-  { icon: Eye, label: 'Ver detalhes', desc: 'Reabra a análise completa numa página dedicada.' },
-  { icon: Columns2, label: 'Comparar', desc: 'Veja duas análises guardadas lado a lado.' },
-  { icon: FileDown, label: 'Exportar PDF', desc: 'Descarregue um relatório com narrativa, gráfico e mapa.' },
-  { icon: BellRing, label: 'Alertas', desc: 'Seja avisado quando um dataset-fonte for actualizado.' },
+  { icon: LayoutDashboard, label: 'Minhas análises', desc: 'Todas as análises que fizer ficam listadas, prontas a reabrir.' },
+  { icon: BellRing, label: 'Guardar', desc: 'Marque um dashboard como guardado para o encontrar depois.' },
+  { icon: Eye, label: 'Exportar HTML', desc: 'Ficheiro autónomo com o mesmo aspecto do dashboard, mapas e gráficos incluídos.' },
+  { icon: FileDown, label: 'Exportar PDF', desc: 'Relatório pronto a imprimir ou partilhar, igual ao que vê no ecrã.' },
 ] as const
 
 const STORAGE_KEY = 'ai-insights-guide-collapsed-v1'
@@ -90,7 +89,7 @@ export function AIHowItWorksGuide() {
         <div className="px-4 sm:px-5 pb-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-5 relative">
             <div
-              className="hidden lg:block absolute top-4 h-px bg-gradient-to-r from-[#064E2C]/25 via-[#6B4FBB]/25 to-[#064E2C]/25"
+              className="hidden lg:block absolute top-4 h-px bg-[#064E2C]/20"
               style={{ left: '12.5%', right: '12.5%' }}
             />
             {STEPS.map((step, i) => {
@@ -98,7 +97,7 @@ export function AIHowItWorksGuide() {
               return (
                 <div key={step.title} className="relative">
                   <div className="flex items-center gap-2.5 mb-1.5">
-                    <span className="relative z-10 inline-flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-[#064E2C] to-[#6B4FBB] text-white text-xs font-bold shadow-sm shrink-0">
+                    <span className="relative z-10 inline-flex items-center justify-center w-8 h-8 rounded-full bg-[#064E2C] text-white text-xs font-bold shadow-sm shrink-0">
                       {i + 1}
                     </span>
                     <StepIcon className="w-4 h-4 text-[#064E2C] shrink-0" />
@@ -119,7 +118,7 @@ export function AIHowItWorksGuide() {
                 const FeatureIcon = f.icon
                 return (
                   <div key={f.label} className="rounded-xl border border-[#E2E8E5] bg-white px-3 py-2.5">
-                    <FeatureIcon className="w-4 h-4 text-[#6B4FBB] mb-1.5" />
+                    <FeatureIcon className="w-4 h-4 text-[#064E2C] mb-1.5" />
                     <p className="text-xs font-bold text-gray-800">{f.label}</p>
                     <p className="text-[11px] text-gray-500 mt-0.5 leading-snug">{f.desc}</p>
                   </div>

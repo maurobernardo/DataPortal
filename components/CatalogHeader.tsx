@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { Search, X, Sparkles, Loader2 } from 'lucide-react'
+import { Search, X, LineChart, Loader2 } from 'lucide-react'
 import { SearchSuggestionsPopover } from '@/components/SearchSuggestionsPopover'
 
 interface CatalogHeaderProps {
@@ -116,7 +116,7 @@ export function CatalogHeader({ initialSearch, totalCount }: CatalogHeaderProps)
           type="submit"
           className="px-6 py-3.5 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl font-semibold hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition shadow-md hover:shadow-lg flex items-center justify-center gap-2"
         >
-          <Sparkles className="w-4 h-4" />
+          <LineChart className="w-4 h-4" />
           Buscar
         </button>
       </form>

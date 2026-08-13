@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { db, countDatasets } from '@/lib/db'
 import { HeroSection } from '@/components/HeroSection'
 import { FeaturedCatalogSection } from '@/components/FeaturedCatalogSection'
@@ -5,6 +6,7 @@ import { AboutSection } from '@/components/AboutSection'
 import { FeaturesSection } from '@/components/FeaturesSection'
 import { FAQSection } from '@/components/FAQSection'
 import { PartnersCarouselSection } from '@/components/PartnersCarouselSection'
+import { ContactsSection } from '@/components/ContactsSection'
 
 export const dynamic = 'force-dynamic'
 
@@ -71,6 +73,9 @@ export default async function Home() {
     source: dataset.source || null,
     format: dataset.format || null,
     views: Number(dataset.views || 0),
+    updatedAt: dataset.updatedAt ? new Date(dataset.updatedAt).toISOString() : null,
+    category: dataset.categoryName || null,
+    dataType: dataset.dataType === 'geoespacial' ? ('geoespacial' as const) : ('alfanumerico' as const),
   }))
 
   const featuredDatasets = mostViewed.map((dataset) => ({
@@ -107,6 +112,9 @@ export default async function Home() {
       <FeaturesSection />
       <PartnersCarouselSection />
       <FAQSection />
+      <Suspense fallback={null}>
+        <ContactsSection />
+      </Suspense>
     </div>
   )
 }

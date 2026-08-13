@@ -40,3 +40,7 @@ next-env.d.ts
 /public/uploads/*
 !/public/uploads/.gitkeep
 
+# base de dados GeoIP (MaxMind GeoLite2) — binário de ~66MB, descarregado via
+# `npm run geoip:update`, nunca commitado
+/data/geoip/*.mmdb
+

@@ -151,10 +151,13 @@ export function AlfDatasetDetailView({ dataset }: { dataset: DatasetDetail }) {
 
                 <div className="geo-detail-actions">
                   {dataset.filePath ? (
-                    <a href={`/api/download/${dataset.id}`} className="geo-detail-btn-primary">
+                    <span
+                      className="geo-detail-btn-primary opacity-50 cursor-not-allowed pointer-events-none"
+                      title="Download temporariamente indisponível"
+                    >
                       <Download className="size-5" aria-hidden />
-                      Descarregar dados
-                    </a>
+                      Download indisponível
+                    </span>
                   ) : (
                     <button type="button" disabled className="geo-detail-btn-primary opacity-50 cursor-not-allowed">
                       Indisponível para download

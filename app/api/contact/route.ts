@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { isValidEmail, normalizeEmail, normalizeText, rateLimit } from '@/lib/security'
 import { hasMailConfig, sendContactEmail } from '@/lib/mailer'
 import { createContactMessage } from '@/lib/db'
+import { registarAcesso } from '@/lib/origem'
 import { logger } from '@/lib/logger'
+import { OPCOES_FINALIDADE_CONTACTO, VALORES_FINALIDADE_CONTACTO } from '@/lib/user-profile-options'
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,6 +22,7 @@ export async function POST(request: NextRequest) {
     const email = normalizeEmail(body?.email)
     const subject = normalizeText(body?.subject, 180)
     const message = normalizeText(body?.message, 5000)
+    const purpose = normalizeText(body?.purpose, 60)
 
     if (!name || !email || !subject || !message) {
       return NextResponse.json(
@@ -28,18 +31,28 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    if (!purpose || !VALORES_FINALIDADE_CONTACTO.includes(purpose)) {
+      return NextResponse.json(
+        { error: 'Seleccione para que fim pretende utilizar os dados.' },
+        { status: 400 }
+      )
+    }
+
     if (!isValidEmail(email)) {
       return NextResponse.json({ error: 'Email inválido.' }, { status: 400 })
     }
 
-    await createContactMessage({ name, email, subject, message })
+    await createContactMessage({ name, email, subject, message, purpose })
+    await registarAcesso(request, 'contacto')
 
     if (hasMailConfig()) {
+      const purposeLabel = OPCOES_FINALIDADE_CONTACTO.find((o) => o.value === purpose)?.label
       await sendContactEmail({
         fromName: name,
         fromEmail: email,
         subject,
         message,
+        purposeLabel,
       })
     } else {
       logger.warn('smtp_nao_configurado_mensagem_de_contacto_salva_apenas_na_ba')

@@ -2,6 +2,7 @@
 
 import {
   createContext,
+  Suspense,
   useCallback,
   useContext,
   useEffect,
@@ -97,7 +98,9 @@ export function ContactModalProvider({ children }: { children: ReactNode }) {
                 <X size={22} strokeWidth={2} />
               </button>
             </div>
-            <ContactsSection variant="modal" />
+            <Suspense fallback={null}>
+              <ContactsSection variant="modal" />
+            </Suspense>
           </div>
         </div>
       ) : null}

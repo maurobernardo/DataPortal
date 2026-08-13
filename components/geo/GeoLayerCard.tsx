@@ -10,10 +10,11 @@ import {
   FileText,
   ImageOff,
   Package,
-  Sparkles,
+  LineChart,
 } from 'lucide-react'
 import type { GeoDataset } from '@/components/geo/types'
 import { GeoLayerThumb } from '@/components/geo/GeoLayerThumb'
+import { GeoLayerCardMap } from '@/components/geo/GeoLayerCardMap'
 import { AlfLayerThumb } from '@/components/alf/AlfLayerThumb'
 import { getPopularityTier } from '@/components/geo/geo-utils'
 import { FavoriteButton } from '@/components/FavoriteButton'
@@ -108,23 +109,28 @@ export function GeoLayerCard({
         aria-label={`${selectLabel}: ${dataset.title}`}
       >
         <div className="geo-layer-thumb">
-          <span className="geo-layer-thumb-format">{dataset.format}</span>
+          {thumbVariant === 'alf' ? (
+            <AlfLayerThumb index={index} datasetId={dataset.id} />
+          ) : (
+            <>
+              <GeoLayerThumb index={index} datasetId={dataset.id} />
+              <div className="absolute inset-0 z-0">
+                <GeoLayerCardMap datasetId={dataset.id} />
+              </div>
+            </>
+          )}
+          <span className="geo-layer-thumb-format z-10">{dataset.format}</span>
           {popularityTier && (
-            <span className={`geo-layer-popular geo-layer-popular--${popularityTier.key}`}>
+            <span className={`geo-layer-popular geo-layer-popular--${popularityTier.key} z-10`}>
               <popularityTier.icon className="size-3" aria-hidden />
               {popularityTier.label}
             </span>
           )}
           {previewKnownUnavailable && (
-            <span className="geo-layer-preview-unavailable" title="Pré-visualização indisponível para este ficheiro">
+            <span className="geo-layer-preview-unavailable z-10" title="Pré-visualização indisponível para este ficheiro">
               <ImageOff className="size-3" aria-hidden />
               Sem pré-visualização
             </span>
-          )}
-          {thumbVariant === 'alf' ? (
-            <AlfLayerThumb index={index} datasetId={dataset.id} />
-          ) : (
-            <GeoLayerThumb index={index} datasetId={dataset.id} />
           )}
         </div>
 
@@ -187,7 +193,7 @@ export function GeoLayerCard({
 
       {bestMatch && (
         <span className="geo-layer-best-match">
-          <Sparkles className="size-3" aria-hidden />
+          <LineChart className="size-3" aria-hidden />
           Melhor correspondência
         </span>
       )}

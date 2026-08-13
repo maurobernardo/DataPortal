@@ -284,13 +284,17 @@ export function GeoDatasetDetailView({ dataset }: { dataset: DatasetDetail }) {
 
                   {dataset.filePath ? (
 
-                    <a href={`/api/download/${dataset.id}`} className="geo-detail-btn-primary">
+                    <span
+                      className="geo-detail-btn-primary opacity-50 cursor-not-allowed pointer-events-none"
+                      title="Download temporariamente indisponível"
+                      aria-disabled="true"
+                    >
 
                       <Download className="size-5" aria-hidden />
 
-                      Descarregar dados
+                      Download indisponível
 
-                    </a>
+                    </span>
 
                   ) : (
 

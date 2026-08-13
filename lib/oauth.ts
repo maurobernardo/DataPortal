@@ -12,8 +12,10 @@ type ProviderConfig = {
   scope: string
 }
 
-function getSiteUrl(): string {
-  return (process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXTAUTH_URL || 'http://localhost:3000').replace(
+export function getSiteUrl(): string {
+  // NEXTAUTH_URL primeiro: ao contrário de NEXT_PUBLIC_SITE_URL, nunca é gravada como valor fixo
+  // no bundle durante o build — é sempre lida ao vivo do servidor em produção.
+  return (process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000').replace(
     /\/$/,
     ''
   )

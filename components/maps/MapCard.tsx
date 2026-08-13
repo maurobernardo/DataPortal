@@ -1,54 +1,40 @@
 import Link from 'next/link'
-import {
-  ArrowRight,
-  BarChart3,
-  Eye,
-  Globe,
-  LayoutDashboard,
-  Map,
-  MapPinned,
-} from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
+import { MapCardThumb } from '@/components/maps/MapCardThumb'
 import { MapRequestButton } from '@/components/maps/MapRequestButton'
 import { FavoriteButton } from '@/components/FavoriteButton'
+import { iconeParaCapacidade } from '@/lib/maps-highlight-icons'
 import {
   MAP_EXPERIENCE_LABELS,
-  type MapExperienceType,
   type PublicMapDashboard,
 } from '@/lib/maps-catalog'
-
-const EXPERIENCE_ICONS: Record<MapExperienceType, typeof Map> = {
-  map: MapPinned,
-  dashboard: LayoutDashboard,
-  'map-dashboard': Map,
-}
+import type { PreviewMapa } from '@/lib/maps-preview-data'
 
 export function MapCard({
   map,
   isFavorited = false,
   viewCount,
+  preview,
 }: {
   map: PublicMapDashboard
   isFavorited?: boolean
   viewCount?: number
+  preview?: PreviewMapa | null
 }) {
   const exp = MAP_EXPERIENCE_LABELS[map.experienceType]
-  const ExpIcon = EXPERIENCE_ICONS[map.experienceType]
   const highlights = (map.highlights ?? []).slice(0, 2)
+
+  // Uma só linha de metadados-chave: os dois primeiros badges do catálogo (já são os factos mais
+  // relevantes de cada mapa) + visualizações SEMPRE presente (mesmo "0"), nunca uma linha extra
+  // condicional — era isso que fazia a altura dos cards variar de coluna para coluna.
+  const metaValues = [...map.badges.slice(0, 2), `${(viewCount ?? 0).toLocaleString('pt-PT')} visualizações`]
 
   return (
     <article className="mp-card">
-      <div className="mp-card-thumb" aria-hidden>
-        <ExpIcon className="mp-card-thumb-icon" strokeWidth={1.5} />
-        <span className={`mp-card-type mp-card-type--${map.experienceType}`}>
-          {exp.short}
-        </span>
-        <div className="mp-card-badges">
-          {map.badges.slice(0, 2).map((b) => (
-            <span key={b} className="mp-card-badge">
-              {b}
-            </span>
-          ))}
-        </div>
+      {/* a) Uma badge de tipo + favorito no canto oposto — sem ícone decorativo de mapa. */}
+      <div className="mp-card-thumb">
+        <MapCardThumb preview={preview} />
+        <span className={`mp-card-type mp-card-type--${map.experienceType}`}>{exp.short}</span>
       </div>
       <FavoriteButton
         entityType="map"
@@ -58,45 +44,36 @@ export function MapCard({
       />
 
       <div className="mp-card-body">
-        <div className="mp-card-head">
-          <span className="mp-card-category">{map.category}</span>
-          <span className="mp-card-type-inline" title={exp.description}>
-            {exp.label}
-          </span>
-        </div>
+        {/* c) Categoria como label colorido, sem badge duplicada ao lado. */}
+        <span className="mp-card-category">{map.category}</span>
+
+        {/* d) Título e descrição, ambos truncados a 2 linhas. */}
         <h3 className="mp-card-title">
           <Link href={`/maps/${map.slug}`}>{map.title}</Link>
         </h3>
-        {map.subtitle ? <p className="mp-card-sub">{map.subtitle}</p> : null}
+        <p className="mp-card-desc">{map.description}</p>
 
-        {highlights.length > 0 ? (
+        {/* e) + h) Uma linha de metadados, visualizações sempre incluída. */}
+        <p className="mp-card-metaline">{metaValues.join(' · ')}</p>
+
+        {/* f) Até 2 capacidades, cada uma com o seu próprio ícone. */}
+        {highlights.length > 0 && (
           <ul className="mp-card-highlights">
-            {highlights.map((h) => (
-              <li key={h}>
-                <BarChart3 className="size-3 shrink-0" aria-hidden />
-                <span>{h}</span>
-              </li>
-            ))}
+            {highlights.map((h) => {
+              const Icon = iconeParaCapacidade(h)
+              return (
+                <li key={h}>
+                  <Icon className="size-3.5 shrink-0" aria-hidden />
+                  <span>{h}</span>
+                </li>
+              )
+            })}
           </ul>
-        ) : (
-          <p className="mp-card-desc">{map.description}</p>
         )}
 
-        <ul className="mp-card-meta">
-          <li>
-            <Globe className="size-3.5 shrink-0" aria-hidden />
-            <span>{map.coverage}</span>
-          </li>
-          {typeof viewCount === 'number' && viewCount > 0 && (
-            <li>
-              <Eye className="size-3.5 shrink-0" aria-hidden />
-              <span>{viewCount.toLocaleString('pt-PT')} visualizações</span>
-            </li>
-          )}
-        </ul>
-
+        {/* g) Rodapé fixo: acção primária preenchida, acção secundária como link de texto. */}
         <div className="mp-card-actions">
-          <Link href={`/maps/${map.slug}`} className="mp-btn mp-btn-outline">
+          <Link href={`/maps/${map.slug}`} className="mp-btn mp-btn-primary">
             Abrir experiência
             <ArrowRight className="size-4" aria-hidden />
           </Link>
@@ -107,7 +84,7 @@ export function MapCard({
               coverage: map.coverage,
               description: map.description,
             }}
-            className="mp-btn mp-btn-ghost"
+            className="mp-card-secondary-link"
           />
         </div>
       </div>

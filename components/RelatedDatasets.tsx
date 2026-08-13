@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { ArrowRight, Sparkles } from 'lucide-react'
+import { ArrowRight, LineChart } from 'lucide-react'
 
 type RelatedDataset = {
   id: number
@@ -36,7 +36,7 @@ export function RelatedDatasets({ datasetId, sectionLabelClassName }: { datasetI
   return (
     <div className="pt-4 mt-1 border-t border-[#E2E8E5]">
       <div className={sectionLabelClassName ?? 'flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-[var(--pd-ink-500)] mb-2.5'}>
-        <Sparkles className="size-3.5 text-[var(--pd-green-700)]" aria-hidden />
+        <LineChart className="size-3.5 text-[var(--pd-green-700)]" aria-hidden />
         Datasets relacionados
       </div>
       <ul className="space-y-1.5">

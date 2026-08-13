@@ -226,9 +226,12 @@ export function GeoMapDetailPanel({ dataset }: { dataset: GeoDataset | null }) {
             Ver dataset completo →
           </Link>
           {dataset.filePath ? (
-            <a href={`/api/download/${dataset.id}`} className="geo-ldp-action-secondary">
-              ↓ Descarregar
-            </a>
+            <span
+              className="geo-ldp-action-secondary opacity-50 cursor-not-allowed pointer-events-none"
+              title="Download temporariamente indisponível"
+            >
+              ↓ Indisponível
+            </span>
           ) : null}
         </div>
       </div>

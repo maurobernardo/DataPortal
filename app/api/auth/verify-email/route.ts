@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { clearUserOtp, findUserByEmail, findUserByVerificationToken, markEmailVerified } from '@/lib/db'
+import { sendWelcomeEmail } from '@/lib/mailer'
 import { isValidEmail, normalizeEmail, normalizeText, rateLimit } from '@/lib/security'
 import { logger } from '@/lib/logger'
+
+export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
@@ -28,6 +31,9 @@ export async function GET(request: NextRequest) {
 
     await markEmailVerified(user.id)
     await clearUserOtp(user.id)
+    sendWelcomeEmail(user.email, user.name).catch((error) => {
+      logger.error('error_sending_welcome_email', { error, email: user.email })
+    })
 
     return NextResponse.json({ success: true, message: 'Email confirmado com sucesso.' })
   } catch (error) {
@@ -84,6 +90,9 @@ export async function POST(request: Request) {
 
     await markEmailVerified(user.id)
     await clearUserOtp(user.id)
+    sendWelcomeEmail(user.email, user.name).catch((error) => {
+      logger.error('error_sending_welcome_email', { error, email: user.email })
+    })
 
     return NextResponse.json({ success: true, message: 'Email confirmado com sucesso! Já pode entrar.' })
   } catch (error) {

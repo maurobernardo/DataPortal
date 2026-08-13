@@ -1,5 +1,11 @@
 import Link from 'next/link'
-import { ArrowRight, BarChart3, MessageSquareText, ShieldCheck, Sparkles, TrendingUp } from 'lucide-react'
+import { ArrowRight, MessageSquareText, LineChart } from 'lucide-react'
+import { AIChartRenderer } from '@/components/ai-insights/AIChartRenderer'
+import {
+  ONBOARDING_EXAMPLE_CHART,
+  ONBOARDING_EXAMPLE_NARRATIVE,
+  ONBOARDING_EXAMPLE_QUESTION,
+} from '@/lib/ai-onboarding-example'
 
 type AIInsightsHeroProps = {
   totalDatasets: number
@@ -34,12 +40,12 @@ export function AIInsightsHero({ totalDatasets, totalCategories }: AIInsightsHer
             </p>
 
             <div className="ai-animate-in-2 flex gap-4 items-center mb-8 flex-wrap">
-              <Link href="/ai-insights/workspace" className="group ai-btn ai-btn-ai ai-btn-lg ai-btn-hero">
+              <Link href="/analise/nova" className="group ai-btn ai-btn-primary ai-btn-lg">
                 Experimentar grátis
                 <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
               </Link>
               <Link
-                href="/ai-insights/workspace"
+                href="/analise/nova"
                 className="text-sm font-semibold text-gray-500 hover:text-[#064E2C] underline underline-offset-4 decoration-gray-300 hover:decoration-[#064E2C] transition-colors"
               >
                 Ver demonstração ao vivo
@@ -62,79 +68,53 @@ export function AIInsightsHero({ totalDatasets, totalCategories }: AIInsightsHer
             </div>
           </div>
 
-          {/* Right: real capabilities card */}
-          <AIRealCapabilitiesCard totalDatasets={totalDatasets} totalCategories={totalCategories} />
+          {/* Right: real demonstration card */}
+          <AIRealDemoCard />
         </div>
       </div>
     </section>
   )
 }
 
-function AIRealCapabilitiesCard({ totalDatasets, totalCategories }: AIInsightsHeroProps) {
-  const items = [
-    {
-      icon: MessageSquareText,
-      title: 'Linguagem natural',
-      desc: 'Pergunte como perguntaria a um colega, sem SQL nem filtros complicados. Só a sua pergunta, em português.',
-    },
-    {
-      icon: BarChart3,
-      title: 'Visualização automática',
-      desc: 'Em segundos, a IA escolhe o gráfico ou mapa certo para a sua pergunta, sem abrir Excel nem GIS.',
-    },
-    {
-      icon: TrendingUp,
-      title: 'Previsões de tendência',
-      desc: 'Veja para onde a tendência aponta, com cenários hipotéticos e uma banda de incerteza sempre à vista.',
-    },
-    {
-      icon: ShieldCheck,
-      title: 'Fontes sempre citadas',
-      desc: 'Cada resposta traz o dataset, a fonte e o ano exactos, verificados pelo servidor e nunca inventados pela IA.',
-    },
-  ]
-
+/**
+ * Antes: cartão escuro isolado com 4 itens repetindo o mesmo tile de ícone roxo — uma lista de
+ * promessas, não uma prova. Substituído por UMA demonstração real: a mesma pergunta+resposta já
+ * usadas no exemplo de onboarding (dados reais do dataset "Mozambique Turismo", World Bank WDI),
+ * não texto inventado para este card.
+ */
+function AIRealDemoCard() {
   return (
-    <div className="relative rounded-2xl overflow-hidden border border-white/10 bg-[#0B1B14] text-white p-6 md:p-7 shadow-[0_20px_50px_rgba(6,78,44,0.22)]">
-      <div className="pointer-events-none absolute -top-20 -right-20 w-64 h-64 rounded-full bg-[#6B4FBB] opacity-20 blur-[80px]" />
-
-      <div className="relative flex items-center gap-2 pb-4 mb-5 border-b border-white/10">
-        <Sparkles className="w-4 h-4 text-[#9B85D9]" />
-        <span className="text-[13px] font-bold uppercase tracking-widest text-white/75">
-          O que o AI Insights faz hoje
+    <div className="rounded-2xl overflow-hidden border border-[#E2E8E5] bg-white shadow-[0_20px_50px_rgba(6,78,44,0.10)]">
+      <div className="flex items-center gap-2 px-6 pt-6 pb-4 border-b border-[#E2E8E5]">
+        <LineChart className="w-4 h-4 text-[#064E2C]" aria-hidden />
+        <span className="text-[13px] font-bold uppercase tracking-widest text-[#064E2C]">
+          Exemplo com dados reais do portal
         </span>
       </div>
 
-      <div className="relative grid grid-cols-1 gap-4 mb-5">
-        {items.map(({ icon: Icon, title, desc }) => (
-          <div key={title} className="flex gap-3">
-            <span className="shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-xl bg-[#6B4FBB]/15 border border-[#6B4FBB]/25 text-[#B9A6EA]">
-              <Icon className="w-4.5 h-4.5" />
-            </span>
-            <div>
-              <p className="text-sm font-bold">{title}</p>
-              <p className="text-xs text-white/65 leading-relaxed mt-0.5">{desc}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="relative rounded-xl p-4 bg-white/5 border border-white/10">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-2xl font-extrabold">{totalDatasets}</p>
-            <p className="text-[11px] text-white/60">datasets analisáveis</p>
-          </div>
-          <div className="w-px h-8 bg-white/10" />
-          <div>
-            <p className="text-2xl font-extrabold">{totalCategories}</p>
-            <p className="text-[11px] text-white/60">categorias</p>
-          </div>
+      <div className="p-6">
+        <div className="flex items-start gap-2.5 mb-4">
+          <span className="shrink-0 inline-flex items-center justify-center size-7 rounded-full bg-[#F1F8F4] border border-[#CFE3D6] text-[#064E2C]">
+            <MessageSquareText className="w-3.5 h-3.5" aria-hidden />
+          </span>
+          <p className="text-[14.5px] font-semibold text-gray-900 leading-snug pt-1">
+            {ONBOARDING_EXAMPLE_QUESTION}
+          </p>
         </div>
-        <p className="flex items-center gap-1.5 text-[10px] text-white/45 mt-3 pt-3 border-t border-white/10">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#3DDC84] animate-pulse" />
-          Contagem em tempo real: actualiza a cada novo dataset publicado no portal.
-        </p>
+
+        <div className="rounded-xl border border-[#E2E8E5] bg-[#FAFBFA] p-3 mb-4">
+          <AIChartRenderer chart={ONBOARDING_EXAMPLE_CHART} />
+        </div>
+
+        <p className="text-[12.5px] text-gray-600 leading-relaxed mb-5">{ONBOARDING_EXAMPLE_NARRATIVE}</p>
+
+        <div className="flex items-center gap-2 text-[11px] font-semibold text-gray-500 pt-4 border-t border-[#E2E8E5] flex-wrap">
+          <span>Sem SQL</span>
+          <span aria-hidden>·</span>
+          <span>Fonte sempre citada</span>
+          <span aria-hidden>·</span>
+          <span>Segundos, não dias</span>
+        </div>
       </div>
     </div>
   )

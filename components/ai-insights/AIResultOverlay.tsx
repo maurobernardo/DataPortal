@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import { AlertCircle, ArrowLeft, Loader2, Sparkles } from 'lucide-react'
+import { AlertCircle, ArrowLeft, Loader2, LineChart } from 'lucide-react'
 import { AIResultView, type AiAnalysisResultWithSources } from '@/components/ai-insights/AIResultView'
 
 export function AIResultOverlay({
@@ -62,7 +62,7 @@ export function AIResultOverlay({
             <div className="pointer-events-none absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white/10 blur-2xl" />
             <div className="relative flex items-center gap-2 mb-3">
               <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-white/15">
-                <Sparkles className="w-3.5 h-3.5" />
+                <LineChart className="w-3.5 h-3.5" />
               </span>
               <span className="text-[11px] font-bold uppercase tracking-widest text-white/80">
                 Análise gerada por IA

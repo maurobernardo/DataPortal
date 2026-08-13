@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentAdmin } from '@/lib/auth'
 import { findAllContactMessages, findAllMapRequests, findAllReportRequestsWithDetails } from '@/lib/db'

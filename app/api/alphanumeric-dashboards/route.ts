@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { NextRequest, NextResponse } from 'next/server'
 import { createAlphanumericDashboard, findAllAlphanumericDashboards } from '@/lib/db'
 import { getCurrentAdmin } from '@/lib/auth'
@@ -47,4 +49,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Erro ao criar dashboard alfanumérico' }, { status: 500 })
   }
 }
-

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
-import { ChevronDown, Loader2, Search, Sparkles } from 'lucide-react'
+import { ArrowRight, ChevronDown, Loader2, Search, LineChart } from 'lucide-react'
 import { SearchSuggestionsPopover } from '@/components/SearchSuggestionsPopover'
 import { HERO_TRY_SUGGESTIONS } from '@/lib/portal-search'
 
@@ -13,6 +13,9 @@ type HeroPreviewDataset = {
   source: string | null
   format: string | null
   views: number
+  updatedAt: string | null
+  category: string | null
+  dataType: 'geoespacial' | 'alfanumerico'
 }
 type HeroStats = {
   datasets: number
@@ -22,93 +25,105 @@ type HeroStats = {
 }
 
 /* ─────────────────────────────────────────────
-   Inline mini-chart (SVG sparkline from HTML)
+   Gráfico de barras: visualizações reais dos datasets em destaque.
+   Antes disto era uma área com gradiente decorativo sem eixo, sem
+   unidade e sem qualquer ligação ao texto — parecia dado, era só
+   enfeite. Cada barra aqui é uma contagem real (rótulo numérico por
+   cima, ranking como rótulo do eixo X), não uma série temporal
+   inventada: o schema do portal não guarda histórico ano-a-ano por
+   dataset, só o total acumulado de visualizações.
 ───────────────────────────────────────────── */
-function MiniChart({ points }: { points: number[] }) {
-  const safePoints = points.length > 1 ? points : [10, 20, 15, 25, 30]
-  const max = Math.max(...safePoints, 1)
-  const step = 400 / (safePoints.length - 1)
-  const chartPoints = safePoints
-    .map((value, index) => {
-      const x = Math.round(index * step)
-      const y = Math.round(120 - (value / max) * 100)
-      return `${x},${y}`
-    })
-    .join(' L')
-  const areaPath = `M${chartPoints} L400,140 L0,140 Z`
-  const linePath = `M${chartPoints}`
-  const highlightIndex = Math.max(0, safePoints.length - 1)
-  const highlightX = Math.round(highlightIndex * step)
-  const highlightY = Math.round(120 - (safePoints[highlightIndex] / max) * 100)
+function GraficoVisualizacoes({ datasets }: { datasets: HeroPreviewDataset[] }) {
+  const barras = datasets.slice(0, 6)
+  const max = Math.max(...barras.map((d) => d.views), 1)
+
+  if (barras.length === 0) return null
 
   return (
-    <div
-      style={{
-        height: 140,
-        background: 'linear-gradient(180deg, var(--pd-green-50), transparent)',
-        borderRadius: 'var(--pd-radius-md)',
-        overflow: 'hidden',
-        marginBottom: 'var(--pd-space-3)',
-        position: 'relative',
-      }}
-    >
-      <svg
-        viewBox="0 0 400 140"
-        xmlns="http://www.w3.org/2000/svg"
-        preserveAspectRatio="none"
-        style={{ width: '100%', height: '100%', display: 'block' }}
+    <div style={{ marginBottom: 'var(--pd-space-4)' }}>
+      <p
+        style={{
+          fontSize: 11,
+          fontWeight: 700,
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em',
+          color: 'var(--pd-ink-500)',
+          marginBottom: 10,
+        }}
       >
-        <defs>
-          <linearGradient id="pd-grad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#064E2C" stopOpacity="0.32" />
-            <stop offset="100%" stopColor="#064E2C" stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        <path
-          d={areaPath}
-          fill="url(#pd-grad)"
-        />
-        <path
-          d={linePath}
-          fill="none"
-          stroke="#064E2C"
-          strokeWidth="2.5"
-        />
-        <circle cx={highlightX} cy={highlightY} r="4" fill="#064E2C" />
-        <circle cx={highlightX} cy={highlightY} r="8" fill="#064E2C" opacity="0.2" />
-      </svg>
+        Visualizações desta semana
+      </p>
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 92 }}>
+        {barras.map((d, i) => {
+          const altura = Math.max(6, Math.round((d.views / max) * 68))
+          return (
+            <div
+              key={d.id}
+              style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, minWidth: 0 }}
+            >
+              <span
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  fontVariantNumeric: 'tabular-nums',
+                  color: 'var(--pd-ink-500)',
+                }}
+              >
+                {d.views >= 1000 ? `${(d.views / 1000).toFixed(1)}k` : d.views}
+              </span>
+              <div
+                style={{
+                  width: '100%',
+                  height: altura,
+                  borderRadius: 4,
+                  background: i === 0 ? 'var(--pd-green-700)' : 'var(--pd-green-100)',
+                }}
+                aria-hidden
+              />
+              <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--pd-ink-500)', fontVariantNumeric: 'tabular-nums' }}>
+                {String(i + 1).padStart(2, '0')}
+              </span>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
 
-/* ─────────────────────────────────────────────
-   Tag badge helpers
-───────────────────────────────────────────── */
-function TagLive({ children = 'Dados reais' }: { children?: string }) {
-  return (
-    <span
-      style={{
-        background: 'var(--pd-green-100)',
-        color: 'var(--pd-green-900)',
-        padding: '2px 6px',
-        borderRadius: 4,
-        fontSize: 10,
-        fontWeight: 700,
-        textTransform: 'uppercase',
-        letterSpacing: '0.04em',
-      }}
-    >
-      {children}
-    </span>
-  )
+function formatarDataAtualizacao(iso: string | null): string {
+  if (!iso) return 'data desconhecida'
+  try {
+    return new Date(iso).toLocaleDateString('pt-PT', { day: '2-digit', month: 'short', year: 'numeric' })
+  } catch {
+    return 'data desconhecida'
+  }
 }
+
 function HeroPreview({ datasets }: { datasets: HeroPreviewDataset[] }) {
-  const previewRows = datasets.slice(0, 4).map((dataset) => ({
-    id: dataset.id,
-    title: dataset.title,
-    meta: `${dataset.source || 'Portal de Dados'} · ${dataset.format || 'Dataset'} · ${dataset.views.toLocaleString('pt-BR')} visualizações`,
-  }))
-  const chartPoints = datasets.slice(0, 8).map((dataset) => dataset.views || 0)
+  const destaque = datasets[0]
+  const ranking = datasets.slice(0, 4)
+
+  if (!destaque) {
+    return (
+      <div
+        style={{
+          background: 'var(--pd-surface-0)',
+          border: '1px solid var(--pd-ink-100)',
+          borderRadius: 'var(--pd-radius-xl)',
+          padding: 'var(--pd-space-4)',
+          boxShadow: 'var(--pd-shadow-lg)',
+        }}
+      >
+        <p style={{ fontSize: 'var(--pd-text-sm)', color: 'var(--pd-ink-500)' }}>Nenhum dataset disponível.</p>
+      </div>
+    )
+  }
+
+  const rotuloTipo = destaque.dataType === 'geoespacial' ? 'geoespacial' : 'alfanumérico'
+  const apoio = `Dataset ${rotuloTipo}${destaque.category ? ` de ${destaque.category}` : ''}, disponibilizado por ${
+    destaque.source || 'o portal'
+  }.`
 
   return (
     <div
@@ -120,69 +135,165 @@ function HeroPreview({ datasets }: { datasets: HeroPreviewDataset[] }) {
         boxShadow: 'var(--pd-shadow-lg)',
       }}
     >
-      {/* Header */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '8px 12px 12px',
-          borderBottom: '1px solid var(--pd-ink-100)',
-          marginBottom: 'var(--pd-space-3)',
-        }}
-      >
-        <div>
-          <div style={{ fontSize: 'var(--pd-text-sm)', fontWeight: 600 }}>Em destaque hoje</div>
-          <div style={{ fontSize: 'var(--pd-text-xs)', color: 'var(--pd-ink-300)' }}>
-            {previewRows[0]?.title || 'Nenhum dataset disponível'}
-          </div>
+      {/* ── Bloco 1: destaque editorial ── */}
+      <div>
+        <p
+          style={{
+            fontSize: 11,
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+            color: 'var(--pd-green-700)',
+            marginBottom: 8,
+          }}
+        >
+          Destaque desta semana
+        </p>
+        <p
+          style={{
+            fontSize: 17,
+            fontWeight: 700,
+            lineHeight: 1.3,
+            color: 'var(--pd-ink-900)',
+            marginBottom: 6,
+          }}
+        >
+          «{destaque.title}» lidera com{' '}
+          <span style={{ fontVariantNumeric: 'tabular-nums' }}>{destaque.views.toLocaleString('pt-PT')}</span>{' '}
+          visualizações
+        </p>
+        <p style={{ fontSize: 13, lineHeight: 1.5, color: 'var(--pd-ink-500)', marginBottom: 16 }}>{apoio}</p>
+
+        <GraficoVisualizacoes datasets={datasets} />
+
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 8,
+            paddingTop: 12,
+            borderTop: '1px solid var(--pd-ink-100)',
+            fontSize: 12,
+          }}
+        >
+          <span style={{ color: 'var(--pd-ink-500)' }}>
+            Fonte: {destaque.source || 'Portal de Dados'} · {destaque.format || 'Dados'} · actualizado em{' '}
+            {formatarDataAtualizacao(destaque.updatedAt)}
+          </span>
+          <Link
+            href={`/dataset/${destaque.id}`}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              fontWeight: 700,
+              fontSize: 12,
+              color: 'var(--pd-green-700)',
+              textDecoration: 'none',
+              whiteSpace: 'nowrap',
+              background: 'var(--pd-green-50)',
+              border: '1px solid #CFE3D6',
+              borderRadius: 10,
+              padding: '8px 14px',
+              minHeight: 36,
+              transition: 'background 0.15s, border-color 0.15s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--pd-green-100)'
+              e.currentTarget.style.borderColor = 'var(--pd-green-700)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'var(--pd-green-50)'
+              e.currentTarget.style.borderColor = '#CFE3D6'
+            }}
+          >
+            Ver dataset <ArrowRight className="w-3.5 h-3.5" aria-hidden />
+          </Link>
         </div>
-        <TagLive>● Dados reais</TagLive>
       </div>
 
-      <MiniChart points={chartPoints} />
-
-      {/* Rows */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--pd-space-2)' }}>
-        {previewRows.map((row) => (
-          <Link
-            key={row.id}
-            href={`/dataset/${row.id}`}
+      {/* ── Bloco 2: ranking "mais consultados" ── */}
+      <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--pd-ink-100)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
+          <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--pd-ink-900)' }}>Mais consultados esta semana</p>
+          <p
             style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '8px 12px',
-              borderRadius: 'var(--pd-radius-sm)',
-              fontSize: 'var(--pd-text-sm)',
-              cursor: 'default',
-              textDecoration: 'none',
-              color: 'inherit',
-              transition: 'background 0.12s',
+              fontSize: 10,
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+              color: 'var(--pd-ink-500)',
             }}
-            onMouseEnter={(e) =>
-              ((e.currentTarget as HTMLAnchorElement).style.background = 'var(--pd-surface-50)')
-            }
-            onMouseLeave={(e) =>
-              ((e.currentTarget as HTMLAnchorElement).style.background = 'transparent')
-            }
           >
-            <div>
-              <strong style={{ fontWeight: 600 }}>{row.title}</strong>
+            Visualizações
+          </p>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          {ranking.map((dataset, i) => (
+            <Link
+              key={dataset.id}
+              href={`/dataset/${dataset.id}`}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                minHeight: 44,
+                padding: '8px 6px',
+                borderRadius: 'var(--pd-radius-sm)',
+                textDecoration: 'none',
+                color: 'inherit',
+                transition: 'background 0.12s',
+              }}
+              onMouseEnter={(e) => ((e.currentTarget as HTMLAnchorElement).style.background = 'var(--pd-surface-50)')}
+              onMouseLeave={(e) => ((e.currentTarget as HTMLAnchorElement).style.background = 'transparent')}
+            >
               <span
                 style={{
-                  display: 'block',
-                  color: 'var(--pd-ink-300)',
-                  fontSize: 'var(--pd-text-xs)',
-                  marginTop: 2,
+                  fontSize: 15,
+                  fontWeight: 800,
+                  fontVariantNumeric: 'tabular-nums',
+                  // --pd-accent-amber (#D4A017) só dá ~2.4:1 sobre branco — falha AA para texto.
+                  // #8A6510 é o mesmo tom mais escuro, ~5.3:1, mantém o acento sem falhar contraste.
+                  color: i === 0 ? '#8A6510' : 'var(--pd-ink-500)',
+                  width: 24,
+                  flexShrink: 0,
                 }}
               >
-                {row.meta}
+                {String(i + 1).padStart(2, '0')}
               </span>
-            </div>
-            <TagLive>Dataset</TagLive>
-          </Link>
-        ))}
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <p
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: 'var(--pd-ink-900)',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {dataset.title}
+                </p>
+                <p style={{ fontSize: 11, color: 'var(--pd-ink-500)', marginTop: 1 }}>
+                  {dataset.source || 'Portal de Dados'} · {dataset.format || 'Dados'}
+                </p>
+              </div>
+              <span
+                style={{
+                  fontSize: 13,
+                  fontWeight: 700,
+                  fontVariantNumeric: 'tabular-nums',
+                  color: 'var(--pd-ink-700)',
+                  flexShrink: 0,
+                }}
+              >
+                {dataset.views.toLocaleString('pt-PT')}
+              </span>
+            </Link>
+          ))}
+        </div>
       </div>
     </div>
   )
@@ -307,7 +418,7 @@ export function HeroSection({
                   />
                 )}
                 <button type="button" className="pd-search-mode">
-                  <Sparkles className="w-3.5 h-3.5" />
+                  <LineChart className="w-3.5 h-3.5" />
                   Modo IA
                   <ChevronDown className="w-3.5 h-3.5" />
                 </button>

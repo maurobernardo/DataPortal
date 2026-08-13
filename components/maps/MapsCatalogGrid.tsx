@@ -4,15 +4,18 @@ import { useMemo, useState } from 'react'
 import { Search } from 'lucide-react'
 import { MapCard } from '@/components/maps/MapCard'
 import type { PublicMapDashboard } from '@/lib/maps-catalog'
+import type { PreviewMapa } from '@/lib/maps-preview-data'
 
 export function MapsCatalogGrid({
   maps,
   favoriteIds,
   viewCounts,
+  previews,
 }: {
   maps: PublicMapDashboard[]
   favoriteIds?: Set<string>
   viewCounts?: Record<string, number>
+  previews?: Record<string, PreviewMapa | null>
 }) {
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('Todos')
@@ -72,6 +75,7 @@ export function MapsCatalogGrid({
               map={map}
               isFavorited={favoriteIds?.has(map.slug) ?? false}
               viewCount={viewCounts?.[map.slug]}
+              preview={previews?.[map.slug]}
             />
           ))}
         </div>

@@ -5,6 +5,7 @@ import { hasAuthMailConfig, sendRegistrationVerificationEmail } from '@/lib/mail
 import { notifyAdminsOfNewUser } from '@/lib/notifications'
 import { isStrongPassword, isValidEmail, normalizeEmail, normalizeText, rateLimit } from '@/lib/security'
 import { logger } from '@/lib/logger'
+import { VALORES_AREA_UTILIZADOR } from '@/lib/user-profile-options'
 
 export async function POST(request: Request) {
   try {
@@ -19,6 +20,7 @@ export async function POST(request: Request) {
     const name = normalizeText(body?.name, 120)
     const email = normalizeEmail(body?.email)
     const password = normalizeText(body?.password, 256)
+    const profileCategory = normalizeText(body?.profileCategory, 30)
 
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
     const rl = await rateLimit(`register:${ip}:${email}`, 5, 15 * 60 * 1000)
@@ -35,6 +37,10 @@ export async function POST(request: Request) {
 
     if (!isValidEmail(email)) {
       return NextResponse.json({ error: 'Email inválido' }, { status: 400 })
+    }
+
+    if (!profileCategory || !VALORES_AREA_UTILIZADOR.includes(profileCategory)) {
+      return NextResponse.json({ error: 'Seleccione a sua área' }, { status: 400 })
     }
 
     if (!isStrongPassword(password)) {
@@ -73,6 +79,7 @@ export async function POST(request: Request) {
       passwordHash,
       verificationToken,
       verificationExpires,
+      profileCategory,
     })
 
     if (!user) {

@@ -1780,6 +1780,43 @@
   background: var(--brand-primary-strong);
 }
 
+/* Painel lateral "Como funciona" (Nova Análise) */
+.como-funciona-panel {
+  animation: pd-slide-in-right 0.2s ease-out;
+}
+@keyframes pd-slide-in-right {
+  from { transform: translateX(16px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .como-funciona-panel { animation: none; }
+}
+
+/* Barra de acção fixa (Nova Análise): fica presa ao fundo da viewport enquanto o utilizador
+   percorre a pergunta e os datasets, sempre mostrando o progresso e o botão Analisar. */
+.na-actionbar {
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(6px);
+  border: 1px solid #E2E8E5;
+  border-radius: 16px;
+  box-shadow: var(--pd-shadow-lg);
+}
+@media (max-width: 639px) {
+  .na-actionbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
 .geo-detail-stats {
   margin-top: 20px;
   padding: 18px;
@@ -2142,8 +2179,15 @@
 
 .alf-sample-scroll {
   overflow-x: auto;
+  overflow-y: auto;
   border-radius: 8px;
   border: 1px solid #E2E8E5;
+}
+
+.alf-sample-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 .alf-sample-table {

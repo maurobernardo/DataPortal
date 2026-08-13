@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useState, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import {
-  Sparkles,
+  LineChart,
   ChevronRight,
   Map,
   Table2,
@@ -158,7 +158,7 @@ export function SearchSuggestionsPopover({
     <>
       <div className="flex items-center justify-between gap-2 border-b border-green-100 bg-gradient-to-r from-green-600 via-green-600 to-emerald-600 px-4 py-2.5">
         <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 shrink-0 text-white" aria-hidden />
+          <LineChart className="h-4 w-4 shrink-0 text-white" aria-hidden />
           <span className="text-xs font-bold uppercase tracking-wide text-white">Sugestões</span>
         </div>
         <span className="hidden text-[10px] font-medium text-white/90 sm:inline">Toque num resultado</span>

@@ -3,6 +3,7 @@ import { existsSync } from 'fs'
 import { join } from 'path'
 import ExcelJS from 'exceljs'
 import { inferColumnType } from '@/components/alf/alf-preview-utils'
+import { fixEncodingText } from './geo-preview-interactive'
 
 export type TablePreview = { type: 'table'; columns: string[]; rows: string[][]; delimiter: string }
 export type GeoPreview = {
@@ -274,6 +275,24 @@ export async function getDatasetPreview(
     const buf = await readFile(absPath)
     const g = globalThis as any
     if (!g.self) g.self = g
+
+    // Alguns utilizadores metem um .geojson dentro do .zip (em vez de shapefile) — verifica-se
+    // isso primeiro, senão o shpjs falha silenciosamente à procura de .shp/.dbf.
+    const JSZip = (await import('jszip')).default
+    const zip = await JSZip.loadAsync(buf)
+    const geojsonEntry = Object.values(zip.files).find(
+      (f: any) => !f.dir && /\.(geojson|json)$/i.test(f.name)
+    ) as any
+    if (geojsonEntry) {
+      const raw = await geojsonEntry.async('string')
+      const geojson = JSON.parse(raw)
+      const features = geojson?.type === 'FeatureCollection' ? geojson.features : []
+      const clipped = { ...geojson, features: features.slice(0, maxFeatures) }
+      const rawBbox = computeBBoxFromGeoJSON(clipped)
+      const bbox = bboxLooksLikeLonLat(rawBbox) ? rawBbox : null
+      return { type: 'geo', geojson: clipped, bbox, featureCount: features.length }
+    }
+
     const shpModule = await import('shpjs')
     const shp = (shpModule as any).default || shpModule
     const geojson = await shp(buf)
@@ -281,7 +300,17 @@ export async function getDatasetPreview(
       ? { type: 'FeatureCollection', features: geojson.flatMap((g: any) => g?.features || []) }
       : geojson
     const features = featureCollection?.type === 'FeatureCollection' ? featureCollection.features : []
-    const clipped = { ...featureCollection, features: features.slice(0, maxFeatures) }
+    // shpjs lê o .dbf sem respeitar sempre o .cpg (codepage) do shapefile: nomes com acentos
+    // chegam como "Sa??de" em vez de "Saúde". Corrige-se aqui, uma única vez à entrada, para que
+    // tudo o que consome este preview (mapa, motor de análise) receba texto já limpo — em vez de
+    // cada consumidor ter de repetir a mesma correcção.
+    const featuresCorrigidas = features.slice(0, maxFeatures).map((f: any) => ({
+      ...f,
+      properties: Object.fromEntries(
+        Object.entries(f?.properties || {}).map(([k, v]) => [k, typeof v === 'string' ? fixEncodingText(v) : v])
+      ),
+    }))
+    const clipped = { ...featureCollection, features: featuresCorrigidas }
     const rawBbox = computeBBoxFromGeoJSON(clipped)
     const bbox = bboxLooksLikeLonLat(rawBbox) ? rawBbox : null
     return { type: 'geo', geojson: clipped, bbox, featureCount: features.length }
@@ -289,6 +318,10 @@ export async function getDatasetPreview(
 
   if (isGeo && (lower.endsWith('.kml') || lower.endsWith('.gpx'))) {
     return { error: 'Pré-visualização de KML/GPX não suportada. Faça o download para visualizar.' }
+  }
+
+  if (isGeo && (lower.endsWith('.tif') || lower.endsWith('.tiff'))) {
+    return { error: 'Pré-visualização de raster (TIFF) não suportada. Faça o download para visualizar num SIG.' }
   }
 
   return { type: 'none' }

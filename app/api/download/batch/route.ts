@@ -7,11 +7,18 @@ import archiver from 'archiver'
 import { createStatistic, findDatasetsByIds, incrementDatasetDownloads } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
 import { recordDailyUsageAndMaybeAlertAdmins } from '@/lib/notifications'
+import { registarAcesso } from '@/lib/origem'
 import { logger } from '@/lib/logger'
 
 const MAX_BATCH = 20
 
+/** Downloads temporariamente desactivados a pedido do administrador (geoespaciais e alfanuméricos). */
+const DOWNLOADS_DESACTIVADOS = true
+
 export async function POST(request: NextRequest) {
+  if (DOWNLOADS_DESACTIVADOS) {
+    return NextResponse.json({ error: 'O download de dados está temporariamente indisponível.' }, { status: 423 })
+  }
   try {
     const body = await request.json().catch(() => null)
     const ids = Array.isArray(body?.ids)
@@ -66,6 +73,7 @@ export async function POST(request: NextRequest) {
         await incrementDatasetDownloads(dataset.id)
         await createStatistic(dataset.id, 'download', session?.userId)
         recordDailyUsageAndMaybeAlertAdmins('downloads')
+        await registarAcesso(request, 'download', { referenciaId: dataset.id, utilizadorId: session?.userId })
       })
     )
 

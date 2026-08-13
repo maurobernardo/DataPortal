@@ -61,9 +61,14 @@ export function BatchActionBar({
             Comparar no mapa
           </button>
         )}
-        <button type="button" className="geo-batch-bar-btn" onClick={handleDownload} disabled={downloading}>
-          {downloading ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Download className="size-4" aria-hidden />}
-          Descarregar (.zip)
+        <button
+          type="button"
+          className="geo-batch-bar-btn opacity-50 cursor-not-allowed"
+          disabled
+          title="Download temporariamente indisponível"
+        >
+          <Download className="size-4" aria-hidden />
+          Indisponível
         </button>
         <button type="button" className="geo-batch-bar-close" onClick={onClear} aria-label="Limpar seleção">
           <X className="size-4" aria-hidden />

@@ -191,6 +191,12 @@ export async function ensureUsersTable(): Promise<void> {
   }
 
   try {
+    await db.execute(`ALTER TABLE users ADD COLUMN profile_category VARCHAR(30) NULL`)
+  } catch {
+    /* coluna já existe */
+  }
+
+  try {
     const [legacyRows] = (await db.execute('SELECT COUNT(*) as total FROM users')) as [
       { total: number }[],
       unknown,
@@ -306,11 +312,12 @@ export async function createAuthUser(data: {
   verificationToken?: string | null
   verificationExpires?: Date | null
   emailVerified?: boolean
+  profileCategory?: string | null
 }) {
   await ensureUsersTable()
   const [result] = (await db.execute(
-    `INSERT INTO users (name, email, password_hash, email_verified, verification_token, verification_expires)
-     VALUES (?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO users (name, email, password_hash, email_verified, verification_token, verification_expires, profile_category)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
     [
       data.name,
       data.email,
@@ -318,6 +325,7 @@ export async function createAuthUser(data: {
       data.emailVerified ? 1 : 0,
       data.verificationToken ?? null,
       data.verificationExpires ?? null,
+      data.profileCategory ?? null,
     ]
   )) as [{ insertId: number }, unknown]
   return findUserById(result.insertId)
@@ -541,6 +549,21 @@ export async function linkOAuthToUser(userId: number, provider: string, oauthId:
 }
 
 // ==================== CATEGORY ====================
+/** Quantos datasets existem por categoria (nome), juntando geoespacial + alfanumérico da mesma
+ *  categoria — para a página de Serviços mostrar que temas o portal já cobre de facto, em vez de
+ *  inventar sectores sem dados por trás. */
+export async function contarDatasetsPorCategoria(): Promise<{ nome: string; total: number }[]> {
+  const [rows] = (await db.execute(
+    `SELECT c.name AS nome, COUNT(d.id) AS total
+     FROM Category c
+     JOIN Dataset d ON d.categoryId = c.id
+     GROUP BY c.name
+     HAVING total > 0
+     ORDER BY total DESC`
+  )) as [any[], unknown]
+  return rows.map((r: any) => ({ nome: r.nome, total: Number(r.total) }))
+}
+
 export async function findAllCategories() {
   await ensureCategoryCompositeUnique()
   const [rows] = await db.execute('SELECT * FROM Category ORDER BY name ASC') as any
@@ -847,6 +870,30 @@ export async function markDailyUsageAlerted(kind: 'views' | 'downloads', thresho
 export async function countDatasets() {
   const [rows] = await db.execute('SELECT COUNT(*) as total FROM Dataset') as any
   return rows[0].total
+}
+
+/** Contagens reais por serviço, para a página /servicos — cada número no directório vem daqui,
+ *  nunca escrito à mão. */
+export async function contarServicos(): Promise<{
+  geoespaciais: number
+  alfanumericos: number
+  mapas: number
+  dashboards: number
+  relatorios: number
+}> {
+  const [[geo], [alfa], [dash], [rel]] = await Promise.all([
+    db.execute(`SELECT COUNT(*) as total FROM Dataset WHERE dataType = 'geoespacial'`) as any,
+    db.execute(`SELECT COUNT(*) as total FROM Dataset WHERE dataType = 'alfanumerico'`) as any,
+    db.execute(`SELECT COUNT(*) as total FROM AlphanumericDashboard`) as any,
+    db.execute(`SELECT COUNT(*) as total FROM Report`) as any,
+  ])
+  return {
+    geoespaciais: Number(geo[0]?.total ?? 0),
+    alfanumericos: Number(alfa[0]?.total ?? 0),
+    mapas: 0, // preenchido no chamador a partir de MAP_CATALOG (fonte real: lib/maps-catalog.ts)
+    dashboards: Number(dash[0]?.total ?? 0),
+    relatorios: Number(rel[0]?.total ?? 0),
+  }
 }
 
 export async function findDatasetsByIds(ids: number[]) {
@@ -1340,10 +1387,22 @@ export async function countReportRequests(): Promise<number> {
 }
 
 // ==================== CONTACT ====================
-export async function createContactMessage(data: { name: string; email: string; subject: string; message: string }) {
+let contactMessagePurposeColumnEnsured = false
+async function ensureContactMessagePurposeColumn(): Promise<void> {
+  if (contactMessagePurposeColumnEnsured) return
+  contactMessagePurposeColumnEnsured = true
+  try {
+    await db.execute(`ALTER TABLE ContactMessage ADD COLUMN purpose VARCHAR(60) NULL`)
+  } catch {
+    /* coluna já existe */
+  }
+}
+
+export async function createContactMessage(data: { name: string; email: string; subject: string; message: string; purpose?: string | null }) {
+  await ensureContactMessagePurposeColumn()
   await db.execute(
-    'INSERT INTO ContactMessage (name, email, subject, message, createdAt) VALUES (?, ?, ?, ?, NOW())',
-    [data.name, data.email, data.subject, data.message]
+    'INSERT INTO ContactMessage (name, email, subject, message, purpose, createdAt) VALUES (?, ?, ?, ?, ?, NOW())',
+    [data.name, data.email, data.subject, data.message, data.purpose ?? null]
   )
 }
 
@@ -1638,41 +1697,138 @@ export async function logAiInsightQuery(data: {
   )
 }
 
+/**
+ * Junta as duas fontes de consultas de IA: AIInsightQuery (a ferramenta antiga, "/ai-insights",
+ * entretanto descontinuada) e `analises` (o motor de análise profunda actual, "/analise/nova").
+ * Sem esta união, o painel ficava parado na última data em que alguém usou a ferramenta antiga,
+ * mesmo com uso activo todos os dias na nova.
+ */
 export async function getAiInsightUsageSummary() {
   await ensureAiInsightQueriesTable()
 
   const [totals] = (await db.execute(
-    `SELECT
-       COUNT(*) as totalQueries,
-       COUNT(DISTINCT userId) as totalUsers,
+    `SELECT COUNT(*) as totalQueries, COUNT(DISTINCT userId) as totalUsers,
        SUM(CASE WHEN createdAt >= DATE(NOW()) THEN 1 ELSE 0 END) as todayQueries
-     FROM AIInsightQuery`
+     FROM (
+       SELECT userId, createdAt FROM AIInsightQuery
+       UNION ALL
+       SELECT utilizador_id as userId, criado_em as createdAt FROM analises WHERE utilizador_id IS NOT NULL
+     ) t`
   )) as [{ totalQueries: number; totalUsers: number; todayQueries: number }[], unknown]
 
   const [byUser] = (await db.execute(
     `SELECT u.id as userId, u.name, u.email,
-       COUNT(q.id) as totalQueries,
-       SUM(CASE WHEN q.createdAt >= DATE(NOW()) THEN 1 ELSE 0 END) as todayQueries,
-       MAX(q.createdAt) as lastQueryAt
-     FROM AIInsightQuery q
-     JOIN users u ON u.id = q.userId
+       COUNT(t.createdAt) as totalQueries,
+       SUM(CASE WHEN t.createdAt >= DATE(NOW()) THEN 1 ELSE 0 END) as todayQueries,
+       MAX(t.createdAt) as lastQueryAt
+     FROM (
+       SELECT userId, createdAt FROM AIInsightQuery
+       UNION ALL
+       SELECT utilizador_id as userId, criado_em as createdAt FROM analises WHERE utilizador_id IS NOT NULL
+     ) t
+     JOIN users u ON u.id = t.userId
      GROUP BY u.id, u.name, u.email
      ORDER BY totalQueries DESC
      LIMIT 50`
   )) as [any[], unknown]
 
   const [recent] = (await db.execute(
-    `SELECT q.id, q.question, q.datasetIds, q.confidence, q.createdAt, u.name, u.email
-     FROM AIInsightQuery q
-     JOIN users u ON u.id = q.userId
-     ORDER BY q.createdAt DESC
+    `SELECT t.id, t.question, t.createdAt, u.name, u.email FROM (
+       SELECT CAST(id AS CHAR) as id, CONVERT(question USING utf8mb4) COLLATE utf8mb4_unicode_ci as question, userId, createdAt FROM AIInsightQuery
+       UNION ALL
+       SELECT CAST(id AS CHAR) as id, CONVERT(pergunta USING utf8mb4) COLLATE utf8mb4_unicode_ci as question, utilizador_id as userId, criado_em as createdAt FROM analises WHERE utilizador_id IS NOT NULL
+     ) t
+     JOIN users u ON u.id = t.userId
+     ORDER BY t.createdAt DESC
      LIMIT 30`
   )) as [any[], unknown]
+
+  const tendencias = await getAiInsightTendencias()
 
   return {
     totals: totals[0] ?? { totalQueries: 0, totalUsers: 0, todayQueries: 0 },
     byUser,
     recent,
+    tendencias,
+  }
+}
+
+const ROTULO_ARQUETIPO: Record<string, string> = {
+  exploratorio: 'Exploratório',
+  comparativo: 'Comparativo',
+  temporal: 'Tendência temporal',
+  geoespacial: 'Geoespacial',
+  ranking: 'Ranking / extremos',
+  diagnostico: 'Diagnóstico',
+  preditivo: 'Preditivo',
+  executivo: 'Resumo executivo',
+  monitorizacao: 'Monitorização',
+  narrativo: 'Narrativo',
+}
+
+/**
+ * Tendências de uso do motor de análise por TIPO de pergunta e por CATEGORIA de dataset — não por
+ * texto literal repetido (uma tabela de "perguntas iguais" fica quase sempre vazia, porque
+ * raramente duas pessoas escrevem a mesma pergunta palavra por palavra). Isto usa classificação
+ * que o próprio motor já produz por análise (arquétipo, Parte 1 da compreensão) e os datasets
+ * realmente usados — nenhuma instrumentação nova, só agregação melhor do que já existe.
+ *
+ * `arquetipo` só existe em `analises` (o motor actual) — a ferramenta antiga (AIInsightQuery)
+ * nunca classificou a pergunta, por isso entra na contagem por dataset/categoria mas não na de
+ * arquétipo, em vez de lhe atribuir uma classificação inventada.
+ */
+export async function getAiInsightTendencias() {
+  const [analisesRows] = (await db.execute(
+    `SELECT arquetipo, datasets_ids FROM analises WHERE datasets_ids IS NOT NULL`
+  )) as [any[], unknown]
+  const [legadoRows] = (await db.execute(
+    `SELECT datasetIds FROM AIInsightQuery`
+  )) as [any[], unknown]
+
+  const porArquetipo = new Map<string, number>()
+  const porDataset = new Map<number, number>()
+
+  for (const r of analisesRows) {
+    if (r.arquetipo) porArquetipo.set(r.arquetipo, (porArquetipo.get(r.arquetipo) || 0) + 1)
+    const ids: number[] = typeof r.datasets_ids === 'string' ? JSON.parse(r.datasets_ids) : r.datasets_ids || []
+    for (const id of ids) porDataset.set(id, (porDataset.get(id) || 0) + 1)
+  }
+  for (const r of legadoRows) {
+    let ids: number[] = []
+    try {
+      ids = JSON.parse(r.datasetIds)
+    } catch {
+      continue
+    }
+    for (const id of ids) porDataset.set(id, (porDataset.get(id) || 0) + 1)
+  }
+
+  const datasetIdsUnicos = Array.from(porDataset.keys())
+  const datasetsInfo = datasetIdsUnicos.length > 0 ? await findDatasetsByIds(datasetIdsUnicos) : []
+  const infoPorId = new Map<number, any>(datasetsInfo.map((d: any) => [d.id, d]))
+
+  const porCategoria = new Map<string, number>()
+  porDataset.forEach((total, id) => {
+    const nomeCategoria = infoPorId.get(id)?.category?.name || 'Sem categoria'
+    porCategoria.set(nomeCategoria, (porCategoria.get(nomeCategoria) || 0) + total)
+  })
+
+  return {
+    porArquetipo: Array.from(porArquetipo.entries())
+      .map(([arquetipo, total]) => ({ arquetipo, rotulo: ROTULO_ARQUETIPO[arquetipo] || arquetipo, total }))
+      .sort((a, b) => b.total - a.total),
+    porCategoriaDataset: Array.from(porCategoria.entries())
+      .map(([categoria, total]) => ({ categoria, total }))
+      .sort((a, b) => b.total - a.total),
+    porDataset: Array.from(porDataset.entries())
+      .map(([datasetId, total]) => ({
+        datasetId,
+        titulo: infoPorId.get(datasetId)?.title || `Dataset #${datasetId}`,
+        categoria: infoPorId.get(datasetId)?.category?.name || 'Sem categoria',
+        total,
+      }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 15),
   }
 }
 

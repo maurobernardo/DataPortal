@@ -5,6 +5,7 @@ import { HealthMapDashboard } from '@/components/maps/HealthMapDashboard'
 import PolesMapDashboard from '@/components/maps/PolesMapDashboard'
 import MalariaMapDashboard from '@/components/maps/MalariaMapDashboard'
 import FeederPulseDashboard from '@/components/maps/FeederPulseDashboard'
+import CerealProductionDashboard from '@/components/maps/CerealProductionDashboard'
 import { MapDetailToolbar } from '@/components/maps/MapDetailToolbar'
 import { RecordMapView } from '@/components/maps/RecordMapView'
 import '../../maps-catalog.css'
@@ -21,6 +22,7 @@ export function generateStaticParams() {
     { slug: 'diagnostico-rede-postes' },
     { slug: 'malaria-geografia-2015-2018' },
     { slug: 'feederpulse-mz' },
+    { slug: 'producao-cereais' },
   ]
 }
 
@@ -73,6 +75,13 @@ export default async function MapDetailPage({ params }: PageProps) {
         />
       ) : map.kind === 'feeder' ? (
         <FeederPulseDashboard
+          dataPath={map.dataPath}
+          title={map.title}
+          subtitle={map.subtitle}
+          badges={map.badges}
+        />
+      ) : map.kind === 'cereals' ? (
+        <CerealProductionDashboard
           dataPath={map.dataPath}
           title={map.title}
           subtitle={map.subtitle}

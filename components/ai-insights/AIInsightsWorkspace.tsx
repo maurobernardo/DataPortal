@@ -10,7 +10,7 @@ import {
   Map,
   MapPinned,
   Search,
-  Sparkles,
+  LineChart,
 } from 'lucide-react'
 import { SearchSuggestionsPopover } from '@/components/SearchSuggestionsPopover'
 import { HERO_TRY_SUGGESTIONS } from '@/lib/portal-search'
@@ -84,7 +84,7 @@ export function AIInsightsWorkspace() {
       <div className="ai-section-inner">
         <div className="max-w-3xl mb-8">
           <div className="inline-flex items-center gap-2 rounded-full bg-[#F1F8F4] border border-[#CFE3D6] px-3 py-1 mb-4">
-            <Sparkles className="w-3.5 h-3.5 text-[#6B4FBB]" aria-hidden />
+            <LineChart className="w-3.5 h-3.5 text-[#6B4FBB]" aria-hidden />
             <span className="text-[10px] font-bold tracking-widest uppercase text-[#064E2C]">
               Assistente de descoberta
             </span>

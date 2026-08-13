@@ -6,6 +6,7 @@ import {
   BarChart3,
   Brain,
   Database,
+  Globe2,
   Home,
   Settings,
   LogOut,
@@ -61,6 +62,12 @@ export function AdminSidebar({ user, activeTab }: AdminSidebarProps) {
       label: 'Utilização de IA',
       href: '/dashboard/ia-utilizacao',
       active: pathname === '/dashboard/ia-utilizacao',
+    },
+    {
+      icon: Globe2,
+      label: 'Origem dos Utilizadores',
+      href: '/admin/origem-utilizadores',
+      active: pathname === '/admin/origem-utilizadores',
     },
   ]
   const mainLinks = [

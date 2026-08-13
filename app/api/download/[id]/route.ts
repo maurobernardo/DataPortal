@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { NextRequest, NextResponse } from 'next/server'
 import { readFile } from 'fs/promises'
 import { existsSync } from 'fs'
@@ -9,12 +11,19 @@ import {
 } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
 import { recordDailyUsageAndMaybeAlertAdmins } from '@/lib/notifications'
+import { registarAcesso } from '@/lib/origem'
 import { logger } from '@/lib/logger'
+
+/** Downloads temporariamente desactivados a pedido do administrador (geoespaciais e alfanuméricos). */
+const DOWNLOADS_DESACTIVADOS = true
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  if (DOWNLOADS_DESACTIVADOS) {
+    return NextResponse.json({ error: 'O download de dados está temporariamente indisponível.' }, { status: 423 })
+  }
   try {
     const datasetId = parseInt(params.id)
     
@@ -60,6 +69,7 @@ export async function GET(
     const session = await getCurrentUser()
     await createStatistic(datasetId, 'download', session?.userId)
     recordDailyUsageAndMaybeAlertAdmins('downloads')
+    await registarAcesso(request, 'download', { referenciaId: datasetId, utilizadorId: session?.userId })
 
     // Retornar o arquivo para download
     const contentType = fileName.endsWith('.zip') ? 'application/zip' :
@@ -83,16 +93,3 @@ export async function GET(
     )
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

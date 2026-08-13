@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
-import { Menu, X, Database, FileText, BarChart3, Map, MapPinned, Home, LogIn, UserPlus } from 'lucide-react'
+import { Menu, X, Database, FileText, BarChart3, Map, MapPinned, Home, LogIn, UserPlus, LayoutGrid } from 'lucide-react'
 import Image from 'next/image'
 import { NavUserMenu } from '@/components/NavUserMenu'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
@@ -35,7 +35,11 @@ export function Navigation() {
   }, [])
 
   useEffect(() => {
-    const mq = window.matchMedia('(max-width: 1240px)')
+    // 1240px deixava uma faixa larga (~1241-1480px, larguras de portátil muito comuns como
+    // 1280/1366) onde os rótulos completos não cabiam mas o modo compacto ainda não tinha
+    // activado — o texto ficava cortado a meio por "text-overflow: ellipsis" em vez de mostrar a
+    // versão curta. 1480px cobre essa faixa.
+    const mq = window.matchMedia('(max-width: 1480px)')
     const update = () => setCompactNav(mq.matches)
     update()
     mq.addEventListener('change', update)
@@ -93,6 +97,7 @@ export function Navigation() {
     { href: '/dashboards-alfanumericos', label: 'Dashboards', compactLabel: 'Dash.', icon: BarChart3 },
     { href: '/maps', label: 'Mapas Inteligentes', compactLabel: 'Mapas', icon: MapPinned },
     { href: '/relatorios', label: 'Relatórios', compactLabel: 'Relat.', icon: FileText },
+    { href: '/servicos', label: 'Serviços', compactLabel: 'Serviços', icon: LayoutGrid },
   ]
 
   return (
@@ -123,24 +128,23 @@ export function Navigation() {
               {navLinks.slice(3).map(renderNavLink)}
             </div>
             <div className="pd-nav-actions" aria-label="Acções">
-              <LanguageSwitcher compact={compactNav} />
+              {/* Sempre compacto no cabeçalho (só ícone / só iniciais): o nome, email e idioma por
+                  extenso continuam visíveis no painel que abre ao clicar — o cabeçalho não precisa
+                  de repetir essa informação, só de dar acesso a ela. */}
+              <LanguageSwitcher compact />
               {sessionUser ? (
                 <NavUserMenu
                   name={sessionUser.name}
                   email={sessionUser.email}
                   initials={sessionUser.initials}
                   role={sessionUser.role}
-                  compact={compactNav}
+                  compact
                 />
               ) : (
                 <div className="pd-nav-auth">
                   <Link href="/login" className="pd-nav-auth-link" title="Entrar">
                     <LogIn size={15} strokeWidth={2} aria-hidden />
                     <span>Entrar</span>
-                  </Link>
-                  <Link href="/registo" className="pd-nav-auth-register" title="Criar conta">
-                    <UserPlus size={15} strokeWidth={2} aria-hidden />
-                    <span>Registar</span>
                   </Link>
                 </div>
               )}

@@ -3,15 +3,17 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Mail, Lock, Loader2, AlertCircle, User, CheckCircle2 } from 'lucide-react'
+import { Mail, Lock, Loader2, AlertCircle, User, Users, CheckCircle2, ChevronDown } from 'lucide-react'
 import { parseApiResponse } from '@/lib/parse-api-response'
 import { SocialLoginButtons } from '@/components/SocialLoginButtons'
+import { OPCOES_AREA_UTILIZADOR } from '@/lib/user-profile-options'
 
 export function RegisterForm() {
   const router = useRouter()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [profileCategory, setProfileCategory] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [loading, setLoading] = useState(false)
@@ -27,7 +29,7 @@ export function RegisterForm() {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password, profileCategory }),
       })
 
       const { data, ok } = await parseApiResponse<{
@@ -102,6 +104,38 @@ export function RegisterForm() {
           placeholder="O seu nome"
           className="w-full px-3 md:px-4 py-2.5 md:py-3 border-2 border-gray-200 rounded-lg md:rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition text-sm md:text-base"
         />
+      </div>
+
+      <div>
+        <label
+          htmlFor="registo-area"
+          className="block text-xs md:text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2"
+        >
+          <Users className="w-3.5 h-3.5 md:w-4 md:h-4" />
+          Qual a sua área?
+        </label>
+        <div className="relative">
+          <select
+            id="registo-area"
+            value={profileCategory}
+            onChange={(e) => setProfileCategory(e.target.value)}
+            required
+            className="w-full appearance-none px-3 md:px-4 py-2.5 md:py-3 pr-10 border-2 border-gray-200 rounded-lg md:rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition text-sm md:text-base bg-white"
+          >
+            <option value="" disabled>
+              Seleccione uma opção
+            </option>
+            {OPCOES_AREA_UTILIZADOR.map((opcao) => (
+              <option key={opcao.value} value={opcao.value}>
+                {opcao.label}
+              </option>
+            ))}
+          </select>
+          <ChevronDown
+            className="pointer-events-none absolute right-3 md:right-4 top-1/2 -translate-y-1/2 size-4 text-gray-500"
+            aria-hidden
+          />
+        </div>
       </div>
 
       <div>

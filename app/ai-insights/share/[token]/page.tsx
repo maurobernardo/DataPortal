@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Sparkles } from 'lucide-react'
+import { LineChart } from 'lucide-react'
 import { findAiInsightTileByShareToken } from '@/lib/db'
 import { AIResultView, type AiAnalysisResultWithSources } from '@/components/ai-insights/AIResultView'
 
@@ -37,7 +37,7 @@ export default async function AiInsightSharePage({ params }: { params: { token: 
             href="/ai-insights"
             className="text-xs font-semibold text-gray-500 hover:text-[#064E2C] inline-flex items-center gap-1.5"
           >
-            <Sparkles className="w-3.5 h-3.5 text-[#6B4FBB]" />
+            <LineChart className="w-3.5 h-3.5 text-[#6B4FBB]" />
             Data Portal · AI Insights
           </Link>
           <h1 className="text-xl md:text-2xl font-extrabold text-gray-900 mt-2">{tile.title}</h1>

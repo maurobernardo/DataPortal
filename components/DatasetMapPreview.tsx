@@ -35,10 +35,14 @@ export function DatasetMapPreview({
   geojson,
   bbox,
   className,
+  showToggle = true,
 }: {
   geojson: any
   bbox?: [number, number, number, number] | null
   className?: string
+  /** false em contextos onde o mapa fica dentro de outro elemento interactivo (ex.: card
+   *  clicável) — dois <button> aninhados são HTML inválido e quebram a hidratação. */
+  showToggle?: boolean
 }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<Map | null>(null)
@@ -74,15 +78,47 @@ export function DatasetMapPreview({
       if (geojson) {
         geojsonRef.current = L.geoJSON(geojson, {
           style: GEOJSON_STYLE.map,
+          // Sem isto, pontos (ex.: unidades sanitárias) usam o marcador azul por omissão do
+          // Leaflet — "style" só afecta linhas/polígonos. Com centenas de pontos sobrepostos a
+          // um zoom afastado, isso aparecia como uma mancha azul sólida em vez do país.
+          pointToLayer: (_feature, latlng) =>
+            L.circleMarker(latlng, {
+              radius: 3,
+              color: GEOJSON_STYLE.map.color,
+              fillColor: GEOJSON_STYLE.map.fillColor,
+              fillOpacity: 0.7,
+              weight: 1,
+            }),
         }).addTo(map)
       }
 
-      if (bbox) {
-        map.fitBounds(
-          [[bbox[1], bbox[0]], [bbox[3], bbox[2]]],
-          { padding: [24, 24] }
-        )
+      // O container pode ainda não ter as dimensões finais no primeiro paint (comum dentro de
+      // cards pequenos com layout flex/absolute) — sem invalidateSize antes do fitBounds, o
+      // Leaflet calcula o zoom com base numa caixa errada e mostra o continente inteiro em vez
+      // de aproximar a Moçambique.
+      function ajustarEnquadramento(tentativas = 0) {
+        const largura = containerRef.current?.offsetWidth || 0
+        // Dentro de um card pequeno (flex/absolute), o container pode continuar com 0px de
+        // largura por vários frames enquanto o layout ainda está a assentar — um só
+        // requestAnimationFrame não chega. Insiste até haver tamanho real ou desistir.
+        if (largura === 0 && tentativas < 20) {
+          requestAnimationFrame(() => ajustarEnquadramento(tentativas + 1))
+          return
+        }
+        map.invalidateSize()
+        if (bbox) {
+          map.fitBounds([[bbox[1], bbox[0]], [bbox[3], bbox[2]]], { padding: [16, 16], animate: false })
+        } else if (geojsonRef.current) {
+          // Sem bbox explícito na resposta da API: a camada já carregada sabe os seus próprios
+          // limites reais (Leaflet calcula-os a partir da geometria) — usar isso em vez de ficar
+          // preso ao enquadramento inicial do mundo inteiro, que não mostra nada de útil.
+          const limites = geojsonRef.current.getBounds()
+          if (limites.isValid()) {
+            map.fitBounds(limites, { padding: [16, 16], animate: false })
+          }
+        }
       }
+      requestAnimationFrame(() => ajustarEnquadramento())
 
       mapRef.current = map
     })
@@ -125,24 +161,26 @@ export function DatasetMapPreview({
       <div ref={containerRef} style={{ height: '100%', width: '100%' }} />
 
       {/* Toggle Mapa / Satélite */}
-      <div className="absolute top-3 right-3 z-[1000] bg-white/95 backdrop-blur rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="flex">
-          {(['map', 'satellite'] as BaseMap[]).map((mode) => (
-            <button
-              key={mode}
-              type="button"
-              onClick={() => setBaseMap(mode)}
-              className={`px-3 py-2 text-xs font-bold transition ${
-                baseMap === mode
-                  ? 'bg-green-600 text-white'
-                  : 'text-slate-700 hover:bg-slate-100'
-              }`}
-            >
-              {mode === 'map' ? 'Mapa' : 'Satélite'}
-            </button>
-          ))}
+      {showToggle && (
+        <div className="absolute top-3 right-3 z-[1000] bg-white/95 backdrop-blur rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="flex">
+            {(['map', 'satellite'] as BaseMap[]).map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => setBaseMap(mode)}
+                className={`px-3 py-2 text-xs font-bold transition ${
+                  baseMap === mode
+                    ? 'bg-green-600 text-white'
+                    : 'text-slate-700 hover:bg-slate-100'
+                }`}
+              >
+                {mode === 'map' ? 'Mapa' : 'Satélite'}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

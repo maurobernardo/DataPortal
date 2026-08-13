@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSessionCookieOptions, SESSION_COOKIE_NAME, signSessionToken } from '@/lib/auth'
 import { createOAuthUser, findUserByEmail, findUserByOAuth, linkOAuthToUser } from '@/lib/db'
-import { exchangeCodeForProfile, getProviderConfig, isOAuthProvider } from '@/lib/oauth'
+import { exchangeCodeForProfile, getProviderConfig, getSiteUrl, isOAuthProvider } from '@/lib/oauth'
 import { notifyAdminsOfNewUser } from '@/lib/notifications'
+import { sendWelcomeEmail } from '@/lib/mailer'
 import { logger } from '@/lib/logger'
+
+export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest, { params }: { params: { provider: string } }) {
   const provider = params.provider
 
   const loginErrorUrl = (reason: string) => {
-    const url = new URL('/login', request.url)
+    const url = new URL('/login', getSiteUrl())
     url.searchParams.set('error', reason)
     return url
   }
@@ -61,13 +64,16 @@ export async function GET(request: NextRequest, { params }: { params: { provider
       notifyAdminsOfNewUser({ name: user.name, email: user.email }).catch((error) => {
         logger.error('error_notifying_admins_of_new_oauth_user', { error, email: user!.email })
       })
+      sendWelcomeEmail(user.email, user.name).catch((error) => {
+        logger.error('error_sending_welcome_email_oauth', { error, email: user!.email })
+      })
     }
 
     const role = user.role === 'admin' ? 'admin' : 'user'
     const token = signSessionToken({ userId: user.id, email: user.email, role })
     const redirectTo = role === 'admin' ? '/dashboard' : '/'
 
-    const response = NextResponse.redirect(new URL(redirectTo, request.url))
+    const response = NextResponse.redirect(new URL(redirectTo, getSiteUrl()))
     response.cookies.set(SESSION_COOKIE_NAME, token, getSessionCookieOptions())
     response.cookies.set(`oauth_state_${provider}`, '', { path: '/', maxAge: 0 })
     return response

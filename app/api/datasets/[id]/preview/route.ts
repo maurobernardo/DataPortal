@@ -1,12 +1,14 @@
 export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { findDatasetById, setDatasetPreviewMeta } from '@/lib/db'
 import { getDatasetPreview } from '@/lib/dataset-preview'
 import { computeGeoInsights } from '@/lib/geo-intelligence'
+import { registarAcesso } from '@/lib/origem'
 import { logger } from '@/lib/logger'
 
-export async function GET(_request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const datasetId = Number.parseInt(params.id, 10)
     if (!Number.isFinite(datasetId)) {
@@ -19,10 +21,13 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
     }
 
     const preview = await getDatasetPreview(dataset)
+    registarAcesso(request, 'vista_dataset', { referenciaId: datasetId }).catch(() => {})
 
-    // Backfill preguiçoso do badge/bbox em cache para datasets criados antes desta funcionalidade.
-    if (dataset.previewAvailable == null) {
-      const available = 'type' in preview && (preview.type === 'table' || preview.type === 'geo')
+    // Backfill preguiçoso do badge/bbox em cache. Reavalia sempre que a flag ainda não existe OU
+    // está marcada como indisponível mas a geração acabou de funcionar agora — um "não disponível"
+    // registado antes já não pode ser corrigido de outra forma, um "disponível" nunca regride.
+    const available = 'type' in preview && (preview.type === 'table' || preview.type === 'geo')
+    if (dataset.previewAvailable == null || (dataset.previewAvailable == false && available)) {
       const bbox = 'type' in preview && preview.type === 'geo' ? preview.bbox : null
       setDatasetPreviewMeta(datasetId, { previewAvailable: available, bbox }).catch((error) => {
         logger.error('error_backfilling_preview_meta', { error, datasetId })

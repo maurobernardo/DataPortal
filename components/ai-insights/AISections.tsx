@@ -134,7 +134,7 @@ export function AIFinalCTA() {
           Análise em português, baseada nos dados oficiais do país. Basta iniciar sessão.
         </p>
         <div className="flex gap-3 justify-center flex-wrap">
-          <Link href="/ai-insights/workspace" className="ai-btn ai-btn-ai ai-btn-lg">
+          <Link href="/analise/nova" className="ai-btn ai-btn-ai ai-btn-lg">
             Começar agora →
           </Link>
         </div>

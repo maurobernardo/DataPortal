@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
-import { ArrowLeft, Brain, Sparkles } from 'lucide-react'
+import { ArrowLeft, Brain, LineChart } from 'lucide-react'
 import { getCurrentUserProfile } from '@/lib/auth'
 import { findAiInsightTileById } from '@/lib/db'
 import { AIResultView, type AiAnalysisResultWithSources } from '@/components/ai-insights/AIResultView'
@@ -36,7 +36,7 @@ export default async function AIDashboardDetailPage({ params }: { params: { id: 
       <header className="border-b border-[#E2E8E5] bg-white">
         <div className="max-w-4xl mx-auto px-4 py-6">
           <Link
-            href="/ai-insights/workspace"
+            href="/analise/nova"
             className="group inline-flex items-center gap-2 rounded-xl border border-[#E2E8E5] bg-white pl-1.5 pr-3 py-1.5 shadow-sm hover:shadow-md hover:-translate-x-0.5 transition-all"
           >
             <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-[#F1F8F4] text-[#064E2C] group-hover:bg-[#064E2C] group-hover:text-white transition-colors">
@@ -54,7 +54,7 @@ export default async function AIDashboardDetailPage({ params }: { params: { id: 
                 {tile.title}
               </h1>
               <p className="text-sm text-gray-500 mt-2 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-[#6B4FBB] shrink-0" />
+                <LineChart className="w-3.5 h-3.5 text-[#6B4FBB] shrink-0" />
                 "{tile.question}"
               </p>
               <p className="text-xs text-gray-400 mt-1">

@@ -169,11 +169,11 @@ export function AlfPreviewInspector({
           <div className="alf-detail-stats">
             <div className="alf-detail-stat">
               <div className="alf-detail-stat-key">Colunas</div>
-              <div className="alf-detail-stat-val">{colCount || '—'}</div>
+              <div className="alf-detail-stat-val">{colCount || 'N/D'}</div>
             </div>
             <div className="alf-detail-stat">
               <div className="alf-detail-stat-key">Linhas (amostra)</div>
-              <div className="alf-detail-stat-val">{rowCount || '—'}</div>
+              <div className="alf-detail-stat-val">{rowCount || 'N/D'}</div>
             </div>
             {typeof views === 'number' && (
               <div className="alf-detail-stat">

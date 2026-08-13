@@ -39,7 +39,9 @@ export function middleware(request: NextRequest) {
     // Middleware corre no Edge — só verifica presença do cookie.
     // A validação JWT e o perfil admin fazem-se nas páginas/API (Node.js).
     if (!token) {
-      const loginUrl = new URL('/login', request.url)
+      const loginUrl = request.nextUrl.clone()
+      loginUrl.pathname = '/login'
+      loginUrl.search = ''
       loginUrl.searchParams.set('next', pathname)
       return applySecurityHeaders(NextResponse.redirect(loginUrl))
     }

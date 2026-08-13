@@ -31,7 +31,7 @@ export default async function AIDashboardComparePage({
       <header className="border-b border-[#E2E8E5] bg-white">
         <div className="max-w-7xl mx-auto px-4 py-6">
           <Link
-            href="/ai-insights/workspace"
+            href="/analise/nova"
             className="group inline-flex items-center gap-2 rounded-xl border border-[#E2E8E5] bg-white pl-1.5 pr-3 py-1.5 shadow-sm hover:shadow-md hover:-translate-x-0.5 transition-all"
           >
             <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-[#F1F8F4] text-[#064E2C] group-hover:bg-[#064E2C] group-hover:text-white transition-colors">
@@ -56,7 +56,7 @@ export default async function AIDashboardComparePage({
               seleccione duas análises guardadas.
             </p>
             <Link
-              href="/ai-insights/workspace"
+              href="/analise/nova"
               className="inline-block mt-3 text-sm font-semibold text-[#064E2C] hover:underline"
             >
               ← Voltar aos meus dashboards

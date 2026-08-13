@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { Brain, MessageSquareText, Users } from 'lucide-react'
+import { Brain, Database, ListTree, MessageSquareText, Users } from 'lucide-react'
 import { getCurrentUserProfile } from '@/lib/auth'
 import { getAiInsightUsageSummary } from '@/lib/db'
 import { AdminSidebar } from '@/components/AdminSidebar'
@@ -17,7 +17,9 @@ export default async function AiUsagePage() {
     redirect('/')
   }
 
-  const { totals, byUser, recent } = await getAiInsightUsageSummary()
+  const { totals, byUser, recent, tendencias } = await getAiInsightUsageSummary()
+  const maxArquetipo = Math.max(1, ...tendencias.porArquetipo.map((a) => a.total))
+  const maxCategoria = Math.max(1, ...tendencias.porCategoriaDataset.map((c) => c.total))
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -98,6 +100,107 @@ export default async function AiUsagePage() {
                           <td className="px-5 py-3 text-gray-700">{row.totalQueries}</td>
                           <td className="px-5 py-3 text-gray-500 text-xs">
                             {row.lastQueryAt ? new Date(row.lastQueryAt).toLocaleString('pt-PT') : '—'}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Categorização robusta em vez de texto literal repetido: tipo de pergunta
+                (arquétipo, já classificado pelo motor em cada análise) e categoria de dataset
+                analisado — é isto que diz que tipo de dado vale a pena produzir mais, não uma
+                tabela de perguntas iguais que fica quase sempre vazia. */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
+                  <ListTree className="w-4 h-4 text-gray-500" />
+                  <h2 className="text-sm font-bold text-gray-900">Tipo de pergunta mais feita</h2>
+                </div>
+                <div className="p-5 space-y-2.5">
+                  {tendencias.porArquetipo.length === 0 ? (
+                    <p className="text-sm text-gray-400 text-center py-6">Ainda não há análises suficientes.</p>
+                  ) : (
+                    tendencias.porArquetipo.map((a) => (
+                      <div key={a.arquetipo} className="flex items-center gap-3">
+                        <span className="w-36 shrink-0 text-[13px] text-gray-700 truncate">{a.rotulo}</span>
+                        <div className="flex-1 h-2 rounded-full bg-gray-100 overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-green-600"
+                            style={{ width: `${Math.max(2, (a.total / maxArquetipo) * 100)}%` }}
+                          />
+                        </div>
+                        <span className="w-10 shrink-0 text-right text-[12px] font-bold text-gray-800 tabular-nums">
+                          {a.total}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
+                  <Database className="w-4 h-4 text-gray-500" />
+                  <h2 className="text-sm font-bold text-gray-900">Categoria de dataset mais analisada</h2>
+                </div>
+                <div className="p-5 space-y-2.5">
+                  {tendencias.porCategoriaDataset.length === 0 ? (
+                    <p className="text-sm text-gray-400 text-center py-6">Ainda não há análises suficientes.</p>
+                  ) : (
+                    tendencias.porCategoriaDataset.map((c) => (
+                      <div key={c.categoria} className="flex items-center gap-3">
+                        <span className="w-36 shrink-0 text-[13px] text-gray-700 truncate">{c.categoria}</span>
+                        <div className="flex-1 h-2 rounded-full bg-gray-100 overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-[#064E2C]"
+                            style={{ width: `${Math.max(2, (c.total / maxCategoria) * 100)}%` }}
+                          />
+                        </div>
+                        <span className="w-10 shrink-0 text-right text-[12px] font-bold text-gray-800 tabular-nums">
+                          {c.total}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
+                <Database className="w-4 h-4 text-gray-500" />
+                <h2 className="text-sm font-bold text-gray-900">Datasets mais analisados</h2>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide border-b border-gray-100">
+                      <th className="px-5 py-2.5">Dataset</th>
+                      <th className="px-5 py-2.5">Categoria</th>
+                      <th className="px-5 py-2.5">Análises</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tendencias.porDataset.length === 0 ? (
+                      <tr>
+                        <td colSpan={3} className="px-5 py-8 text-center text-gray-400">
+                          Ainda não há análises suficientes.
+                        </td>
+                      </tr>
+                    ) : (
+                      tendencias.porDataset.map((d) => (
+                        <tr key={d.datasetId} className="border-b border-gray-50 last:border-0">
+                          <td className="px-5 py-3 text-gray-800 max-w-md truncate" title={d.titulo}>
+                            {d.titulo}
+                          </td>
+                          <td className="px-5 py-3 text-gray-500 text-xs">{d.categoria}</td>
+                          <td className="px-5 py-3">
+                            <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold bg-green-50 text-green-700">
+                              {d.total}
+                            </span>
                           </td>
                         </tr>
                       ))

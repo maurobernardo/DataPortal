@@ -123,9 +123,12 @@ export function AlfDataDetailPanel({ dataset }: { dataset: GeoDataset | null }) 
           Ver dataset completo →
         </Link>
         {dataset.filePath ? (
-          <a href={`/api/download/${dataset.id}`} className="alf-detail-action-secondary">
-            ↓ Descarregar
-          </a>
+          <span
+            className="alf-detail-action-secondary opacity-50 cursor-not-allowed pointer-events-none"
+            title="Download temporariamente indisponível"
+          >
+            ↓ Indisponível
+          </span>
         ) : null}
       </div>
     </aside>

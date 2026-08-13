@@ -137,55 +137,86 @@
   overflow: hidden;
   box-shadow: var(--pd-shadow-md);
   border: 1px solid #e2e8e5;
-  max-width: 420px;
+  max-width: 460px;
   width: 100%;
   justify-self: end;
 }
 
 .mp-hero-visual-canvas {
   position: relative;
-  min-height: 200px;
+  min-height: 260px;
   background: #04361f;
 }
 
 @media (min-width: 768px) {
   .mp-hero-visual-canvas {
-    min-height: 220px;
+    min-height: 300px;
   }
 }
 
 .mp-hero-visual-svg {
   width: 100%;
   height: 100%;
-  min-height: 180px;
+  min-height: 240px;
   display: block;
+}
+
+/* Rótulo da camada (canto superior) — nomeia o que os pontos representam, nunca um mapa
+   decorativo sem legenda. */
+.mp-hero-visual-layer-label {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 4px 9px;
+  border-radius: 100px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(13, 17, 23, 0.75);
+  backdrop-filter: blur(4px);
 }
 
 .mp-hero-visual-legend {
   position: absolute;
-  bottom: 10px;
+  top: 10px;
   right: 10px;
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 6px 8px;
+  gap: 8px;
+  padding: 6px 10px;
   border-radius: 8px;
   background: rgba(13, 17, 23, 0.75);
   backdrop-filter: blur(4px);
 }
 
-.mp-hero-visual-legend span {
-  width: 10px;
-  height: 10px;
+.mp-hero-visual-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.mp-hero-visual-legend-dot {
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   border: 1px solid rgba(255, 255, 255, 0.25);
+  flex-shrink: 0;
 }
 
 .mp-hero-visual-legend small {
-  margin-left: 4px;
-  font-size: 9px;
-  color: rgba(255, 255, 255, 0.7);
+  font-size: 8.5px;
+  color: rgba(255, 255, 255, 0.75);
   font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Fundo neutro quando não há dados reais para desenhar (nunca substituído por pontos falsos). */
+.mp-hero-visual-fallback {
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(31, 163, 101, 0.25), transparent 60%),
+    radial-gradient(ellipse at 80% 80%, rgba(6, 78, 44, 0.35), transparent 55%),
+    #04361f;
 }
 
 .mp-hero-visual-panel {
@@ -252,26 +283,33 @@
   overflow: hidden;
 }
 
-.mp-hero-visual-chips {
+/* Lista vertical compacta das capacidades — antes eram pills que quebravam linha e competiam
+   visualmente com os badges de categoria acima; uma linha por capacidade lê-se como lista, não
+   como mais um grupo de etiquetas soltas. */
+.mp-hero-visual-list {
   list-style: none;
-  margin: 0 0 8px;
+  margin: 0 0 10px;
   padding: 0;
   display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
+  flex-direction: column;
+  gap: 3px;
 }
 
-.mp-hero-visual-chips li {
-  font-size: 9px;
+.mp-hero-visual-list li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
   line-height: 1.3;
-  padding: 3px 7px;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  max-width: 100%;
+  color: rgba(255, 255, 255, 0.82);
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+}
+
+.mp-hero-visual-list li svg {
+  flex-shrink: 0;
+  color: #A8F0C6;
 }
 
 .mp-hero-visual-cta {
@@ -347,9 +385,11 @@
 
 .mp-card-favorite {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 8px;
+  right: 8px;
   z-index: 4;
+  width: 44px;
+  height: 44px;
   background: color-mix(in srgb, var(--pd-ink-900) 55%, transparent);
   color: white;
   border-color: transparent;
@@ -445,17 +485,27 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 96px;
+  min-height: 120px;
   background: linear-gradient(135deg, var(--pd-green-50), #eef5f0);
   border-bottom: 1px solid #e2e8e5;
   flex-shrink: 0;
+  overflow: hidden;
 }
 
-.mp-card-thumb-icon {
-  width: 32px;
-  height: 32px;
-  color: var(--pd-green-700);
-  opacity: 0.28;
+/* Miniatura real (MapCardThumb): pontos reais do próprio dataset, nunca um ícone genérico. */
+.mp-card-thumb-svg {
+  width: 100%;
+  height: 100%;
+  min-height: 120px;
+  display: block;
+}
+
+/* Sem prévia disponível para este tipo de mapa ainda: fundo neutro consistente, sem ícone. */
+.mp-card-thumb-fallback {
+  width: 100%;
+  height: 100%;
+  min-height: 120px;
+  background: linear-gradient(135deg, var(--pd-green-50), #eef5f0);
 }
 
 .mp-card-type {
@@ -488,26 +538,6 @@
   box-shadow: 0 1px 4px rgba(6, 78, 44, 0.25);
 }
 
-.mp-card-badges {
-  position: absolute;
-  bottom: 10px;
-  left: 10px;
-  right: 10px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.mp-card-badge {
-  font-size: 10px;
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 100px;
-  background: var(--pd-surface-0);
-  color: var(--pd-green-700);
-  border: 1px solid #cfe3d6;
-}
-
 .mp-card-body {
   padding: 14px 16px 16px;
   flex: 1;
@@ -515,34 +545,14 @@
   flex-direction: column;
 }
 
-.mp-card-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 6px;
-}
-
 .mp-card-category {
+  display: block;
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--pd-green-700);
-}
-
-.mp-card-type-inline {
-  font-size: 9px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--pd-green-700);
-  background: var(--pd-green-50);
-  border: 1px solid #cfe3d6;
-  padding: 3px 8px;
-  border-radius: 100px;
-  white-space: nowrap;
-  flex-shrink: 0;
+  margin-bottom: 6px;
 }
 
 .mp-card-highlights {
@@ -575,8 +585,9 @@
   font-weight: 700;
   margin: 0 0 6px;
   line-height: 1.35;
+  min-height: calc(1.35em * 2);
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -596,53 +607,36 @@
   border-radius: 2px;
 }
 
-.mp-card-sub {
-  font-size: 13px;
-  color: var(--pd-ink-500);
-  margin: 0 0 10px;
-}
-
 .mp-card-desc {
   font-size: 13px;
   color: var(--pd-ink-500);
-  margin: 0 0 12px;
-  flex: 1;
+  margin: 0 0 10px;
   line-height: 1.45;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.mp-card-meta {
-  list-style: none;
-  padding: 0;
-  margin: 0 0 14px;
-  font-size: 12px;
-  color: var(--pd-ink-500);
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.mp-card-meta li {
-  display: flex;
-  align-items: flex-start;
-  gap: 6px;
-}
-
-.mp-card-meta li span {
+  min-height: calc(1.45em * 2);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
+/* e) + h) Uma linha de metadados só, visualizações sempre incluída — nunca uma linha extra
+   condicional (era isso que fazia a altura dos cards variar entre colunas do mesmo grid). */
+.mp-card-metaline {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pd-ink-500);
+  margin: 0 0 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
 .mp-card-actions {
   margin-top: auto;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 2px;
   padding-top: 12px;
   border-top: 1px solid #e2e8e5;
 }
@@ -666,16 +660,6 @@
   transition: background 0.15s, color 0.15s;
 }
 
-.mp-btn-outline {
-  background: transparent;
-  color: var(--pd-green-700);
-  border: 1.5px solid var(--pd-green-700);
-}
-
-.mp-btn-outline:hover {
-  background: var(--pd-green-50);
-}
-
 .mp-btn-primary {
   background: var(--pd-green-700);
   color: #fff;
@@ -685,18 +669,31 @@
   background: var(--pd-green-800, #04361f);
 }
 
-.mp-btn-ghost {
+/* g) Acção secundária ("Solicitar acesso"): link de texto simples, sem borda própria, para não
+   competir visualmente com o botão primário preenchido acima. */
+.mp-card-secondary-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 12px;
   background: transparent;
-  color: var(--pd-ink-500);
-  border: 1px solid #e2e8e5;
+  border: none;
+  border-radius: 8px;
+  color: var(--pd-green-700);
   font-size: 13px;
-  padding: 8px 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
 }
 
-.mp-btn-ghost:hover {
+.mp-card-secondary-link:hover {
   background: var(--pd-green-50);
-  color: var(--pd-green-700);
-  border-color: #cfe3d6;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .mp-detail-toolbar {

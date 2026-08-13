@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { NextResponse } from 'next/server'
 import { getCurrentAdmin } from '@/lib/auth'
 import { findAllMapOverrides } from '@/lib/db'

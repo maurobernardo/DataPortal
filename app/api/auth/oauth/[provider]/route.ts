@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { generateOAuthState, getProviderConfig, isOAuthProvider } from '@/lib/oauth'
+import { generateOAuthState, getProviderConfig, getSiteUrl, isOAuthProvider } from '@/lib/oauth'
+
+export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest, { params }: { params: { provider: string } }) {
   const provider = params.provider
@@ -11,7 +13,7 @@ export async function GET(request: NextRequest, { params }: { params: { provider
   const config = getProviderConfig(provider)
 
   if (!config) {
-    const loginUrl = new URL('/login', request.url)
+    const loginUrl = new URL('/login', getSiteUrl())
     loginUrl.searchParams.set('error', 'oauth_not_configured')
     return NextResponse.redirect(loginUrl)
   }

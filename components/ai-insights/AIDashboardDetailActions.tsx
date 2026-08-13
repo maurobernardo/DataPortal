@@ -22,7 +22,7 @@ export function AIDashboardDetailActions({ tileId, shareToken }: { tileId: numbe
     setDeleting(true)
     try {
       await fetch(`/api/ai-insights/tiles/${tileId}`, { method: 'DELETE' })
-      router.push('/ai-insights/workspace')
+      router.push('/analise/nova')
     } catch {
       setDeleting(false)
     }

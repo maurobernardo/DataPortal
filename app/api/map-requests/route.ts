@@ -3,6 +3,7 @@ import { isValidEmail, normalizeEmail, normalizeText, rateLimit } from '@/lib/se
 import { hasMailConfig, sendContactEmail } from '@/lib/mailer'
 import { createMapRequest, recordMapStat } from '@/lib/db'
 import { findMapBySlug } from '@/lib/maps-catalog'
+import { registarAcesso } from '@/lib/origem'
 import { logger } from '@/lib/logger'
 
 export async function POST(request: NextRequest) {
@@ -36,6 +37,7 @@ export async function POST(request: NextRequest) {
 
     await createMapRequest({ slug, name, email, message: message || null })
     await recordMapStat(slug, 'request')
+    await registarAcesso(request, 'pedido_mapa', { referenciaId: slug })
 
     if (hasMailConfig()) {
       await sendContactEmail({

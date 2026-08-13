@@ -1,4 +1,4 @@
-export type MapKind = 'health' | 'poles' | 'malaria' | 'feeder'
+export type MapKind = 'health' | 'poles' | 'malaria' | 'feeder' | 'cereals'
 
 /** Tipo de experiência publicada no catálogo */
 export type MapExperienceType = 'map' | 'dashboard' | 'map-dashboard'
@@ -64,7 +64,7 @@ export const MAP_CATALOG: PublicMapDashboard[] = [
       'Painel de estatísticas por posto',
     ],
     dataPath: '/data/health-adm3.geojson',
-    featured: true,
+    featured: false,
     heroStat: { value: '204', label: 'Postos ADM3' },
   },
   {
@@ -104,7 +104,7 @@ export const MAP_CATALOG: PublicMapDashboard[] = [
       'Modos carga 2018 vs. mudança provincial',
     ],
     dataPath: '/data/malaria-provinces.json',
-    featured: false,
+    featured: true,
     heroStat: { value: '11', label: 'Províncias' },
   },
   {
@@ -126,6 +126,26 @@ export const MAP_CATALOG: PublicMapDashboard[] = [
     dataPath: '/data/feeder-pulse.json',
     featured: false,
     heroStat: { value: '25', label: 'Alimentadores (amostra)' },
+  },
+  {
+    slug: 'producao-cereais',
+    title: 'Produção de Cereais por Província em Moçambique',
+    subtitle: 'Milho, arroz, sorgo e milheto · 12 rondas do IAI/TIA 2002–2023',
+    description:
+      'Dashboard analítico da produção de cereais por província: mapa coroplético com símbolos proporcionais, mistura de culturas, radar comparando as rondas do Inquérito Agrário Integrado e ranking de ganhos e perdas entre rondas consecutivas.',
+    coverage: 'Moçambique: 10 províncias, 12 rondas do IAI/TIA (2002–2023)',
+    category: 'Agricultura',
+    badges: ['10 Províncias', '12 Rondas 2002–2023', '4 Culturas'],
+    kind: 'cereals',
+    experienceType: 'map-dashboard',
+    highlights: [
+      'Mapa coroplético com símbolos proporcionais',
+      'Mistura de culturas e radar por ronda do inquérito',
+      'Ranking de ganhos e perdas entre rondas',
+    ],
+    dataPath: '/data/cereal-production-series.json',
+    featured: false,
+    heroStat: { value: '12', label: 'Rondas do inquérito' },
   },
 ]
 

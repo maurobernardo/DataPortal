@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Sparkles, Wand2, X } from 'lucide-react'
+import { LineChart, Wand2, X } from 'lucide-react'
 import { AIChartRenderer } from '@/components/ai-insights/AIChartRenderer'
 import {
   ONBOARDING_EXAMPLE_CHART,
@@ -50,7 +50,7 @@ export function AIOnboardingExample({ onTryIt }: { onTryIt: () => void }) {
       </button>
 
       <div className="inline-flex items-center gap-1.5 rounded-full bg-white border border-[#CFE3D6] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-[#064E2C] mb-3">
-        <Sparkles className="w-3 h-3" />
+        <LineChart className="w-3 h-3" />
         Exemplo com dados reais do portal
       </div>
 

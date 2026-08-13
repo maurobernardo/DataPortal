@@ -4,6 +4,7 @@ import { MapsCatalogGrid } from '@/components/maps/MapsCatalogGrid'
 import { RecentlyViewedRail } from '@/components/RecentlyViewedRail'
 import { getCurrentUser } from '@/lib/auth'
 import { findAllMapOverrides, findEntityFavoriteIds, getMapViewCounts } from '@/lib/db'
+import { obterPreviewParaMapa, type PreviewMapa } from '@/lib/maps-preview-data'
 import '../maps-catalog.css'
 
 export const dynamic = 'force-dynamic'
@@ -25,6 +26,18 @@ export default async function MapsCatalogPage() {
   const maps = applyMapOverrides(MAP_CATALOG, overrides)
   const heroMap = maps.find((m) => m.featured) ?? maps[0]
   const mapDashboardCount = maps.filter((m) => m.experienceType === 'map-dashboard').length
+
+  // Prévia real (pontos reais projectados, coloridos por dados reais do próprio mapa) — para o
+  // hero E para cada card do grid, nunca um ícone decorativo genérico. Uma função por tipo em
+  // lib/maps-preview-data.ts; despachada aqui, no Server Component, porque MapsCatalogGrid e
+  // MapCard são Client Components e não podem ler ficheiros do disco directamente.
+  const previewsPorSlug: Record<string, PreviewMapa | null> = {}
+  await Promise.all(
+    maps.map(async (m) => {
+      previewsPorSlug[m.slug] = await obterPreviewParaMapa(m.kind)
+    })
+  )
+  const previewMapa = heroMap ? previewsPorSlug[heroMap.slug] ?? null : null
 
   return (
     <div className="mp-page">
@@ -48,20 +61,16 @@ export default async function MapsCatalogPage() {
                 <strong>{mapDashboardCount}</strong>
                 <span>Mapa + dashboard</span>
               </div>
-              {maps
-                .map((m) => m.heroStat)
-                .filter((s): s is NonNullable<typeof s> => Boolean(s))
-                .slice(0, 1)
-                .map((stat) => (
-                  <div key={stat.label}>
-                    <strong>{stat.value}</strong>
-                    <span>{stat.label}</span>
-                  </div>
-                ))}
+              {heroMap?.heroStat && (
+                <div>
+                  <strong>{heroMap.heroStat.value}</strong>
+                  <span>{heroMap.heroStat.label}</span>
+                </div>
+              )}
             </div>
           </div>
 
-          {heroMap ? <MapCatalogHeroVisual map={heroMap} /> : null}
+          {heroMap ? <MapCatalogHeroVisual map={heroMap} preview={previewMapa} /> : null}
         </div>
       </section>
 
@@ -75,7 +84,7 @@ export default async function MapsCatalogPage() {
             </p>
           </div>
           <RecentlyViewedRail dataType="map" />
-          <MapsCatalogGrid maps={maps} favoriteIds={favoriteIdSet} viewCounts={viewCounts} />
+          <MapsCatalogGrid maps={maps} favoriteIds={favoriteIdSet} viewCounts={viewCounts} previews={previewsPorSlug} />
         </div>
       </section>
     </div>

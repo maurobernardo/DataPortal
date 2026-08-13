@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { NextResponse } from 'next/server'
 import { findDatasetById } from '@/lib/db'
 import { readFile } from 'fs/promises'
@@ -31,4 +33,3 @@ export async function GET(_request: Request, { params }: { params: { id: string 
     return NextResponse.json({ error: 'Erro ao calcular checksum' }, { status: 500 })
   }
 }
-

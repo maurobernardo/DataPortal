@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { isValidEmail, normalizeEmail, normalizeText, rateLimit } from '@/lib/security'
 import { hasMailConfig, sendContactEmail } from '@/lib/mailer'
 import { createReportRequest, findReportById } from '@/lib/db'
+import { registarAcesso } from '@/lib/origem'
 import { logger } from '@/lib/logger'
 
 export async function POST(request: NextRequest) {
@@ -37,6 +38,7 @@ export async function POST(request: NextRequest) {
     }
 
     await createReportRequest(report.id, { name: name || null, email: email || null, message: message || null })
+    await registarAcesso(request, 'pedido_relatorio', { referenciaId: report.id })
 
     if (name && email && hasMailConfig()) {
       await sendContactEmail({

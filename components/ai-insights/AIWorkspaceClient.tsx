@@ -20,7 +20,7 @@ import {
   MapPinned,
   MousePointerClick,
   Search,
-  Sparkles,
+  LineChart,
   Table2,
   Trash2,
   TrendingUp,
@@ -335,7 +335,7 @@ export function AIWorkspaceClient({
                 <span className="text-xs font-bold text-gray-700">AI Insights</span>
               </Link>
               <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mt-3 flex items-center gap-3 tracking-tight">
-                <span className="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br from-[#064E2C] to-[#6B4FBB] text-white shadow-sm">
+                <span className="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-[#064E2C] text-white shadow-sm">
                   <Brain className="w-5 h-5" />
                 </span>
                 Análise de dados com IA
@@ -344,6 +344,21 @@ export function AIWorkspaceClient({
                 Pergunte em linguagem natural, visualize automaticamente e peça previsões, sempre com
                 fontes auditáveis dos dados oficiais do portal.
               </p>
+              <div className="flex flex-wrap items-center gap-3 mt-4">
+                <Link
+                  href="/analise/nova"
+                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#064E2C] to-[#1FA365] text-white text-sm font-semibold px-4 py-2 shadow-sm hover:shadow-md transition-all"
+                >
+                  <LineChart className="w-4 h-4" />
+                  Experimentar o motor de análise profunda (beta)
+                </Link>
+                <Link
+                  href="/analise"
+                  className="text-sm font-semibold text-[#064E2C] hover:underline"
+                >
+                  Ver as minhas análises
+                </Link>
+              </div>
             </div>
             <div className="inline-flex items-center gap-2.5 rounded-2xl border border-[#E2E8E5] bg-[#FAFBFA] pl-2 pr-4 py-2 shadow-sm">
               <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-[#064E2C] to-[#1FA365] text-white text-xs font-bold shadow-sm">
@@ -445,7 +460,7 @@ export function AIWorkspaceClient({
                     key={tile.id}
                     className="rounded-2xl border border-[#E2E8E5] bg-white shadow-sm hover:shadow-md transition-shadow p-4 flex flex-col"
                   >
-                    <div className="h-1.5 -mx-4 -mt-4 mb-3 rounded-t-2xl bg-gradient-to-r from-[#064E2C] to-[#6B4FBB]" />
+                    <div className="h-1.5 -mx-4 -mt-4 mb-3 rounded-t-2xl bg-[#064E2C]" />
                     <p className="text-sm font-bold text-gray-900 leading-snug line-clamp-2 mb-1.5">{tile.title}</p>
                     {badges.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 mb-2">
@@ -548,25 +563,21 @@ export function AIWorkspaceClient({
             </div>
 
             {topCategories.length > 0 && (
-              <div className="mb-4">
-                <p className="text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1.5">
+              <div className="mb-5 rounded-xl border border-[#E2E8E5] bg-[#FAFBFA] p-3">
+                <p className="text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-2">
                   Atalhos rápidos por categoria
                 </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {topCategories.map((c) => {
-                    const CategoryIcon = getCategoryIcon(c.name)
-                    return (
-                      <button
-                        key={c.id}
-                        type="button"
-                        onClick={() => applyCategoryTemplate(c.id)}
-                        className="inline-flex items-center gap-1.5 rounded-full border border-[#E2E8E5] bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 hover:border-[#064E2C] hover:text-[#064E2C] transition-colors"
-                      >
-                        <CategoryIcon className="w-3.5 h-3.5" />
-                        Análise rápida de {c.name}
-                      </button>
-                    )
-                  })}
+                <div className="flex flex-wrap gap-2">
+                  {topCategories.map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => applyCategoryTemplate(c.id)}
+                      className="rounded-full border border-[#E2E8E5] bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 hover:border-[#064E2C] hover:text-[#064E2C] transition-colors"
+                    >
+                      {c.name}
+                    </button>
+                  ))}
                 </div>
               </div>
             )}
@@ -610,7 +621,7 @@ export function AIWorkspaceClient({
                       onClick={() => toggleCategory(group.key, index)}
                       className="w-full flex items-center justify-between gap-2 px-4 py-3.5 bg-gradient-to-r from-[#F8FAF9] to-white hover:from-[#F1F8F4] transition-colors"
                     >
-                      <span className="flex items-center gap-2.5 text-sm font-bold text-gray-900">
+                      <span className="flex items-center gap-2.5 text-[15px] font-bold text-gray-900 tracking-tight">
                         <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-[#F1F8F4] border border-[#CFE3D6] text-[#064E2C]">
                           <CategoryIcon className="w-4 h-4" />
                         </span>
@@ -640,35 +651,30 @@ export function AIWorkspaceClient({
                               }`}
                             >
                               <div className="flex items-start justify-between gap-2">
-                                <p className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2">
+                                <p className="text-[13.5px] font-bold text-gray-900 leading-snug line-clamp-2">
                                   {dataset.title}
                                 </p>
                                 <span
-                                  className={`shrink-0 inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase ${
+                                  className={`shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase ${
                                     dataset.dataType === 'geoespacial'
                                       ? 'bg-[#EAF2FB] text-[#1F6FB2]'
                                       : 'bg-[#F5F0FB] text-[#6B4FBB]'
                                   }`}
                                   title={dataset.dataType === 'geoespacial' ? 'Dados geoespaciais' : 'Dados alfanuméricos'}
                                 >
-                                  {dataset.dataType === 'geoespacial' ? (
-                                    <MapPinned className="w-2.5 h-2.5" />
-                                  ) : (
-                                    <Table2 className="w-2.5 h-2.5" />
-                                  )}
                                   {dataset.dataType === 'geoespacial' ? 'Geo' : 'Tabular'}
                                 </span>
                               </div>
                               {dataset.category?.name && (
-                                <span className="inline-block mt-1.5 rounded-full bg-[#F1F8F4] border border-[#CFE3D6] px-2 py-0.5 text-[10px] font-bold text-[#064E2C]">
+                                <span className="inline-block mt-2 rounded-full bg-[#F1F8F4] border border-[#CFE3D6] px-2 py-0.5 text-[10px] font-bold text-[#064E2C]">
                                   {dataset.category.name}
                                 </span>
                               )}
-                              <p className="text-xs text-gray-500 mt-1.5">
+                              <p className="text-[11px] text-gray-400 mt-2">
                                 {dataset.source || 'Fonte não especificada'} · {dataset.year ?? '—'}
                               </p>
-                              <div className="flex items-center justify-between mt-3">
-                                <span className="text-[10px] font-bold uppercase tracking-wide text-gray-500 bg-gray-50 rounded px-1.5 py-0.5">
+                              <div className="flex items-center justify-between mt-3 pt-3 border-t border-[#F0F2F1]">
+                                <span className="text-[10px] font-bold uppercase tracking-wide text-gray-400 bg-gray-50 rounded px-1.5 py-0.5">
                                   {dataset.format || dataset.dataType}
                                 </span>
                                 <button
@@ -712,7 +718,7 @@ export function AIWorkspaceClient({
 
           {/* ── Painel de análise ────────────────────────────────── */}
           <div className="lg:sticky lg:top-4 rounded-3xl border border-[#E2E8E5] bg-white shadow-md overflow-hidden">
-            <div className="bg-gradient-to-r from-[#064E2C] to-[#6B4FBB] px-5 py-3.5">
+            <div className="bg-[#064E2C] px-5 py-3.5">
               <h2 className="text-base font-bold text-white flex items-center gap-2">
                 <BarChart3 className="w-4.5 h-4.5" />
                 Painel de análise
@@ -721,18 +727,29 @@ export function AIWorkspaceClient({
             <div className="p-5">
 
             {selected.length === 0 ? (
-              <div className="text-center py-6">
-                <span className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-[#F1F8F4] border border-[#CFE3D6] text-[#064E2C] mb-3">
-                  <MousePointerClick className="w-5 h-5" />
-                </span>
-                <p className="text-sm font-semibold text-gray-700">Comece por escolher um ou mais datasets</p>
-                <p className="text-sm text-gray-500 mt-1.5 max-w-xs mx-auto">
-                  Clique em <strong className="text-gray-700">Seleccionar</strong> em qualquer card à
-                  esquerda. Pode combinar até {MAX_DATASETS} datasets na mesma pergunta, incluindo um
-                  dataset <MapPinned className="inline w-3 h-3 -mt-0.5 text-[#1F6FB2]" /> geoespacial com um{' '}
-                  <Table2 className="inline w-3 h-3 -mt-0.5 text-[#6B4FBB]" /> tabular para gerar mapas e
-                  gráficos cruzados.
-                </p>
+              <div className="py-2">
+                <div className="flex items-center gap-2.5 mb-4">
+                  <span className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-[#F1F8F4] border border-[#CFE3D6] text-[#064E2C] shrink-0">
+                    <MousePointerClick className="w-4 h-4" />
+                  </span>
+                  <p className="text-sm font-bold text-gray-800">Comece por escolher um ou mais datasets</p>
+                </div>
+                <ul className="space-y-2.5">
+                  <li className="flex items-start gap-2.5 text-xs text-gray-600">
+                    <Check className="w-3.5 h-3.5 text-[#064E2C] shrink-0 mt-0.5" />
+                    Clique em <strong className="text-gray-700">&nbsp;Seleccionar&nbsp;</strong> em qualquer card à esquerda
+                  </li>
+                  <li className="flex items-start gap-2.5 text-xs text-gray-600">
+                    <Check className="w-3.5 h-3.5 text-[#064E2C] shrink-0 mt-0.5" />
+                    Combine até {MAX_DATASETS} datasets na mesma pergunta
+                  </li>
+                  <li className="flex items-start gap-2.5 text-xs text-gray-600">
+                    <MapPinned className="w-3.5 h-3.5 text-[#1F6FB2] shrink-0 mt-0.5" />
+                    Junte um dataset geoespacial a um{' '}
+                    <Table2 className="inline w-3 h-3 -mt-0.5 text-[#6B4FBB]" /> tabular para gerar mapas e
+                    gráficos cruzados
+                  </li>
+                </ul>
               </div>
             ) : (
               <>
@@ -837,7 +854,7 @@ export function AIWorkspaceClient({
                       </>
                     ) : (
                       <>
-                        <Sparkles className="w-4 h-4" />
+                        <LineChart className="w-4 h-4" />
                         {result ? 'Perguntar' : 'Analisar com IA'}
                       </>
                     )}
@@ -859,7 +876,7 @@ export function AIWorkspaceClient({
                 onClick={() => setOverlayOpen(true)}
                 className="mt-5 w-full flex items-center justify-center gap-2 rounded-xl border-2 border-[#CFE3D6] bg-[#F1F8F4] px-4 py-2.5 text-sm font-semibold text-[#064E2C] hover:bg-[#064E2C] hover:text-white transition-colors"
               >
-                <Sparkles className="w-4 h-4" />
+                <LineChart className="w-4 h-4" />
                 Ver último resultado
               </button>
             )}

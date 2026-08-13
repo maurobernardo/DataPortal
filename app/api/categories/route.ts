@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { NextRequest, NextResponse } from 'next/server'
 import { createCategory, findAllCategories } from '@/lib/db'
 import { getCurrentAdmin } from '@/lib/auth'
@@ -54,4 +56,3 @@ export async function POST(request: NextRequest) {
     )
   }
 }
-
