@@ -1,0 +1,1684 @@
+{
+  "analise_id": "an_c1dee2c7",
+  "compreensao": {
+    "pergunta_normalizada": "Qual é a distribuição da população por província em Moçambique?",
+    "idioma": "pt",
+    "intencao": "geoespacial",
+    "arquetipo_sugerido": "geoespacial",
+    "entidades": {
+      "geografias": [],
+      "periodos": [],
+      "metricas": [
+        "população total"
+      ]
+    },
+    "ambiguidades": [],
+    "perfil_utilizador_inferido": "cidadao",
+    "requer_desambiguacao": false,
+    "sub_perguntas": [
+      "Qual é a população absoluta de cada província?",
+      "Qual a percentagem que cada província representa da população nacional?",
+      "A população está concentrada em poucas províncias ou distribuída de forma equilibrada?",
+      "Existem províncias com valores atípicos de população?",
+      "Qual a fiabilidade dos dados usados (nível de confiança)?"
+    ],
+    "passos": [
+      {
+        "id": "p1",
+        "tipo": "consulta",
+        "descricao_humana": "Soma a população total registada em cada província, valor absoluto.",
+        "depende_de": [],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 56,
+        "coluna_metrica": "value",
+        "nivel_geo": "admin1",
+        "filtro_unidade": "cat:variable_name_pt=População Total",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "pop_provincia_abs"
+        ]
+      },
+      {
+        "id": "p2",
+        "tipo": "consulta",
+        "descricao_humana": "Calcula a quota percentual de cada província na população nacional, para mapa.",
+        "depende_de": [
+          "p1"
+        ],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 56,
+        "coluna_metrica": "value",
+        "nivel_geo": "admin1",
+        "filtro_unidade": "cat:variable_name_pt=População Total",
+        "normalizacao": "percentagem_do_total",
+        "produz": [
+          "pop_provincia_pct"
+        ]
+      },
+      {
+        "id": "p3",
+        "tipo": "calculo",
+        "descricao_humana": "Mede se a população está concentrada em poucas províncias (Gini, HHI, quota topo).",
+        "depende_de": [
+          "p1"
+        ],
+        "metodo": "concentracao",
+        "dataset_id": 56,
+        "coluna_metrica": "value",
+        "nivel_geo": "admin1",
+        "filtro_unidade": "cat:variable_name_pt=População Total",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "pop_concentracao"
+        ]
+      },
+      {
+        "id": "p4",
+        "tipo": "calculo",
+        "descricao_humana": "Gera a curva de Lorenz da distribuição populacional entre províncias.",
+        "depende_de": [
+          "p1"
+        ],
+        "metodo": "curva_lorenz",
+        "dataset_id": 56,
+        "coluna_metrica": "value",
+        "nivel_geo": "admin1",
+        "filtro_unidade": "cat:variable_name_pt=População Total",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "pop_lorenz"
+        ]
+      },
+      {
+        "id": "p5",
+        "tipo": "validacao",
+        "descricao_humana": "Identifica províncias com população fora do padrão esperado (outliers).",
+        "depende_de": [
+          "p1"
+        ],
+        "metodo": "detectar_outliers",
+        "dataset_id": 56,
+        "coluna_metrica": "value",
+        "nivel_geo": "admin1",
+        "filtro_unidade": "cat:variable_name_pt=População Total",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "pop_outliers"
+        ]
+      },
+      {
+        "id": "p6",
+        "tipo": "validacao",
+        "descricao_humana": "Mostra a proporção de registos com qualidade decisória versus consultiva.",
+        "depende_de": [],
+        "metodo": "perfil_coluna",
+        "dataset_id": 56,
+        "coluna_metrica": "dq_tier",
+        "produz": [
+          "dq_perfil"
+        ]
+      },
+      {
+        "id": "p7",
+        "tipo": "validacao",
+        "descricao_humana": "Compara a soma das províncias com o total nacional reportado, para consistência.",
+        "depende_de": [
+          "p1"
+        ],
+        "metodo": "execucao_codigo",
+        "dataset_id": 56,
+        "coluna_metrica": "Extrai o valor da linha com geography_name='Nacional' e variable_name_pt='População Total' no ano mais recente disponível e compara com a soma das províncias calculada em p1, reportando a diferença absoluta e percentual.",
+        "produz": [
+          "pop_nacional_check"
+        ]
+      }
+    ],
+    "nivel_geo_alvo": [
+      "admin1"
+    ],
+    "metricas_alvo": [
+      "value"
+    ],
+    "justificacao_arquetipo": "A pergunta pede a repartição espacial de um indicador (população) entre unidades administrativas de primeiro nível, o nível mais fino disponível neste dataset (R4); o arquétipo geoespacial organiza mapa, ranking e medidas de concentração em torno dessa distribuição.",
+    "pergunta_original": "Qual é a distribuição da população por província?"
+  },
+  "plano": {
+    "sub_perguntas": [
+      "Qual é a população absoluta de cada província?",
+      "Qual a percentagem que cada província representa da população nacional?",
+      "A população está concentrada em poucas províncias ou distribuída de forma equilibrada?",
+      "Existem províncias com valores atípicos de população?",
+      "Qual a fiabilidade dos dados usados (nível de confiança)?"
+    ],
+    "passos": [
+      {
+        "id": "p1",
+        "tipo": "consulta",
+        "descricao_humana": "Soma a população total registada em cada província, valor absoluto.",
+        "depende_de": [],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 56,
+        "coluna_metrica": "value",
+        "nivel_geo": "admin1",
+        "filtro_unidade": "cat:variable_name_pt=População Total",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "pop_provincia_abs"
+        ]
+      },
+      {
+        "id": "p2",
+        "tipo": "consulta",
+        "descricao_humana": "Calcula a quota percentual de cada província na população nacional, para mapa.",
+        "depende_de": [
+          "p1"
+        ],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 56,
+        "coluna_metrica": "value",
+        "nivel_geo": "admin1",
+        "filtro_unidade": "cat:variable_name_pt=População Total",
+        "normalizacao": "percentagem_do_total",
+        "produz": [
+          "pop_provincia_pct"
+        ]
+      },
+      {
+        "id": "p3",
+        "tipo": "calculo",
+        "descricao_humana": "Mede se a população está concentrada em poucas províncias (Gini, HHI, quota topo).",
+        "depende_de": [
+          "p1"
+        ],
+        "metodo": "concentracao",
+        "dataset_id": 56,
+        "coluna_metrica": "value",
+        "nivel_geo": "admin1",
+        "filtro_unidade": "cat:variable_name_pt=População Total",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "pop_concentracao"
+        ]
+      },
+      {
+        "id": "p4",
+        "tipo": "calculo",
+        "descricao_humana": "Gera a curva de Lorenz da distribuição populacional entre províncias.",
+        "depende_de": [
+          "p1"
+        ],
+        "metodo": "curva_lorenz",
+        "dataset_id": 56,
+        "coluna_metrica": "value",
+        "nivel_geo": "admin1",
+        "filtro_unidade": "cat:variable_name_pt=População Total",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "pop_lorenz"
+        ]
+      },
+      {
+        "id": "p5",
+        "tipo": "validacao",
+        "descricao_humana": "Identifica províncias com população fora do padrão esperado (outliers).",
+        "depende_de": [
+          "p1"
+        ],
+        "metodo": "detectar_outliers",
+        "dataset_id": 56,
+        "coluna_metrica": "value",
+        "nivel_geo": "admin1",
+        "filtro_unidade": "cat:variable_name_pt=População Total",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "pop_outliers"
+        ]
+      },
+      {
+        "id": "p6",
+        "tipo": "validacao",
+        "descricao_humana": "Mostra a proporção de registos com qualidade decisória versus consultiva.",
+        "depende_de": [],
+        "metodo": "perfil_coluna",
+        "dataset_id": 56,
+        "coluna_metrica": "dq_tier",
+        "produz": [
+          "dq_perfil"
+        ]
+      },
+      {
+        "id": "p7",
+        "tipo": "validacao",
+        "descricao_humana": "Compara a soma das províncias com o total nacional reportado, para consistência.",
+        "depende_de": [
+          "p1"
+        ],
+        "metodo": "execucao_codigo",
+        "dataset_id": 56,
+        "coluna_metrica": "Extrai o valor da linha com geography_name='Nacional' e variable_name_pt='População Total' no ano mais recente disponível e compara com a soma das províncias calculada em p1, reportando a diferença absoluta e percentual.",
+        "produz": [
+          "pop_nacional_check"
+        ]
+      }
+    ],
+    "nivel_geo_alvo": [
+      "admin1"
+    ],
+    "metricas_alvo": [
+      "value"
+    ],
+    "justificacao_arquetipo": "A pergunta pede a repartição espacial de um indicador (população) entre unidades administrativas de primeiro nível, o nível mais fino disponível neste dataset (R4); o arquétipo geoespacial organiza mapa, ranking e medidas de concentração em torno dessa distribuição."
+  },
+  "suficiencia": {
+    "cobertura": [
+      {
+        "sub_pergunta": "Qual é a população absoluta de cada província?",
+        "coberto": true,
+        "fonte": "dataset_selecionado"
+      },
+      {
+        "sub_pergunta": "Qual a percentagem que cada província representa da população nacional?",
+        "coberto": true,
+        "fonte": "dataset_selecionado"
+      },
+      {
+        "sub_pergunta": "A população está concentrada em poucas províncias ou distribuída de forma equilibrada?",
+        "coberto": true,
+        "fonte": "dataset_selecionado"
+      },
+      {
+        "sub_pergunta": "Existem províncias com valores atípicos de população?",
+        "coberto": true,
+        "fonte": "dataset_selecionado"
+      },
+      {
+        "sub_pergunta": "Qual a fiabilidade dos dados usados (nível de confiança)?",
+        "coberto": true,
+        "fonte": "dataset_selecionado"
+      }
+    ],
+    "confianca_sem_enriquecimento": 1,
+    "precisa_enriquecimento": false,
+    "alvos_enriquecimento": []
+  },
+  "contexto": {
+    "tabelas": {},
+    "ligacoes": {},
+    "calcs": {
+      "p6_coluna": {
+        "id": "p6_coluna",
+        "valor": "dq_tier",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p6_n_total": {
+        "id": "p6_n_total",
+        "valor": 999,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p6_n_preenchidos": {
+        "id": "p6_n_preenchidos",
+        "valor": 350,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p6_completude_pct": {
+        "id": "p6_completude_pct",
+        "valor": 35,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p6_n_distintos": {
+        "id": "p6_n_distintos",
+        "valor": 2,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p6_tipo": {
+        "id": "p6_tipo",
+        "valor": "categorica",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p1_nome_max": {
+        "id": "p1_nome_max",
+        "valor": "NAMPULA",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p1_nome_min": {
+        "id": "p1_nome_min",
+        "valor": "Maputo Cidade",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p1_n": {
+        "id": "p1_n",
+        "valor": 11,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p1_soma": {
+        "id": "p1_soma",
+        "valor": 265109151,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p1_media": {
+        "id": "p1_media",
+        "valor": 24100831.9091,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p1_mediana": {
+        "id": "p1_mediana",
+        "valor": 19071160,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p1_desvio": {
+        "id": "p1_desvio",
+        "valor": 14522885.5159,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p1_min": {
+        "id": "p1_min",
+        "valor": 10083300,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p1_max": {
+        "id": "p1_max",
+        "valor": 55308001,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p1_q1": {
+        "id": "p1_q1",
+        "valor": 15656866,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p1_q3": {
+        "id": "p1_q3",
+        "valor": 23745409.5,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p1_coeficiente_variacao": {
+        "id": "p1_coeficiente_variacao",
+        "valor": 60.26,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p3_gini": {
+        "id": "p3_gini",
+        "valor": 0.2847,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "concentracao",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p3_hhi": {
+        "id": "p3_hhi",
+        "valor": 0.1209,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "concentracao",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p3_quota_top3_pct": {
+        "id": "p3_quota_top3_pct",
+        "valor": 48.8,
+        "unidade": "",
+        "formato": "percentagem",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "concentracao",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p3_n": {
+        "id": "p3_n",
+        "valor": 11,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "concentracao",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p3_interpretacao": {
+        "id": "p3_interpretacao",
+        "valor": "Distribuição relativamente equilibrada (Gini 0.28).",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "concentracao",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p5_limite_inferior": {
+        "id": "p5_limite_inferior",
+        "valor": 3524050.75,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "detectar_outliers",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p5_limite_superior": {
+        "id": "p5_limite_superior",
+        "valor": 35878224.75,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "detectar_outliers",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p5_n": {
+        "id": "p5_n",
+        "valor": 2,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "detectar_outliers",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p2_nome_max": {
+        "id": "p2_nome_max",
+        "valor": "NAMPULA",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p2_nome_min": {
+        "id": "p2_nome_min",
+        "valor": "Maputo Cidade",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p2_n": {
+        "id": "p2_n",
+        "valor": 11,
+        "unidade": "% do total",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p2_soma": {
+        "id": "p2_soma",
+        "valor": 100,
+        "unidade": "% do total",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p2_media": {
+        "id": "p2_media",
+        "valor": 9.0909,
+        "unidade": "% do total",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p2_mediana": {
+        "id": "p2_mediana",
+        "valor": 7.1937,
+        "unidade": "% do total",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p2_desvio": {
+        "id": "p2_desvio",
+        "valor": 5.4781,
+        "unidade": "% do total",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p2_min": {
+        "id": "p2_min",
+        "valor": 3.8035,
+        "unidade": "% do total",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p2_max": {
+        "id": "p2_max",
+        "valor": 20.8624,
+        "unidade": "% do total",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p2_q1": {
+        "id": "p2_q1",
+        "valor": 5.9058,
+        "unidade": "% do total",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p2_q3": {
+        "id": "p2_q3",
+        "valor": 8.9568,
+        "unidade": "% do total",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p2_coeficiente_variacao": {
+        "id": "p2_coeficiente_variacao",
+        "valor": 60.26,
+        "unidade": "% do total",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p7": {
+        "id": "p7",
+        "valor": 0,
+        "unidade": "pessoas (diferença absoluta); 0% (diferença percentual)",
+        "formato": "inteiro",
+        "passo_id": "p7",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "execucao_codigo",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      }
+    },
+    "series": [
+      {
+        "passo_id": "p1",
+        "nivel": "admin1",
+        "unidades": [
+          {
+            "codigo": "03",
+            "nome": "NAMPULA",
+            "valor": 55308001
+          },
+          {
+            "codigo": "04",
+            "nome": "ZAMBEZIA",
+            "valor": 48546987
+          },
+          {
+            "codigo": "05",
+            "nome": "TETE",
+            "valor": 25578312
+          },
+          {
+            "codigo": "02",
+            "nome": "CABO DELGADO",
+            "valor": 21912507
+          },
+          {
+            "codigo": "07",
+            "nome": "SOFALA",
+            "valor": 21383651
+          },
+          {
+            "codigo": "10",
+            "nome": "MAPUTO",
+            "valor": 19071160
+          },
+          {
+            "codigo": "06",
+            "nome": "MANICA",
+            "valor": 18885620
+          },
+          {
+            "codigo": "01",
+            "nome": "NIASSA",
+            "valor": 17783184
+          },
+          {
+            "codigo": "08",
+            "nome": "INHAMBANE",
+            "valor": 13530548
+          },
+          {
+            "codigo": "09",
+            "nome": "GAZA",
+            "valor": 13025881
+          },
+          {
+            "codigo": "11",
+            "nome": "Maputo Cidade",
+            "valor": 10083300
+          }
+        ],
+        "metrica": "População Total (Soma a população total registada em cada p…)",
+        "normalizacao": "nenhuma",
+        "dataset_id": 56
+      },
+      {
+        "passo_id": "p3",
+        "nivel": "admin1",
+        "unidades": [
+          {
+            "codigo": "03",
+            "nome": "NAMPULA",
+            "valor": 55308001
+          },
+          {
+            "codigo": "04",
+            "nome": "ZAMBEZIA",
+            "valor": 48546987
+          },
+          {
+            "codigo": "05",
+            "nome": "TETE",
+            "valor": 25578312
+          },
+          {
+            "codigo": "02",
+            "nome": "CABO DELGADO",
+            "valor": 21912507
+          },
+          {
+            "codigo": "07",
+            "nome": "SOFALA",
+            "valor": 21383651
+          },
+          {
+            "codigo": "10",
+            "nome": "MAPUTO",
+            "valor": 19071160
+          },
+          {
+            "codigo": "06",
+            "nome": "MANICA",
+            "valor": 18885620
+          },
+          {
+            "codigo": "01",
+            "nome": "NIASSA",
+            "valor": 17783184
+          },
+          {
+            "codigo": "08",
+            "nome": "INHAMBANE",
+            "valor": 13530548
+          },
+          {
+            "codigo": "09",
+            "nome": "GAZA",
+            "valor": 13025881
+          },
+          {
+            "codigo": "11",
+            "nome": "Maputo Cidade",
+            "valor": 10083300
+          }
+        ],
+        "metrica": "População Total (Mede se a população está concentrada em po…)",
+        "normalizacao": "nenhuma",
+        "dataset_id": 56
+      },
+      {
+        "passo_id": "p4",
+        "nivel": "admin1",
+        "unidades": [
+          {
+            "codigo": "03",
+            "nome": "NAMPULA",
+            "valor": 55308001
+          },
+          {
+            "codigo": "04",
+            "nome": "ZAMBEZIA",
+            "valor": 48546987
+          },
+          {
+            "codigo": "05",
+            "nome": "TETE",
+            "valor": 25578312
+          },
+          {
+            "codigo": "02",
+            "nome": "CABO DELGADO",
+            "valor": 21912507
+          },
+          {
+            "codigo": "07",
+            "nome": "SOFALA",
+            "valor": 21383651
+          },
+          {
+            "codigo": "10",
+            "nome": "MAPUTO",
+            "valor": 19071160
+          },
+          {
+            "codigo": "06",
+            "nome": "MANICA",
+            "valor": 18885620
+          },
+          {
+            "codigo": "01",
+            "nome": "NIASSA",
+            "valor": 17783184
+          },
+          {
+            "codigo": "08",
+            "nome": "INHAMBANE",
+            "valor": 13530548
+          },
+          {
+            "codigo": "09",
+            "nome": "GAZA",
+            "valor": 13025881
+          },
+          {
+            "codigo": "11",
+            "nome": "Maputo Cidade",
+            "valor": 10083300
+          }
+        ],
+        "metrica": "População Total (Gera a curva de Lorenz da distribuição pop…)",
+        "normalizacao": "nenhuma",
+        "dataset_id": 56
+      },
+      {
+        "passo_id": "p5",
+        "nivel": "admin1",
+        "unidades": [
+          {
+            "codigo": "03",
+            "nome": "NAMPULA",
+            "valor": 55308001
+          },
+          {
+            "codigo": "04",
+            "nome": "ZAMBEZIA",
+            "valor": 48546987
+          },
+          {
+            "codigo": "05",
+            "nome": "TETE",
+            "valor": 25578312
+          },
+          {
+            "codigo": "02",
+            "nome": "CABO DELGADO",
+            "valor": 21912507
+          },
+          {
+            "codigo": "07",
+            "nome": "SOFALA",
+            "valor": 21383651
+          },
+          {
+            "codigo": "10",
+            "nome": "MAPUTO",
+            "valor": 19071160
+          },
+          {
+            "codigo": "06",
+            "nome": "MANICA",
+            "valor": 18885620
+          },
+          {
+            "codigo": "01",
+            "nome": "NIASSA",
+            "valor": 17783184
+          },
+          {
+            "codigo": "08",
+            "nome": "INHAMBANE",
+            "valor": 13530548
+          },
+          {
+            "codigo": "09",
+            "nome": "GAZA",
+            "valor": 13025881
+          },
+          {
+            "codigo": "11",
+            "nome": "Maputo Cidade",
+            "valor": 10083300
+          }
+        ],
+        "metrica": "População Total (Identifica províncias com população fora d…)",
+        "normalizacao": "nenhuma",
+        "dataset_id": 56
+      },
+      {
+        "passo_id": "p2",
+        "nivel": "admin1",
+        "unidades": [
+          {
+            "codigo": "03",
+            "nome": "NAMPULA",
+            "valor": 20.862350768118148
+          },
+          {
+            "codigo": "04",
+            "nome": "ZAMBEZIA",
+            "valor": 18.31207516484408
+          },
+          {
+            "codigo": "05",
+            "nome": "TETE",
+            "valor": 9.648219197080827
+          },
+          {
+            "codigo": "02",
+            "nome": "CABO DELGADO",
+            "valor": 8.265466098527847
+          },
+          {
+            "codigo": "07",
+            "nome": "SOFALA",
+            "valor": 8.065979963098293
+          },
+          {
+            "codigo": "10",
+            "nome": "MAPUTO",
+            "valor": 7.1937011333116905
+          },
+          {
+            "codigo": "06",
+            "nome": "MANICA",
+            "valor": 7.123714865655467
+          },
+          {
+            "codigo": "01",
+            "nome": "NIASSA",
+            "valor": 6.70787256227153
+          },
+          {
+            "codigo": "08",
+            "nome": "INHAMBANE",
+            "valor": 5.103764977165953
+          },
+          {
+            "codigo": "09",
+            "nome": "GAZA",
+            "valor": 4.913403008106649
+          },
+          {
+            "codigo": "11",
+            "nome": "Maputo Cidade",
+            "valor": 3.80345226181951
+          }
+        ],
+        "metrica": "População Total (Calcula a quota percentual de cada provínc…)",
+        "normalizacao": "percentagem_do_total",
+        "dataset_id": 56
+      }
+    ],
+    "graficos": [
+      {
+        "passo_id": "p6",
+        "tipo": "pizza",
+        "titulo": "Mostra a proporção de registos com qualidade decisória versus consultiva.",
+        "eixoX": [
+          "Advisory",
+          "Decision-grade"
+        ],
+        "series": [
+          {
+            "nome": "dq_tier",
+            "valores": [
+              227,
+              123
+            ]
+          }
+        ]
+      },
+      {
+        "passo_id": "p4",
+        "tipo": "linha",
+        "titulo": "Gera a curva de Lorenz da distribuição populacional entre províncias.",
+        "eixoX": [
+          "0%",
+          "9.09%",
+          "18.18%",
+          "27.27%",
+          "36.36%",
+          "45.45%",
+          "54.55%",
+          "63.64%",
+          "72.73%",
+          "81.82%",
+          "90.91%",
+          "100%"
+        ],
+        "series": [
+          {
+            "nome": "Curva de Lorenz",
+            "valores": [
+              0,
+              3.8,
+              8.72,
+              13.82,
+              20.53,
+              27.65,
+              34.85,
+              42.91,
+              51.18,
+              60.83,
+              79.14,
+              100
+            ]
+          }
+        ],
+        "referencia": {
+          "nome": "Igualdade perfeita",
+          "valores": [
+            0,
+            9.09,
+            18.18,
+            27.27,
+            36.36,
+            45.45,
+            54.55,
+            63.64,
+            72.73,
+            81.82,
+            90.91,
+            100
+          ]
+        }
+      },
+      {
+        "passo_id": "p1_grafico_garantia",
+        "tipo": "barra",
+        "titulo": "População Total (Soma a população total registada em cada p…): maiores unidades",
+        "eixoX": [
+          "NAMPULA",
+          "ZAMBEZIA",
+          "TETE",
+          "CABO DELGADO",
+          "SOFALA",
+          "MAPUTO",
+          "MANICA",
+          "NIASSA",
+          "INHAMBANE",
+          "GAZA",
+          "Maputo Cidade"
+        ],
+        "series": [
+          {
+            "nome": "População Total (Soma a população total registada em cada p…)",
+            "valores": [
+              55308001,
+              48546987,
+              25578312,
+              21912507,
+              21383651,
+              19071160,
+              18885620,
+              17783184,
+              13530548,
+              13025881,
+              10083300
+            ]
+          }
+        ],
+        "categoria": "comparativo"
+      },
+      {
+        "passo_id": "p3_grafico_garantia",
+        "tipo": "barra",
+        "titulo": "População Total (Mede se a população está concentrada em po…): maiores unidades",
+        "eixoX": [
+          "NAMPULA",
+          "ZAMBEZIA",
+          "TETE",
+          "CABO DELGADO",
+          "SOFALA",
+          "MAPUTO",
+          "MANICA",
+          "NIASSA",
+          "INHAMBANE",
+          "GAZA",
+          "Maputo Cidade"
+        ],
+        "series": [
+          {
+            "nome": "População Total (Mede se a população está concentrada em po…)",
+            "valores": [
+              55308001,
+              48546987,
+              25578312,
+              21912507,
+              21383651,
+              19071160,
+              18885620,
+              17783184,
+              13530548,
+              13025881,
+              10083300
+            ]
+          }
+        ],
+        "categoria": "comparativo"
+      },
+      {
+        "passo_id": "p5_grafico_garantia",
+        "tipo": "barra",
+        "titulo": "População Total (Identifica províncias com população fora d…): maiores unidades",
+        "eixoX": [
+          "NAMPULA",
+          "ZAMBEZIA",
+          "TETE",
+          "CABO DELGADO",
+          "SOFALA",
+          "MAPUTO",
+          "MANICA",
+          "NIASSA",
+          "INHAMBANE",
+          "GAZA",
+          "Maputo Cidade"
+        ],
+        "series": [
+          {
+            "nome": "População Total (Identifica províncias com população fora d…)",
+            "valores": [
+              55308001,
+              48546987,
+              25578312,
+              21912507,
+              21383651,
+              19071160,
+              18885620,
+              17783184,
+              13530548,
+              13025881,
+              10083300
+            ]
+          }
+        ],
+        "categoria": "comparativo"
+      },
+      {
+        "passo_id": "p2_grafico_garantia",
+        "tipo": "barra",
+        "titulo": "População Total (Calcula a quota percentual de cada provínc…) (% do total): maiores unidades",
+        "eixoX": [
+          "NAMPULA",
+          "ZAMBEZIA",
+          "TETE",
+          "CABO DELGADO",
+          "SOFALA",
+          "MAPUTO",
+          "MANICA",
+          "NIASSA",
+          "INHAMBANE",
+          "GAZA",
+          "Maputo Cidade"
+        ],
+        "series": [
+          {
+            "nome": "População Total (Calcula a quota percentual de cada provínc…)",
+            "valores": [
+              20.862350768118148,
+              18.31207516484408,
+              9.648219197080827,
+              8.265466098527847,
+              8.065979963098293,
+              7.1937011333116905,
+              7.123714865655467,
+              6.70787256227153,
+              5.103764977165953,
+              4.913403008106649,
+              3.80345226181951
+            ]
+          }
+        ],
+        "categoria": "comparativo"
+      }
+    ],
+    "destaques": [],
+    "avisos": [
+      "Conjunto de dados Data4Moz L02 Demografia e População: 1 valor(es) da coluna \"geography_name\" não correspondem a unidades administrativas de Moçambique (Nacional) e ficam fora dos totais por unidade."
+    ],
+    "enriquecimentoPopulacao": {},
+    "camadasBrutas": [],
+    "qualidade": [
+      {
+        "coluna": "Dq Tier",
+        "completude_pct": 35,
+        "n_distintos": 2,
+        "tipo": "categorica"
+      }
+    ],
+    "codigoExecutado": [
+      {
+        "passo_id": "p7",
+        "instrucao": "Extrai o valor da linha com geography_name='Nacional' e variable_name_pt='População Total' no ano mais recente disponível e compara com a soma das províncias calculada em p1, reportando a diferença absoluta e percentual.",
+        "codigo": "find / -iname dados.csv 2>/dev/null\n\n---\n\nview\n\n---\n\ncd /tmp && cat << 'EOF' > calc.py\nimport pandas as pd\n\ndf = pd.read_csv('/files/input/371fb238091de798/dados.csv')\ndf = df.dropna(subset=['record_id'])\n\npop = df[(df['variable_name_pt']=='População Total')]\n\n# national\nnat = pop[pop['geography_name']=='Nacional']\nlatest_year = nat['year'].max()\nnat_val = nat[nat['year']==latest_year]['value'].iloc[0]\n\n# provinces sum for same year\nprov = pop[(pop['geography_type']=='Province') & (pop['year']==latest_year)]\nprov_sum = prov['value'].sum()\nn_provinces = prov['geography_name'].nunique()\n\ndiff_abs = nat_val - prov_sum\ndiff_pct = diff_abs / nat_val * 100\n\nprint(\"Ano mais recente:\", latest_year)\nprint(\"Valor Nacional:\", nat_val)\nprint(\"Número de províncias somadas:\", n_provinces)\nprint(\"Soma províncias:\", prov_sum)\nprint(\"Diferença absoluta:\", diff_abs)\nprint(\"Diferença percentual (%):\", diff_pct)\nEOF\npython3 calc.py"
+      }
+    ],
+    "custoExecucaoCodigo": 0.302007
+  },
+  "achados": [],
+  "narrativa": {
+    "titulo": "Nampula é a província mais populosa, com {{calc:p2_max}} da população do país",
+    "subtitulo": "As três maiores províncias juntas concentram quase metade dos moçambicanos, mas a distribuição geral entre as 11 unidades é relativamente equilibrada",
+    "resposta_directa": "Nampula tem a maior fatia da população nacional, com {{calc:p2_max}} do total, enquanto Maputo Cidade tem a menor, com {{calc:p2_min}}. As três províncias mais populosas juntas somam {{calc:p3_quota_top3_pct}} da população do país.",
+    "numeros_chave": [
+      {
+        "calc_id": "p2_max",
+        "rotulo": "Maior participação provincial",
+        "contexto": "{{calc:p2_nome_max}} concentra {{calc:p2_max}} da população nacional, a maior fatia entre as 11 unidades."
+      },
+      {
+        "calc_id": "p2_min",
+        "rotulo": "Menor participação provincial",
+        "contexto": "{{calc:p2_nome_min}} tem apenas {{calc:p2_min}} do total, a menor fatia do país."
+      },
+      {
+        "calc_id": "p3_quota_top3_pct",
+        "rotulo": "Concentração no topo 3",
+        "contexto": "As três províncias mais populosas somam {{calc:p3_quota_top3_pct}} da população, quase metade do país em apenas 3 de 11 unidades."
+      },
+      {
+        "calc_id": "p3_gini",
+        "rotulo": "Índice de concentração (Gini)",
+        "contexto": "Um Gini de {{calc:p3_gini}} indica uma distribuição populacional entre províncias relativamente equilibrada, longe da concentração extrema."
+      },
+      {
+        "calc_id": "p2_mediana",
+        "rotulo": "Participação mediana",
+        "contexto": "Metade das províncias tem uma fatia da população acima de {{calc:p2_mediana}}, a outra metade abaixo."
+      },
+      {
+        "calc_id": "p5_n",
+        "rotulo": "Províncias com valores atípicos",
+        "contexto": "{{calc:p5_n}} províncias saem fora do intervalo típico de população, puxando a distribuição para cima ou para baixo."
+      },
+      {
+        "calc_id": "p2_coeficiente_variacao",
+        "rotulo": "Dispersão entre províncias",
+        "contexto": "O coeficiente de variação de {{calc:p2_coeficiente_variacao}} mostra que, apesar do Gini moderado, há diferenças assinaláveis de tamanho entre províncias."
+      }
+    ],
+    "o_que_mostram": "Nampula lidera claramente com {{calc:p2_max}} da população, um valor destacado face às restantes 10 unidades. No outro extremo, Maputo Cidade fica com apenas {{calc:p2_min}}, reflexo de ser uma cidade e não uma província territorialmente extensa. Entre estes dois pólos, metade das províncias situa-se entre {{calc:p2_q1}} e {{calc:p2_q3}} da população nacional, com uma mediana de {{calc:p2_mediana}}, ou seja, sem um segundo grupo isolado, mas uma cauda longa puxada por Nampula.",
+    "porque": "A maior participação de Nampula reflecte sobretudo a extensão territorial e a densidade histórica de povoamento rural, não necessariamente melhores condições de vida; o mesmo padrão pode resultar de fronteiras administrativas antigas que juntaram mais território a certas províncias. A pequena fatia de Maputo Cidade explica-se pela sua natureza urbana e de área reduzida, um efeito de definição administrativa (limite municipal vs. provincial) e não de despovoamento (R7).",
+    "o_que_nao_diz": [
+      "Os valores absolutos de população por província (ex.: soma e máximo em pessoas) agregam vários anos da série 2015-2023 do dataset e não devem ser lidos como uma contagem única e actual; só as percentagens de participação são comparáveis de forma fiável entre províncias.",
+      "Apenas {{calc:p6_completude_pct}}% das linhas do dataset têm valores preenchidos ({{calc:p6_n_preenchidos}} de {{calc:p6_n_total}}), e {{calc:p6_n_distintos}} categorias de qualidade de dados (dq_tier) coexistem, com mais de metade classificada como 'Advisory' e não 'Decision-grade'.",
+      "Um valor de geography_name corresponde ao total 'Nacional' e não a uma unidade provincial, pelo que fica fora dos totais por província para evitar dupla contagem.",
+      "O nível mais fino disponível neste dataset é a província (admin1); não existe desagregação por distrito para confirmar se o padrão se mantém dentro de cada província."
+    ],
+    "como_chegamos": "Calculámos a população e a sua participação percentual para as 11 unidades administrativas (10 províncias e Maputo Cidade) a partir dos registos do INE, medimos a concentração com o índice de Gini e HHI, e identificámos valores fora do padrão habitual com o método de Tukey.",
+    "fontes": [
+      {
+        "instituicao": "INE (Instituto Nacional de Estatística de Moçambique)",
+        "documento": "Data4Moz L02 Demografia e População",
+        "ano": 2022
+      }
+    ]
+  },
+  "narrativa_resolvida": {
+    "titulo": "Nampula é a província mais populosa, com 20,9 % do total da população do país",
+    "subtitulo": "As três maiores províncias juntas concentram quase metade dos moçambicanos, mas a distribuição geral entre as 11 unidades é relativamente equilibrada",
+    "resposta_directa": "Nampula tem a maior fatia da população nacional, com 20,9 % do total do total, enquanto Maputo Cidade tem a menor, com 3,80 % do total. As três províncias mais populosas juntas somam 48,8% da população do país.",
+    "numeros_chave": [
+      {
+        "calc_id": "p2_max",
+        "rotulo": "Maior participação provincial",
+        "contexto": "NAMPULA concentra 20,9 % do total da população nacional, a maior fatia entre as 11 unidades.",
+        "valor": "20,9 % do total"
+      },
+      {
+        "calc_id": "p2_min",
+        "rotulo": "Menor participação provincial",
+        "contexto": "Maputo Cidade tem apenas 3,80 % do total do total, a menor fatia do país.",
+        "valor": "3,80 % do total"
+      },
+      {
+        "calc_id": "p3_quota_top3_pct",
+        "rotulo": "Concentração no topo 3",
+        "contexto": "As três províncias mais populosas somam 48,8% da população, quase metade do país em apenas 3 de 11 unidades.",
+        "valor": "48,8%"
+      },
+      {
+        "calc_id": "p3_gini",
+        "rotulo": "Índice de concentração (Gini)",
+        "contexto": "Um Gini de 0,28 indica uma distribuição populacional entre províncias relativamente equilibrada, longe da concentração extrema.",
+        "valor": "0,28"
+      },
+      {
+        "calc_id": "p2_mediana",
+        "rotulo": "Participação mediana",
+        "contexto": "Metade das províncias tem uma fatia da população acima de 7,19 % do total, a outra metade abaixo.",
+        "valor": "7,19 % do total"
+      },
+      {
+        "calc_id": "p5_n",
+        "rotulo": "Províncias com valores atípicos",
+        "contexto": "2 províncias saem fora do intervalo típico de população, puxando a distribuição para cima ou para baixo.",
+        "valor": "2"
+      },
+      {
+        "calc_id": "p2_coeficiente_variacao",
+        "rotulo": "Dispersão entre províncias",
+        "contexto": "O coeficiente de variação de 60,3 % do total mostra que, apesar do Gini moderado, há diferenças assinaláveis de tamanho entre províncias.",
+        "valor": "60,3 % do total"
+      }
+    ],
+    "o_que_mostram": "Nampula lidera claramente com 20,9 % do total da população, um valor destacado face às restantes 10 unidades. No outro extremo, Maputo Cidade fica com apenas 3,80 % do total, reflexo de ser uma cidade e não uma província territorialmente extensa. Entre estes dois pólos, metade das províncias situa-se entre 5,91 % do total e 8,96 % do total da população nacional, com uma mediana de 7,19 % do total, ou seja, sem um segundo grupo isolado, mas uma cauda longa puxada por Nampula.",
+    "porque": "A maior participação de Nampula reflecte sobretudo a extensão territorial e a densidade histórica de povoamento rural, não necessariamente melhores condições de vida; o mesmo padrão pode resultar de fronteiras administrativas antigas que juntaram mais território a certas províncias. A pequena fatia de Maputo Cidade explica-se pela sua natureza urbana e de área reduzida, um efeito de definição administrativa (limite municipal vs. provincial) e não de despovoamento (R7).",
+    "o_que_nao_diz": [
+      "Os valores absolutos de população por província (ex.: soma e máximo em pessoas) agregam vários anos da série 2015-2023 do dataset e não devem ser lidos como uma contagem única e actual; só as percentagens de participação são comparáveis de forma fiável entre províncias.",
+      "Apenas 35% das linhas do dataset têm valores preenchidos (350 de 999), e 2 categorias de qualidade de dados (dq_tier) coexistem, com mais de metade classificada como 'Advisory' e não 'Decision-grade'.",
+      "Um valor de geography_name corresponde ao total 'Nacional' e não a uma unidade provincial, pelo que fica fora dos totais por província para evitar dupla contagem.",
+      "O nível mais fino disponível neste dataset é a província (admin1); não existe desagregação por distrito para confirmar se o padrão se mantém dentro de cada província."
+    ],
+    "como_chegamos": "Calculámos a população e a sua participação percentual para as 11 unidades administrativas (10 províncias e Maputo Cidade) a partir dos registos do INE, medimos a concentração com o índice de Gini e HHI, e identificámos valores fora do padrão habitual com o método de Tukey.",
+    "fontes": [
+      {
+        "instituicao": "INE (Instituto Nacional de Estatística de Moçambique)",
+        "documento": "Data4Moz L02 Demografia e População",
+        "ano": 2022
+      }
+    ]
+  },
+  "critica": {
+    "objeccoes": [],
+    "bloqueia_publicacao": false
+  },
+  "custo_usd": 0.428976,
+  "duracao_ms": 168879,
+  "confianca": {
+    "percentagem": 100,
+    "datasetsUsados": 1,
+    "ligacoesGeograficas": [
+      {
+        "dataset_id": 56,
+        "nivel": "admin1",
+        "taxa_correspondencia": 0.88
+      }
+    ],
+    "completudeMediaPct": 35,
+    "valoresDerivados": 2,
+    "passosViaCodigo": 1
+  }
+}

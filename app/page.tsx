@@ -1,5 +1,6 @@
 import { Suspense } from 'react'
 import { db, countDatasets } from '@/lib/db'
+import { getDatasetPreview } from '@/lib/dataset-preview'
 import { HeroSection } from '@/components/HeroSection'
 import { FeaturedCatalogSection } from '@/components/FeaturedCatalogSection'
 import { AboutSection } from '@/components/AboutSection'
@@ -41,7 +42,7 @@ async function getStats() {
 
 async function getMostViewedDatasets() {
   try {
-    const base = `SELECT d.id, d.title, d.description, d.source, d.format, d.dataType, d.views, d.downloads, d.updatedAt,
+    const base = `SELECT d.id, d.title, d.description, d.source, d.format, d.dataType, d.filePath, d.views, d.downloads, d.updatedAt,
               c.name as categoryName
        FROM Dataset d
        LEFT JOIN Category c ON c.id = d.categoryId`
@@ -66,6 +67,24 @@ async function getMostViewedDatasets() {
 
 export default async function Home() {
   const [stats, mostViewed] = await Promise.all([getStats(), getMostViewedDatasets()])
+
+  // Pré-visualização real (geometria a sério, não um ícone genérico) só para o dataset em
+  // destaque do hero, e só quando ele é geoespacial: gerada aqui no servidor (reaproveitando o
+  // mesmo código que já serve a ficha do dataset), nunca através da API de preview, que regista
+  // um acesso por chamada — inflacionaria as estatísticas de origem só por a pessoa ter visto a
+  // página inicial, sem sequer ter aberto o dataset.
+  const destaqueTopo = mostViewed[0]
+  let destaquePreview: { geojson: any; bbox: [number, number, number, number] | null } | null = null
+  if (destaqueTopo?.dataType === 'geoespacial' && destaqueTopo.filePath) {
+    try {
+      const preview = await getDatasetPreview(destaqueTopo, { maxFeatures: 200 })
+      if ('type' in preview && preview.type === 'geo') {
+        destaquePreview = { geojson: preview.geojson, bbox: preview.bbox }
+      }
+    } catch {
+      destaquePreview = null
+    }
+  }
 
   const heroDatasets = mostViewed.map((dataset) => ({
     id: Number(dataset.id),
@@ -106,6 +125,7 @@ export default async function Home() {
           views: Number(stats.views || 0),
         }}
         highlightedDatasets={heroDatasets}
+        destaquePreview={destaquePreview}
       />
       <FeaturedCatalogSection datasets={featuredDatasets} />
       <AboutSection />

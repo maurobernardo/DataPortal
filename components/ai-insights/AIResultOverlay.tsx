@@ -58,7 +58,7 @@ export function AIResultOverlay({
         </button>
 
         <div className="rounded-3xl bg-white shadow-2xl overflow-hidden">
-          <div className="relative overflow-hidden bg-gradient-to-br from-[#064E2C] via-[#0B6B3A] to-[#1FA365] px-6 py-7 md:px-9 md:py-8 text-white">
+          <div className="relative overflow-hidden bg-[#064E2C] px-6 py-7 md:px-9 md:py-8 text-white">
             <div className="pointer-events-none absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white/10 blur-2xl" />
             <div className="relative flex items-center gap-2 mb-3">
               <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-white/15">

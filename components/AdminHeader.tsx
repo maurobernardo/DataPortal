@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { Home, FolderOpen, Database, FileText, Settings, BarChart3, MapPinned, Menu, X, LogOut } from 'lucide-react'
+import { Home, FolderOpen, Database, FileText, Settings, BarChart3, MapPinned, Menu, X, LogOut, MessageSquare, Brain, Globe2, Users, ScrollText, Lightbulb, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
@@ -23,8 +23,18 @@ export function AdminHeader({ user }: AdminHeaderProps) {
     { href: '/dados-espaciais', label: 'Geoespaciais', icon: FolderOpen },
     { href: '/dados-alfanumericos', label: 'Alfanuméricos', icon: Database },
     { href: '/dashboards-alfanumericos', label: 'Dashboard', icon: BarChart3 },
-    { href: '/maps', label: 'Mapas Inteligentes', icon: MapPinned },
+    { href: '/maps', label: 'Mapas', icon: MapPinned },
     { href: '/relatorios', label: 'Relatórios', icon: FileText },
+  ]
+  const adminLinks = [
+    { href: '/admin?tab=requests', label: 'Solicitações', icon: MessageSquare },
+    { href: '/admin?tab=maps', label: 'Mapas Inteligentes (admin)', icon: MapPinned },
+    { href: '/dashboard/ia-utilizacao', label: 'Utilização de IA', icon: Brain },
+    { href: '/admin/sugestoes-datasets', label: 'Sugestões de Datasets', icon: Lightbulb },
+    { href: '/admin/origem-utilizadores', label: 'Origem dos Utilizadores', icon: Globe2 },
+    { href: '/admin/utilizadores', label: 'Utilizadores', icon: Users },
+    { href: '/admin/lixeira', label: 'Lixeira', icon: Trash2 },
+    { href: '/admin/auditoria', label: 'Auditoria', icon: ScrollText },
   ]
 
   async function handleLogout() {
@@ -53,12 +63,12 @@ export function AdminHeader({ user }: AdminHeaderProps) {
               </div>
             </Link>
           </div>
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-3 flex-wrap">
             {navLinks.map(({ href, label, icon: Icon }) => (
               <Link
                 key={label}
                 href={href}
-                className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition"
+                className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition whitespace-nowrap"
               >
                 <Icon className="w-4 h-4" />
                 <span className="text-sm font-medium">{label}</span>
@@ -133,6 +143,17 @@ export function AdminHeader({ user }: AdminHeaderProps) {
                 <BarChart3 className="w-5 h-5" />
                 <span>Dashboard</span>
               </Link>
+              {adminLinks.map(({ href, label, icon: Icon }) => (
+                <Link key={label} href={href} onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50">
+                  <Icon className="w-5 h-5" />
+                  <span>{label}</span>
+                </Link>
+              ))}
+            </div>
+            <div className="mt-4 pt-4 border-t border-gray-200 space-y-2">
+              <div className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                Links do portal
+              </div>
               {navLinks.map(({ href, label, icon: Icon }) => (
                 <Link key={label} href={href} onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50">
                   <Icon className="w-5 h-5" />

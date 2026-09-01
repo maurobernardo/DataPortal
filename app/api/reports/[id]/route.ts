@@ -32,6 +32,7 @@ export async function PUT(
       filePath: data.filePath || null,
       fileSize: data.fileSize || null,
       detailsText: data.detailsText || null,
+      sector: data.sector || null,
     })
 
     if (!report) {

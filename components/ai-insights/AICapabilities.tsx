@@ -12,19 +12,19 @@ const CAPABILITIES = [
   {
     num: '01',
     icon: Search,
-    title: 'Ask Your Data',
+    title: 'Pergunte aos seus dados',
     desc: 'Pergunte em português (ou inglês) sobre até 3 datasets seleccionados ao mesmo tempo: geoespaciais, alfanuméricos, ou uma combinação dos dois. O motor entende o contexto de cada dataset e devolve uma resposta fundamentada apenas nos dados fornecidos.',
     features: [
       'Combine datasets geoespaciais e alfanuméricos numa só pergunta',
       'Citações automáticas ao dataset, fonte e ano',
-      'Refinamento conversacional ("e em 2023?")',
+      'Perguntas sugeridas no fim de cada análise, para continuar a explorar os mesmos datasets',
       'Cruzamento automático por divisão administrativa partilhada',
     ],
   },
   {
     num: '02',
     icon: LayoutGrid,
-    title: 'Auto-Visualize',
+    title: 'Visualização automática',
     desc: 'Geração automática de gráficos e mapas coropléticos a partir da relação entre os dados seleccionados, inclusive quando combina uma camada geoespacial com uma tabela de indicadores.',
     features: [
       'Mapas por província, distrito ou posto administrativo',
@@ -36,7 +36,7 @@ const CAPABILITIES = [
   {
     num: '03',
     icon: TrendingUp,
-    title: 'Predictive Analytics',
+    title: 'Análise preditiva',
     desc: 'Estimativas de tendência sobre séries temporais dos dados fornecidos, com banda de incerteza indicativa, sempre identificadas como estimativa da IA e não como um modelo estatístico validado.',
     features: [
       'Projecções com banda de incerteza indicativa',
@@ -49,7 +49,7 @@ const CAPABILITIES = [
 
 export function AICapabilities() {
   return (
-    <section className="font-body-stack relative z-10 py-16 md:py-24 bg-white border-b border-[#E2E8E5]">
+    <section className="font-body-stack relative z-10 py-9 md:py-12 bg-white border-b border-[#E2E8E5]">
       <div className="ai-section-inner">
         <div className="max-w-3xl mb-12 md:mb-14">
           <div className="inline-flex items-center gap-2 rounded-full bg-[#F1F8F4] border border-[#CFE3D6] px-4 py-1.5 mb-6">

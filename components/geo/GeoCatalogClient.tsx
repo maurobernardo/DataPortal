@@ -12,6 +12,7 @@ import { BatchActionBar } from '@/components/geo/BatchActionBar'
 import { pickMostPopular } from '@/components/geo/geo-utils'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { RecentlyViewedRail } from '@/components/RecentlyViewedRail'
+import { EticaBadgeCatalogo } from '@/components/EticaBadgeCatalogo'
 import type { GeoDataset } from '@/components/geo/types'
 
 const GeoCatalogMapView = dynamic(
@@ -38,6 +39,7 @@ export function GeoCatalogClient({
   availableSources,
   availableYears,
   searchParams,
+  coberturaGeografica,
 }: {
   datasets: GeoDataset[]
   categories: Category[]
@@ -47,6 +49,10 @@ export function GeoCatalogClient({
   availableSources: string[]
   availableYears: number[]
   searchParams: Record<string, string | string[] | undefined>
+  coberturaGeografica?: {
+    porProvincia: { provincia: string; total: number }[]
+    datasetsSemCoberturaIdentificada: number
+  } | null
 }) {
   const defaultSelected = useMemo(() => pickMostPopular(datasets), [datasets])
   const [selected, setSelected] = useState<GeoDataset | null>(defaultSelected)
@@ -159,7 +165,9 @@ export function GeoCatalogClient({
 
   return (
   <>
-    <section className="geo-catalog-header">
+    <section className="geo-catalog-header pd-photo-hero">
+      <div className="pd-photo-hero-bg" style={{ backgroundImage: "url('/images/fundo2.webp')" }} aria-hidden />
+      <div className="pd-photo-hero-scrim" aria-hidden />
       <div className="geo-ch-inner">
         <Breadcrumbs
           items={[
@@ -169,7 +177,10 @@ export function GeoCatalogClient({
         />
         <div className="geo-ch-row">
           <div>
-            <div className="geo-ch-eyebrow">Camadas geoespaciais</div>
+            <div className="geo-ch-eyebrow-row">
+              <div className="geo-ch-eyebrow">Camadas geoespaciais</div>
+              <EticaBadgeCatalogo />
+            </div>
             <h1 className="geo-ch-title">Dados Geoespaciais</h1>
             <p className="geo-ch-lede">
               Explore e descarregue camadas oficiais: fronteiras administrativas, hidrografia,

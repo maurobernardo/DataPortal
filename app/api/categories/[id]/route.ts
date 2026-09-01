@@ -72,7 +72,10 @@ export async function DELETE(
       )
     }
 
-    await deleteCategory(id)
+    const resultado = await deleteCategory(id)
+    if (!resultado.ok) {
+      return NextResponse.json({ error: resultado.erro }, { status: 409 })
+    }
 
     return NextResponse.json({ success: true })
   } catch (error: any) {

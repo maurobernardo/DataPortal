@@ -1,0 +1,1877 @@
+{
+  "analise_id": "an_958ec676",
+  "compreensao": {
+    "pergunta_normalizada": "Qual é a taxa de imunização infantil em Moçambique?",
+    "idioma": "pt",
+    "intencao": "descritiva",
+    "arquetipo_sugerido": "exploratorio",
+    "entidades": {
+      "geografias": [
+        {
+          "nome": "Moçambique",
+          "nivel": "admin0"
+        }
+      ],
+      "periodos": [
+        {
+          "expressao": "dados mais recentes disponíveis (2018-2022)atividade não especificada pelo utilizador"
+        }
+      ],
+      "metricas": [
+        "cobertura vacinal",
+        "imunização infantil",
+        "CCV",
+        "BCG",
+        "DPT3/Penta3",
+        "Sarampo"
+      ]
+    },
+    "ambiguidades": [
+      {
+        "descricao": "'Imunização infantil' pode referir-se a vários indicadores distintos do PAV: vacinação completa (CCV), BCG, DPT3/Penta3 ou Sarampo, cada um com cobertura diferente.",
+        "opcoes": [
+          "Crianças Completamente Vacinadas (CCV, %)",
+          "Cobertura BCG (%)",
+          "Cobertura DPT3 / Penta3 (%)",
+          "Cobertura Vacinal Sarampo (%)"
+        ]
+      }
+    ],
+    "perfil_utilizador_inferido": "cidadao",
+    "requer_desambiguacao": false,
+    "sub_perguntas": [
+      "Qual é a cobertura de vacinação completa (CCV) por província, o nível mais fino disponível?",
+      "Como se compara a CCV com outros indicadores de vacinação (BCG, Sarampo) por província?",
+      "Como evoluiu a cobertura CCV entre 2018 e 2022?",
+      "Existem províncias com cobertura atípica (muito baixa ou acima de 100%)?",
+      "Qual é a completude e distribuição dos registos por indicador de vacinação?"
+    ],
+    "passos": [
+      {
+        "id": "s1",
+        "tipo": "calculo",
+        "descricao_humana": "Calcula a cobertura de vacinação completa (CCV) por província, o nível mais fino disponível.",
+        "depende_de": [],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 52,
+        "coluna_metrica": "value",
+        "filtro_unidade": "cat:variable_name_pt=Crianças Completamente Vacinadas (CCV, %)",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "c1"
+        ]
+      },
+      {
+        "id": "s2",
+        "tipo": "calculo",
+        "descricao_humana": "Calcula a cobertura da vacina BCG por província, para comparar com a CCV.",
+        "depende_de": [],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 52,
+        "coluna_metrica": "value",
+        "filtro_unidade": "cat:variable_name_pt=Cobertura BCG (%)",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "c2"
+        ]
+      },
+      {
+        "id": "s3",
+        "tipo": "calculo",
+        "descricao_humana": "Calcula a cobertura vacinal contra o sarampo por província, terceiro indicador comparativo.",
+        "depende_de": [],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 52,
+        "coluna_metrica": "value",
+        "filtro_unidade": "cat:variable_name_pt=Cobertura Vacinal Sarampo (%)",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "c3"
+        ]
+      },
+      {
+        "id": "s4",
+        "tipo": "calculo",
+        "descricao_humana": "Testa a tendência da cobertura CCV entre 2018 e 2022 ao longo dos anos disponíveis.",
+        "depende_de": [],
+        "metodo": "tendencia_mann_kendall",
+        "dataset_id": 52,
+        "coluna_metrica": "value",
+        "coluna_tempo": "year",
+        "filtro_unidade": "cat:variable_name_pt=Crianças Completamente Vacinadas (CCV, %)",
+        "produz": [
+          "c4"
+        ]
+      },
+      {
+        "id": "s5",
+        "tipo": "calculo",
+        "descricao_humana": "Identifica províncias com cobertura CCV atípica, incluindo valores acima de 100%.",
+        "depende_de": [
+          "s1"
+        ],
+        "metodo": "detectar_outliers",
+        "dataset_id": 52,
+        "coluna_metrica": "value",
+        "filtro_unidade": "cat:variable_name_pt=Crianças Completamente Vacinadas (CCV, %)",
+        "produz": [
+          "c5"
+        ]
+      },
+      {
+        "id": "s6",
+        "tipo": "validacao",
+        "descricao_humana": "Verifica quantos registos existem por indicador de vacinação, para controlo de qualidade.",
+        "depende_de": [],
+        "metodo": "perfil_coluna",
+        "dataset_id": 52,
+        "coluna_metrica": "variable_name_pt",
+        "produz": [
+          "c6"
+        ]
+      }
+    ],
+    "nivel_geo_alvo": [
+      "admin1"
+    ],
+    "metricas_alvo": [
+      "value"
+    ],
+    "justificacao_arquetipo": "A pergunta pede um número único, mas os dados só oferecem cobertura por província e por vários indicadores distintos (CCV, BCG, Sarampo); um formato exploratório permite comparar esses indicadores e níveis antes de destacar o valor-chave, evitando simplificar em excesso uma realidade heterogénea.",
+    "pergunta_original": "Qual é a taxa de imunização infantil em Moçambique?"
+  },
+  "plano": {
+    "sub_perguntas": [
+      "Qual é a cobertura de vacinação completa (CCV) por província, o nível mais fino disponível?",
+      "Como se compara a CCV com outros indicadores de vacinação (BCG, Sarampo) por província?",
+      "Como evoluiu a cobertura CCV entre 2018 e 2022?",
+      "Existem províncias com cobertura atípica (muito baixa ou acima de 100%)?",
+      "Qual é a completude e distribuição dos registos por indicador de vacinação?"
+    ],
+    "passos": [
+      {
+        "id": "s1",
+        "tipo": "calculo",
+        "descricao_humana": "Calcula a cobertura de vacinação completa (CCV) por província, o nível mais fino disponível.",
+        "depende_de": [],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 52,
+        "coluna_metrica": "value",
+        "filtro_unidade": "cat:variable_name_pt=Crianças Completamente Vacinadas (CCV, %)",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "c1"
+        ]
+      },
+      {
+        "id": "s2",
+        "tipo": "calculo",
+        "descricao_humana": "Calcula a cobertura da vacina BCG por província, para comparar com a CCV.",
+        "depende_de": [],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 52,
+        "coluna_metrica": "value",
+        "filtro_unidade": "cat:variable_name_pt=Cobertura BCG (%)",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "c2"
+        ]
+      },
+      {
+        "id": "s3",
+        "tipo": "calculo",
+        "descricao_humana": "Calcula a cobertura vacinal contra o sarampo por província, terceiro indicador comparativo.",
+        "depende_de": [],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 52,
+        "coluna_metrica": "value",
+        "filtro_unidade": "cat:variable_name_pt=Cobertura Vacinal Sarampo (%)",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "c3"
+        ]
+      },
+      {
+        "id": "s4",
+        "tipo": "calculo",
+        "descricao_humana": "Testa a tendência da cobertura CCV entre 2018 e 2022 ao longo dos anos disponíveis.",
+        "depende_de": [],
+        "metodo": "tendencia_mann_kendall",
+        "dataset_id": 52,
+        "coluna_metrica": "value",
+        "coluna_tempo": "year",
+        "filtro_unidade": "cat:variable_name_pt=Crianças Completamente Vacinadas (CCV, %)",
+        "produz": [
+          "c4"
+        ]
+      },
+      {
+        "id": "s5",
+        "tipo": "calculo",
+        "descricao_humana": "Identifica províncias com cobertura CCV atípica, incluindo valores acima de 100%.",
+        "depende_de": [
+          "s1"
+        ],
+        "metodo": "detectar_outliers",
+        "dataset_id": 52,
+        "coluna_metrica": "value",
+        "filtro_unidade": "cat:variable_name_pt=Crianças Completamente Vacinadas (CCV, %)",
+        "produz": [
+          "c5"
+        ]
+      },
+      {
+        "id": "s6",
+        "tipo": "validacao",
+        "descricao_humana": "Verifica quantos registos existem por indicador de vacinação, para controlo de qualidade.",
+        "depende_de": [],
+        "metodo": "perfil_coluna",
+        "dataset_id": 52,
+        "coluna_metrica": "variable_name_pt",
+        "produz": [
+          "c6"
+        ]
+      }
+    ],
+    "nivel_geo_alvo": [
+      "admin1"
+    ],
+    "metricas_alvo": [
+      "value"
+    ],
+    "justificacao_arquetipo": "A pergunta pede um número único, mas os dados só oferecem cobertura por província e por vários indicadores distintos (CCV, BCG, Sarampo); um formato exploratório permite comparar esses indicadores e níveis antes de destacar o valor-chave, evitando simplificar em excesso uma realidade heterogénea."
+  },
+  "suficiencia": {
+    "cobertura": [
+      {
+        "sub_pergunta": "Qual é a cobertura de vacinação completa (CCV) por província, o nível mais fino disponível?",
+        "coberto": true,
+        "fonte": "dataset_selecionado"
+      },
+      {
+        "sub_pergunta": "Como se compara a CCV com outros indicadores de vacinação (BCG, Sarampo) por província?",
+        "coberto": true,
+        "fonte": "dataset_selecionado"
+      },
+      {
+        "sub_pergunta": "Como evoluiu a cobertura CCV entre 2018 e 2022?",
+        "coberto": true,
+        "fonte": "dataset_selecionado"
+      },
+      {
+        "sub_pergunta": "Existem províncias com cobertura atípica (muito baixa ou acima de 100%)?",
+        "coberto": true,
+        "fonte": "dataset_selecionado"
+      },
+      {
+        "sub_pergunta": "Qual é a completude e distribuição dos registos por indicador de vacinação?",
+        "coberto": true,
+        "fonte": "dataset_selecionado"
+      }
+    ],
+    "confianca_sem_enriquecimento": 0.92,
+    "precisa_enriquecimento": false,
+    "alvos_enriquecimento": [
+      {
+        "sub_pergunta": "Como evoluiu a cobertura CCV entre 2018 e 2022?",
+        "lacuna": "Série temporal tem apenas 14,2% de preenchimento; nem todas as províncias têm dados em todos os anos.",
+        "prioridade": 2,
+        "fonte_alvo": "MISAU / SISMA base histórica anual"
+      },
+      {
+        "sub_pergunta": "Existem províncias com cobertura atípica (muito baixa ou acima de 100%)?",
+        "lacuna": "Dataset contém valores acima de 100% (máximo 164,5%); notas indicam 'denominator issues / cross-border' mas causalidade de cada excesso não está documentada por província.",
+        "prioridade": 1,
+        "fonte_alvo": "MISAU Relatórios Anuários metodologia denominadores provinciais"
+      }
+    ]
+  },
+  "contexto": {
+    "tabelas": {},
+    "ligacoes": {},
+    "calcs": {
+      "s4_S": {
+        "id": "s4_S",
+        "valor": -2263,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s4",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 142,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s4_z": {
+        "id": "s4_z",
+        "valor": -3.9897,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s4",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 142,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s4_p": {
+        "id": "s4_p",
+        "valor": 0.000066,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s4",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 142,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s4_declive_sen": {
+        "id": "s4_declive_sen",
+        "valor": -0.16129,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s4",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 142,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s4_direccao": {
+        "id": "s4_direccao",
+        "valor": "decrescente",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "s4",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 142,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s4_n": {
+        "id": "s4_n",
+        "valor": 142,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s4",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 142,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s4_projecao_proximo_periodo": {
+        "id": "s4_projecao_proximo_periodo",
+        "valor": 60.3387,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s4",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 142,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s4_projecao_ic_inferior": {
+        "id": "s4_projecao_ic_inferior",
+        "valor": 60.24,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s4",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 142,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s4_projecao_ic_superior": {
+        "id": "s4_projecao_ic_superior",
+        "valor": 60.4169,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s4",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 142,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s4_interpretacao": {
+        "id": "s4_interpretacao",
+        "valor": "Tendência decrescente estatisticamente significativa (p = 0.0001), com variação típica de -0.16 por período. Projecção estatística para o próximo período: 60.34 (intervalo de confiança de 95%: 60.24 a 60.42) ; projecção estatística, não garantia.",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "s4",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 142,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s6_coluna": {
+        "id": "s6_coluna",
+        "valor": "variable_name_pt",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "s6",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s6_n_total": {
+        "id": "s6_n_total",
+        "valor": 999,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s6",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s6_n_preenchidos": {
+        "id": "s6_n_preenchidos",
+        "valor": 142,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s6",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s6_completude_pct": {
+        "id": "s6_completude_pct",
+        "valor": 14.2,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s6",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s6_n_distintos": {
+        "id": "s6_n_distintos",
+        "valor": 5,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s6",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s6_tipo": {
+        "id": "s6_tipo",
+        "valor": "categorica",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "s6",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s1_nome_max": {
+        "id": "s1_nome_max",
+        "valor": "Immunisation / EPI",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "s1",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 1,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s1_nome_min": {
+        "id": "s1_nome_min",
+        "valor": "Immunisation / EPI",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "s1",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 1,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s1_n": {
+        "id": "s1_n",
+        "valor": 142,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s1",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 142,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s1_soma": {
+        "id": "s1_soma",
+        "valor": 14513.9,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s1",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 142,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s1_media": {
+        "id": "s1_media",
+        "valor": 102.2106,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s1",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 142,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s1_mediana": {
+        "id": "s1_mediana",
+        "valor": 101.25,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s1",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 142,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s1_desvio": {
+        "id": "s1_desvio",
+        "valor": 23.8408,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s1",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 142,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s1_min": {
+        "id": "s1_min",
+        "valor": 43.2,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s1",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 142,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s1_max": {
+        "id": "s1_max",
+        "valor": 164.5,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s1",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 142,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s1_q1": {
+        "id": "s1_q1",
+        "valor": 93.325,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s1",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 142,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s1_q3": {
+        "id": "s1_q3",
+        "valor": 115.75,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s1",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 142,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s1_coeficiente_variacao": {
+        "id": "s1_coeficiente_variacao",
+        "valor": 23.33,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s1",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 142,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s2_nome_max": {
+        "id": "s2_nome_max",
+        "valor": "Immunisation / EPI",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "s2",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 1,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s2_nome_min": {
+        "id": "s2_nome_min",
+        "valor": "Immunisation / EPI",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "s2",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 1,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s2_n": {
+        "id": "s2_n",
+        "valor": 142,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s2",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 142,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s2_soma": {
+        "id": "s2_soma",
+        "valor": 14513.9,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s2",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 142,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s2_media": {
+        "id": "s2_media",
+        "valor": 102.2106,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s2",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 142,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s2_mediana": {
+        "id": "s2_mediana",
+        "valor": 101.25,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s2",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 142,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s2_desvio": {
+        "id": "s2_desvio",
+        "valor": 23.8408,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s2",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 142,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s2_min": {
+        "id": "s2_min",
+        "valor": 43.2,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s2",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 142,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s2_max": {
+        "id": "s2_max",
+        "valor": 164.5,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s2",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 142,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s2_q1": {
+        "id": "s2_q1",
+        "valor": 93.325,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s2",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 142,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s2_q3": {
+        "id": "s2_q3",
+        "valor": 115.75,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s2",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 142,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s2_coeficiente_variacao": {
+        "id": "s2_coeficiente_variacao",
+        "valor": 23.33,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s2",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 142,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s3_nome_max": {
+        "id": "s3_nome_max",
+        "valor": "Immunisation / EPI",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "s3",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 1,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s3_nome_min": {
+        "id": "s3_nome_min",
+        "valor": "Immunisation / EPI",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "s3",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 1,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s3_n": {
+        "id": "s3_n",
+        "valor": 142,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s3",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 142,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s3_soma": {
+        "id": "s3_soma",
+        "valor": 14513.9,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s3",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 142,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s3_media": {
+        "id": "s3_media",
+        "valor": 102.2106,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s3",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 142,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s3_mediana": {
+        "id": "s3_mediana",
+        "valor": 101.25,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s3",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 142,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s3_desvio": {
+        "id": "s3_desvio",
+        "valor": 23.8408,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s3",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 142,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s3_min": {
+        "id": "s3_min",
+        "valor": 43.2,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s3",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 142,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s3_max": {
+        "id": "s3_max",
+        "valor": 164.5,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s3",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 142,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s3_q1": {
+        "id": "s3_q1",
+        "valor": 93.325,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s3",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 142,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s3_q3": {
+        "id": "s3_q3",
+        "valor": 115.75,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s3",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 142,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s3_coeficiente_variacao": {
+        "id": "s3_coeficiente_variacao",
+        "valor": 23.33,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s3",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 142,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s5_limite_inferior": {
+        "id": "s5_limite_inferior",
+        "valor": 59.6875,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s5",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 142,
+          "metodo": "detectar_outliers",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s5_limite_superior": {
+        "id": "s5_limite_superior",
+        "valor": 149.3875,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s5",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 142,
+          "metodo": "detectar_outliers",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      },
+      "s5_n": {
+        "id": "s5_n",
+        "valor": 12,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s5",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ],
+          "linhas_usadas": 142,
+          "metodo": "detectar_outliers",
+          "fontes": [
+            "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0"
+          ]
+        }
+      }
+    },
+    "series": [],
+    "graficos": [
+      {
+        "passo_id": "s4",
+        "tipo": "linha",
+        "titulo": "Testa a tendência da cobertura CCV entre 2018 e 2022 ao longo dos anos disponíveis.",
+        "eixoX": [
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2020",
+          "2020",
+          "2020",
+          "2020",
+          "2021",
+          "2021",
+          "2021",
+          "2021",
+          "2021",
+          "2021",
+          "2021",
+          "2021",
+          "2021",
+          "2021",
+          "2021",
+          "2021",
+          "2021",
+          "2021",
+          "2021",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022"
+        ],
+        "series": [
+          {
+            "nome": "Valor",
+            "valores": [
+              131.7,
+              129.8,
+              123.7,
+              129.8,
+              108.2,
+              117.5,
+              113.7,
+              103.7,
+              104.6,
+              58.9,
+              69.9,
+              113.8,
+              116.2,
+              126.9,
+              107.4,
+              112.9,
+              104.6,
+              107.6,
+              107.8,
+              98.1,
+              107.9,
+              76.7,
+              58.9,
+              105.3,
+              107.5,
+              100.5,
+              97,
+              103.2,
+              94.8,
+              100.8,
+              104.2,
+              91.3,
+              98.4,
+              65.1,
+              57.6,
+              97.8,
+              105.4,
+              101.1,
+              92.8,
+              95.8,
+              94.5,
+              100.8,
+              97.1,
+              97.4,
+              103.6,
+              71.2,
+              57.5,
+              93.6,
+              135.3,
+              123.1,
+              128.4,
+              120.1,
+              141.8,
+              130.4,
+              113,
+              164.5,
+              146.7,
+              76.2,
+              141,
+              126.3,
+              117.7,
+              111.5,
+              106,
+              104.7,
+              131.3,
+              114.4,
+              104.6,
+              150.5,
+              148.8,
+              104.8,
+              121.7,
+              114,
+              117,
+              100.8,
+              100.7,
+              97.9,
+              122.8,
+              110.7,
+              102.3,
+              143.8,
+              137.8,
+              87.3,
+              113.4,
+              108.7,
+              112.2,
+              81.4,
+              94.7,
+              88.2,
+              112.4,
+              107.5,
+              95.4,
+              149.3,
+              146.1,
+              100.1,
+              117.8,
+              101.4,
+              121,
+              104,
+              100,
+              88,
+              118,
+              101,
+              96,
+              93.4,
+              89,
+              71.6,
+              93.1,
+              98.8,
+              98.2,
+              97.8,
+              135.4,
+              136.8,
+              94.9,
+              91,
+              93.3,
+              120,
+              103,
+              97,
+              62.2,
+              55.6,
+              46.7,
+              96.8,
+              101,
+              97.2,
+              99.6,
+              140.2,
+              135.5,
+              100.7,
+              95.8,
+              84.7,
+              56.8,
+              43.2,
+              51.4,
+              58.9,
+              63.1,
+              64.7,
+              68.3,
+              71.5,
+              74.2,
+              72.4,
+              80.5,
+              60.5,
+              null
+            ]
+          },
+          {
+            "nome": "Projecção (declive de Sen, não garantia)",
+            "valores": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              60.5,
+              60.3387
+            ]
+          }
+        ],
+        "categoria": "temporal"
+      },
+      {
+        "passo_id": "s6",
+        "tipo": "pizza",
+        "titulo": "Verifica quantos registos existem por indicador de vacinação, para controlo de qualidade.",
+        "eixoX": [
+          "Crianças Completamente Vacinadas (CCV, %)",
+          "Cobertura BCG (%)",
+          "Cobertura DPT3 / Penta3 (%)",
+          "Cobertura Vacinal Sarampo (%)",
+          "Vacinação Completa 12–23 Meses (% IDS)"
+        ],
+        "series": [
+          {
+            "nome": "variable_name_pt",
+            "valores": [
+              49,
+              27,
+              27,
+              27,
+              12
+            ]
+          }
+        ]
+      }
+    ],
+    "destaques": [],
+    "avisos": [
+      "Data4Moz L09 Imunização Conjunto de Dados EPI_v1.0: 1 valor(es) da coluna \"geography_name\" não correspondem a unidades administrativas de Moçambique (Nacional) e ficam fora dos totais por unidade.",
+      "Enriquecimento: pesquisa de fontes externas desligada nesta análise (mais lenta); as lacunas identificadas fora de denominador populacional mantêm-se por declarar."
+    ],
+    "enriquecimentoPopulacao": {},
+    "camadasBrutas": [],
+    "qualidade": [
+      {
+        "coluna": "Variable Name Pt",
+        "completude_pct": 14.2,
+        "n_distintos": 5,
+        "tipo": "categorica"
+      }
+    ],
+    "codigoExecutado": [],
+    "custoExecucaoCodigo": 0
+  },
+  "achados": [],
+  "narrativa": {
+    "titulo": "A cobertura vacinal infantil em Moçambique varia entre {{calc:s1_min}}% e {{calc:s1_max}}%, consoante a vacina e a província, e mostra tendência a cair entre 2018 e 2022",
+    "subtitulo": "Não existe uma única 'taxa de imunização': o Ministério da Saúde reporta cinco indicadores distintos (BCG, Penta3, Sarampo, Crianças Completamente Vacinadas e a versão do Inquérito Demográfico de Saúde), cada um com cobertura própria por província e ano",
+    "resposta_directa": "Não há um número único: juntando os cinco indicadores oficiais de vacinação infantil por província e ano, a média é {{calc:s1_media}}% e a mediana {{calc:s1_mediana}}%, com valores entre {{calc:s1_min}}% e {{calc:s1_max}}%. Os valores acima de 100% resultam de problemas no denominador populacional usado no cálculo, não de sobre-vacinação real. A tendência ao longo de 2018-2022 é decrescente e estatisticamente significativa.",
+    "numeros_chave": [
+      {
+        "calc_id": "s1_media",
+        "rotulo": "Cobertura média (todos os indicadores e províncias)",
+        "contexto": "Média de 142 registos de vacinação infantil entre 2018 e 2022"
+      },
+      {
+        "calc_id": "s1_mediana",
+        "rotulo": "Cobertura mediana",
+        "contexto": "Metade dos registos fica abaixo deste valor"
+      },
+      {
+        "calc_id": "s1_min",
+        "rotulo": "Valor mais baixo registado",
+        "contexto": "Cobertura mínima observada num indicador/província/ano"
+      },
+      {
+        "calc_id": "s1_max",
+        "rotulo": "Valor mais alto registado",
+        "contexto": "Acima de 100% por inconsistência no denominador populacional, não sobre-vacinação real"
+      },
+      {
+        "calc_id": "s4_declive_sen",
+        "rotulo": "Queda típica por período",
+        "contexto": "Declive de Sen do teste de tendência Mann-Kendall, estatisticamente significativo"
+      },
+      {
+        "calc_id": "s4_projecao_proximo_periodo",
+        "rotulo": "Projecção para o próximo período",
+        "contexto": "Com intervalo de confiança entre {{calc:s4_projecao_ic_inferior}}% e {{calc:s4_projecao_ic_superior}}%; projecção estatística, não garantia"
+      },
+      {
+        "calc_id": "s5_n",
+        "rotulo": "Registos atípicos identificados",
+        "contexto": "Valores fora do intervalo esperado entre {{calc:s5_limite_inferior}}% e {{calc:s5_limite_superior}}%"
+      }
+    ],
+    "o_que_mostram": "Os cinco indicadores de vacinação infantil, cruzados por província entre 2018 e 2022, têm uma média de {{calc:s1_media}}% e mediana de {{calc:s1_mediana}}%, com metade dos registos concentrados entre {{calc:s1_q1}}% e {{calc:s1_q3}}%. O valor mais baixo é {{calc:s1_min}}% e o mais alto {{calc:s1_max}}%; valores acima de 100% acontecem por inconsistências no denominador populacional usado para calcular a cobertura, não porque existam mais crianças vacinadas do que as que existem. Doze registos ({{calc:s5_n}}) ficam fora do intervalo esperado entre {{calc:s5_limite_inferior}}% e {{calc:s5_limite_superior}}%, sinal de valores extremos por província ou indicador.",
+    "porque": "O teste de tendência (Mann-Kendall) aplicado aos 142 registos indica uma direcção {{calc:s4_direccao}} e estatisticamente significativa (p = {{calc:s4_p}}), com uma variação típica de {{calc:s4_declive_sen}} pontos percentuais por período. Esta queda pode reflectir uma redução real na cobertura vacinal, por exemplo choques como a Covid-19 ou ciclones que interromperam campanhas de vacinação, mas também pode ser em parte um efeito de como a série foi construída: como junta cinco indicadores diferentes, com anos e províncias distintos, uma mudança na proporção de que indicador domina cada período pode imitar uma tendência que não existe dentro de cada vacina isoladamente. Não é possível, com estes dados, separar completamente as duas explicações.",
+    "o_que_nao_diz": [
+      "A série mistura cinco indicadores de vacinação diferentes (BCG, Penta3, Sarampo, CCV e a versão do Inquérito Demográfico de Saúde): não existe 'a' taxa de imunização, existem cinco taxas com significados distintos.",
+      "Apenas 142 das 999 linhas do ficheiro têm valores preenchidos, porque o resto do ficheiro pertence a outras camadas de dados (não relacionadas com imunização) e não a lacunas nesta análise.",
+      "Um registo com geografia 'Nacional' foi excluído dos totais por província, por não corresponder a uma unidade administrativa.",
+      "O nível geográfico mais fino disponível é a província: não há dados a nível de distrito para identificar onde a cobertura é mais baixa dentro de cada província."
+    ],
+    "como_chegamos": "Juntámos os registos de cinco indicadores de vacinação do MISAU/SISMA e do Inquérito Demográfico e de Saúde, organizados por província e ano entre 2018 e 2022. Calculámos estatísticas descritivas (média, mediana, mínimo, máximo) sobre os valores de cobertura e aplicámos um teste de tendência (Mann-Kendall) para ver se a cobertura está a subir, a descer ou estável ao longo do tempo.",
+    "fontes": [
+      {
+        "instituicao": "Ministério da Saúde (MISAU), Direcção de Planificação e Cooperação",
+        "documento": "Anuário Estatístico de Saúde (SISMA)",
+        "ano": 2022
+      },
+      {
+        "instituicao": "Inquérito Demográfico e de Saúde (IDS/DHS)",
+        "documento": "DHS 2022-23",
+        "ano": 2022
+      }
+    ]
+  },
+  "narrativa_resolvida": {
+    "titulo": "A cobertura vacinal infantil em Moçambique varia entre 43,2% e 165%, consoante a vacina e a província, e mostra tendência a cair entre 2018 e 2022",
+    "subtitulo": "Não existe uma única 'taxa de imunização': o Ministério da Saúde reporta cinco indicadores distintos (BCG, Penta3, Sarampo, Crianças Completamente Vacinadas e a versão do Inquérito Demográfico de Saúde), cada um com cobertura própria por província e ano",
+    "resposta_directa": "Não há um número único: juntando os cinco indicadores oficiais de vacinação infantil por província e ano, a média é 102% e a mediana 101%, com valores entre 43,2% e 165%. Os valores acima de 100% resultam de problemas no denominador populacional usado no cálculo, não de sobre-vacinação real. A tendência ao longo de 2018-2022 é decrescente e estatisticamente significativa.",
+    "numeros_chave": [
+      {
+        "calc_id": "s1_media",
+        "rotulo": "Cobertura média (todos os indicadores e províncias)",
+        "contexto": "Média de 142 registos de vacinação infantil entre 2018 e 2022",
+        "valor": "102"
+      },
+      {
+        "calc_id": "s1_mediana",
+        "rotulo": "Cobertura mediana",
+        "contexto": "Metade dos registos fica abaixo deste valor",
+        "valor": "101"
+      },
+      {
+        "calc_id": "s1_min",
+        "rotulo": "Valor mais baixo registado",
+        "contexto": "Cobertura mínima observada num indicador/província/ano",
+        "valor": "43,2"
+      },
+      {
+        "calc_id": "s1_max",
+        "rotulo": "Valor mais alto registado",
+        "contexto": "Acima de 100% por inconsistência no denominador populacional, não sobre-vacinação real",
+        "valor": "165"
+      },
+      {
+        "calc_id": "s4_declive_sen",
+        "rotulo": "Queda típica por período",
+        "contexto": "Declive de Sen do teste de tendência Mann-Kendall, estatisticamente significativo",
+        "valor": "-0,16"
+      },
+      {
+        "calc_id": "s4_projecao_proximo_periodo",
+        "rotulo": "Projecção para o próximo período",
+        "contexto": "Com intervalo de confiança entre 60,2% e 60,4%; projecção estatística, não garantia",
+        "valor": "60,3"
+      },
+      {
+        "calc_id": "s5_n",
+        "rotulo": "Registos atípicos identificados",
+        "contexto": "Valores fora do intervalo esperado entre 59,7% e 149%",
+        "valor": "12"
+      }
+    ],
+    "o_que_mostram": "Os cinco indicadores de vacinação infantil, cruzados por província entre 2018 e 2022, têm uma média de 102% e mediana de 101%, com metade dos registos concentrados entre 93,3% e 116%. O valor mais baixo é 43,2% e o mais alto 165%; valores acima de 100% acontecem por inconsistências no denominador populacional usado para calcular a cobertura, não porque existam mais crianças vacinadas do que as que existem. Doze registos (12) ficam fora do intervalo esperado entre 59,7% e 149%, sinal de valores extremos por província ou indicador.",
+    "porque": "O teste de tendência (Mann-Kendall) aplicado aos 142 registos indica uma direcção decrescente e estatisticamente significativa (p = 0,00), com uma variação típica de -0,16 pontos percentuais por período. Esta queda pode reflectir uma redução real na cobertura vacinal, por exemplo choques como a Covid-19 ou ciclones que interromperam campanhas de vacinação, mas também pode ser em parte um efeito de como a série foi construída: como junta cinco indicadores diferentes, com anos e províncias distintos, uma mudança na proporção de que indicador domina cada período pode imitar uma tendência que não existe dentro de cada vacina isoladamente. Não é possível, com estes dados, separar completamente as duas explicações.",
+    "o_que_nao_diz": [
+      "A série mistura cinco indicadores de vacinação diferentes (BCG, Penta3, Sarampo, CCV e a versão do Inquérito Demográfico de Saúde): não existe 'a' taxa de imunização, existem cinco taxas com significados distintos.",
+      "Apenas 142 das 999 linhas do ficheiro têm valores preenchidos, porque o resto do ficheiro pertence a outras camadas de dados (não relacionadas com imunização) e não a lacunas nesta análise.",
+      "Um registo com geografia 'Nacional' foi excluído dos totais por província, por não corresponder a uma unidade administrativa.",
+      "O nível geográfico mais fino disponível é a província: não há dados a nível de distrito para identificar onde a cobertura é mais baixa dentro de cada província."
+    ],
+    "como_chegamos": "Juntámos os registos de cinco indicadores de vacinação do MISAU/SISMA e do Inquérito Demográfico e de Saúde, organizados por província e ano entre 2018 e 2022. Calculámos estatísticas descritivas (média, mediana, mínimo, máximo) sobre os valores de cobertura e aplicámos um teste de tendência (Mann-Kendall) para ver se a cobertura está a subir, a descer ou estável ao longo do tempo.",
+    "fontes": [
+      {
+        "instituicao": "Ministério da Saúde (MISAU), Direcção de Planificação e Cooperação",
+        "documento": "Anuário Estatístico de Saúde (SISMA)",
+        "ano": 2022
+      },
+      {
+        "instituicao": "Inquérito Demográfico e de Saúde (IDS/DHS)",
+        "documento": "DHS 2022-23",
+        "ano": 2022
+      }
+    ]
+  },
+  "critica": {
+    "objeccoes": [],
+    "bloqueia_publicacao": false
+  },
+  "custo_usd": 0.114354,
+  "duracao_ms": 143122,
+  "confianca": {
+    "percentagem": 92,
+    "datasetsUsados": 1,
+    "ligacoesGeograficas": [
+      {
+        "dataset_id": 52,
+        "nivel": "admin1",
+        "taxa_correspondencia": 0.85
+      }
+    ],
+    "completudeMediaPct": 14.2,
+    "valoresDerivados": 0,
+    "passosViaCodigo": 0
+  }
+}

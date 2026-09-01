@@ -57,7 +57,7 @@ export function FeaturedCatalogSection({ datasets }: { datasets: FeaturedDataset
   const visible = showAll ? filtered : filtered.slice(0, 3)
 
   return (
-    <section className="font-body-stack py-16 md:py-20 bg-gradient-to-b from-[#f8faf8] to-[#eef4ef] border-t border-[#E2E8E5]">
+    <section className="font-body-stack py-9 md:py-10 bg-gradient-to-b from-[#f8faf8] to-[#eef4ef] border-t border-[#E2E8E5]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-end justify-between gap-4 flex-wrap mb-10">
           <div className="max-w-2xl">
@@ -117,12 +117,12 @@ export function FeaturedCatalogSection({ datasets }: { datasets: FeaturedDataset
           })}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 md:gap-7">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 md:gap-7 items-stretch">
           {visible.map((d) => (
             <Link
               key={d.id}
               href={`/dataset/${d.id}`}
-              className="group relative flex flex-col overflow-hidden rounded-2xl border border-[#CFE3D6] bg-white p-6 shadow-[0_4px_18px_rgba(11,27,20,0.07)] transition duration-300 hover:-translate-y-0.5 hover:border-[#064E2C] hover:shadow-[0_16px_40px_rgba(6,78,44,0.14)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#064E2C] focus-visible:ring-offset-2"
+              className="group relative flex h-full min-h-[380px] flex-col overflow-hidden rounded-2xl border border-[#CFE3D6] bg-white p-6 shadow-[0_4px_18px_rgba(11,27,20,0.07)] transition duration-300 hover:-translate-y-0.5 hover:border-[#064E2C] hover:shadow-[0_16px_40px_rgba(6,78,44,0.14)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#064E2C] focus-visible:ring-offset-2"
             >
               <span
                 className="absolute left-0 right-0 top-0 h-1 bg-gradient-to-r from-[#064E2C] via-[#0a6b45] to-[#064E2C] opacity-90 transition-opacity group-hover:opacity-100"
@@ -136,10 +136,10 @@ export function FeaturedCatalogSection({ datasets }: { datasets: FeaturedDataset
                   Top
                 </span>
               </div>
-              <h3 className="font-bold text-[18px] md:text-xl leading-snug text-[#0B1B14] mb-3 line-clamp-2 group-hover:text-[#064E2C] transition-colors">
+              <h3 className="pd-card-desc-clamp-2 font-bold text-[18px] md:text-xl leading-snug text-[#0B1B14] mb-3 group-hover:text-[#064E2C] transition-colors">
                 {d.title}
               </h3>
-              <p className="text-[15px] leading-relaxed text-[#37403C] line-clamp-4 mb-5 flex-1">
+              <p className="pd-card-desc-clamp-4 text-[15px] leading-relaxed text-[#37403C] mb-5 flex-1">
                 {d.description || 'Sem descrição disponível.'}
               </p>
               <div className="flex flex-wrap items-center gap-2 mb-5">

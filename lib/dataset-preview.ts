@@ -293,13 +293,59 @@ export async function getDatasetPreview(
       return { type: 'geo', geojson: clipped, bbox, featureCount: features.length }
     }
 
-    const shpModule = await import('shpjs')
-    const shp = (shpModule as any).default || shpModule
+    const shpModule: any = await import('shpjs')
+    const shp = shpModule.default || shpModule
     const geojson = await shp(buf)
-    const featureCollection = Array.isArray(geojson)
+    let featureCollection = Array.isArray(geojson)
       ? { type: 'FeatureCollection', features: geojson.flatMap((g: any) => g?.features || []) }
       : geojson
-    const features = featureCollection?.type === 'FeatureCollection' ? featureCollection.features : []
+    let features = featureCollection?.type === 'FeatureCollection' ? featureCollection.features : []
+
+    // Quando o .zip não tem .cpg (codepage), o parser do .dbf (parsedbf, via shpjs) decodifica
+    // por omissão como UTF-8 — mas shapefiles produzidos no Windows/QGIS/ArcGIS em português
+    // (o caso comum neste portal) costumam vir em Windows-1252 sem .cpg nenhum, e um byte único
+    // acentuado (ex.: "é" = 0xE9) não é UTF-8 válido: o decode falha e o carácter fica
+    // irrecuperável (substituído por U+FFFD ANTES de qualquer correcção de texto poder actuar —
+    // "Zambézia" chega já como "Zamb�zia", não como uma sequência má mas reconstruível como
+    // os casos "Ã©" que fixEncodingText trata). A única correcção possível é reprocessar o .dbf
+    // com Windows-1252 explícito e usar esse resultado quando ficar mais limpo do que o original.
+    const temSubstituicao = (v: unknown) => typeof v === 'string' && v.includes('�')
+    const pareceCorrompido = features
+      .slice(0, 50)
+      .some((f: any) => Object.values(f?.properties || {}).some(temSubstituicao))
+    const temCpgNoZip = Object.keys(zip.files).some((k) => k.toLowerCase().endsWith('.cpg') && !zip.files[k].dir)
+
+    if (pareceCorrompido && !temCpgNoZip && typeof shpModule.parseDbf === 'function' && typeof shpModule.parseShp === 'function') {
+      try {
+        const entrada = (sufixo: string) =>
+          Object.keys(zip.files).find((k) => !zip.files[k].dir && k.toLowerCase().endsWith(sufixo))
+        const shpEntrada = entrada('.shp')
+        const dbfEntrada = entrada('.dbf')
+        const prjEntrada = entrada('.prj')
+        if (shpEntrada) {
+          const [shpBuf, dbfBuf, prjTxt] = await Promise.all([
+            zip.files[shpEntrada].async('arraybuffer'),
+            dbfEntrada ? zip.files[dbfEntrada].async('arraybuffer') : Promise.resolve(null),
+            prjEntrada ? zip.files[prjEntrada].async('string') : Promise.resolve(null),
+          ])
+          const geometrias = shpModule.parseShp(shpBuf, prjTxt || undefined)
+          const linhasDbf = dbfBuf ? shpModule.parseDbf(dbfBuf, 'windows-1252') : []
+          const tentativa = shpModule.combine([geometrias, linhasDbf])
+          const featuresTentativa = tentativa?.features || []
+          const aindaCorrompido = featuresTentativa
+            .slice(0, 50)
+            .some((f: any) => Object.values(f?.properties || {}).some(temSubstituicao))
+          if (!aindaCorrompido && featuresTentativa.length > 0) {
+            featureCollection = tentativa
+            features = featuresTentativa
+          }
+        }
+      } catch {
+        // Reprocessamento é só uma segunda tentativa best-effort: se falhar por qualquer razão
+        // (ficheiro num formato inesperado), fica-se com o resultado original do shpjs.
+      }
+    }
+
     // shpjs lê o .dbf sem respeitar sempre o .cpg (codepage) do shapefile: nomes com acentos
     // chegam como "Sa??de" em vez de "Saúde". Corrige-se aqui, uma única vez à entrada, para que
     // tudo o que consome este preview (mapa, motor de análise) receba texto já limpo — em vez de

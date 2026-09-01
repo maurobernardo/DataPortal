@@ -56,6 +56,7 @@ export async function POST(request: NextRequest) {
       filePath: data.filePath || null,
       fileSize: data.fileSize || null,
       detailsText: data.detailsText || null,
+      sector: data.sector || null,
     })
 
     if (report) {

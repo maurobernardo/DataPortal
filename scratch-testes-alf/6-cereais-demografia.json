@@ -1,0 +1,1728 @@
+{
+  "analise_id": "an_ad507079",
+  "compreensao": {
+    "pergunta_normalizada": "Existe relação entre a população e a produção de cereais por província em Moçambique?",
+    "idioma": "pt",
+    "intencao": "diagnostica",
+    "arquetipo_sugerido": "diagnostico",
+    "entidades": {
+      "geografias": [],
+      "periodos": [
+        {
+          "expressao": "ano mais recente disponível em cada dataset"
+        }
+      ],
+      "metricas": [
+        "população total",
+        "produção de milho (toneladas)",
+        "produção de arroz (toneladas)",
+        "área cultivada de milho (ha)"
+      ]
+    },
+    "ambiguidades": [
+      {
+        "descricao": "'Produção de cereais' pode significar só milho (cereal dominante) ou a soma de milho, arroz, mapira e mexoeira; o catálogo só permite isolar uma categoria de cada vez por passo",
+        "opcoes": [
+          "Usar apenas milho como proxy do cereal dominante",
+          "Somar as quatro culturas num indicador agregado"
+        ]
+      }
+    ],
+    "perfil_utilizador_inferido": "investigador",
+    "requer_desambiguacao": false,
+    "sub_perguntas": [
+      "Qual é a população total por província (dado mais recente)?",
+      "Qual é a produção de milho e de arroz (principais cereais) por província?",
+      "Existe correlação linear entre população e produção de milho por província?",
+      "A área cultivada de milho explica a produção melhor do que a população, sugerindo confundimento?",
+      "Os dados de produção de cereais têm qualidade (dq_tier) suficiente para sustentar esta análise?"
+    ],
+    "passos": [
+      {
+        "id": "p1",
+        "tipo": "calculo",
+        "descricao_humana": "Soma a população total por província, ano mais recente disponível.",
+        "depende_de": [],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 56,
+        "coluna_metrica": "value",
+        "filtro_unidade": "cat:variable_name_pt=População Total",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "pop_admin1"
+        ]
+      },
+      {
+        "id": "p2",
+        "tipo": "calculo",
+        "descricao_humana": "Soma a produção de milho (toneladas) por província, o cereal mais cultivado.",
+        "depende_de": [],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 63,
+        "coluna_metrica": "value",
+        "filtro_unidade": "cat:variable_name_pt=Produção de milho (toneladas)",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "milho_admin1"
+        ]
+      },
+      {
+        "id": "p3",
+        "tipo": "calculo",
+        "descricao_humana": "Soma a produção de arroz (toneladas) por província, segundo maior cereal nacional.",
+        "depende_de": [],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 63,
+        "coluna_metrica": "value",
+        "filtro_unidade": "cat:variable_name_pt=Produção de arroz (toneladas)",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "arroz_admin1"
+        ]
+      },
+      {
+        "id": "p4",
+        "tipo": "calculo",
+        "descricao_humana": "Soma a área cultivada de milho (ha) por província, para testar explicação alternativa.",
+        "depende_de": [],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 63,
+        "coluna_metrica": "value",
+        "filtro_unidade": "cat:variable_name_pt=Área cultivada de milho (ha)",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "area_milho_admin1"
+        ]
+      },
+      {
+        "id": "p5",
+        "tipo": "calculo",
+        "descricao_humana": "Testa correlação entre população e produção de milho por província.",
+        "depende_de": [
+          "p1",
+          "p2"
+        ],
+        "metodo": "correlacao_pearson",
+        "dataset_id": 56,
+        "dataset_id_2": 63,
+        "coluna_metrica": "value",
+        "coluna_metrica_2": "value",
+        "nivel_geo": "admin1",
+        "produz": [
+          "corr_pop_milho"
+        ]
+      },
+      {
+        "id": "p6",
+        "tipo": "calculo",
+        "descricao_humana": "Testa se área cultivada, e não população, explica melhor a produção de milho.",
+        "depende_de": [
+          "p2",
+          "p4"
+        ],
+        "metodo": "correlacao_pearson",
+        "dataset_id": 63,
+        "coluna_metrica": "value",
+        "coluna_metrica_2": "value",
+        "nivel_geo": "admin1",
+        "produz": [
+          "corr_area_milho"
+        ]
+      },
+      {
+        "id": "p7",
+        "tipo": "validacao",
+        "descricao_humana": "Avalia qualidade e cobertura dos dados de cereais (dq_tier) por variável.",
+        "depende_de": [],
+        "metodo": "perfil_coluna",
+        "dataset_id": 63,
+        "coluna_metrica": "dq_tier",
+        "produz": [
+          "qualidade_cereais"
+        ]
+      }
+    ],
+    "nivel_geo_alvo": [
+      "admin1"
+    ],
+    "metricas_alvo": [
+      "população total",
+      "produção de milho (toneladas)",
+      "produção de arroz (toneladas)",
+      "área cultivada de milho (ha)"
+    ],
+    "justificacao_arquetipo": "A pergunta testa uma relação estatística entre duas variáveis geográficas (não apenas descreve ou ranqueia), pelo que o arquétipo diagnóstico é o mais adequado; inclui-se um passo de correlação directa (população vs milho) e um passo com variável alternativa (área cultivada) para cumprir R7, já que correlação geográfica entre stock populacional e produção agrícola pode ser confundida pelo tamanho da área cultivada de cada província.",
+    "pergunta_original": "Existe relação entre a população e a produção de cereais por província?"
+  },
+  "plano": {
+    "sub_perguntas": [
+      "Qual é a população total por província (dado mais recente)?",
+      "Qual é a produção de milho e de arroz (principais cereais) por província?",
+      "Existe correlação linear entre população e produção de milho por província?",
+      "A área cultivada de milho explica a produção melhor do que a população, sugerindo confundimento?",
+      "Os dados de produção de cereais têm qualidade (dq_tier) suficiente para sustentar esta análise?"
+    ],
+    "passos": [
+      {
+        "id": "p1",
+        "tipo": "calculo",
+        "descricao_humana": "Soma a população total por província, ano mais recente disponível.",
+        "depende_de": [],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 56,
+        "coluna_metrica": "value",
+        "filtro_unidade": "cat:variable_name_pt=População Total",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "pop_admin1"
+        ]
+      },
+      {
+        "id": "p2",
+        "tipo": "calculo",
+        "descricao_humana": "Soma a produção de milho (toneladas) por província, o cereal mais cultivado.",
+        "depende_de": [],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 63,
+        "coluna_metrica": "value",
+        "filtro_unidade": "cat:variable_name_pt=Produção de milho (toneladas)",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "milho_admin1"
+        ]
+      },
+      {
+        "id": "p3",
+        "tipo": "calculo",
+        "descricao_humana": "Soma a produção de arroz (toneladas) por província, segundo maior cereal nacional.",
+        "depende_de": [],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 63,
+        "coluna_metrica": "value",
+        "filtro_unidade": "cat:variable_name_pt=Produção de arroz (toneladas)",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "arroz_admin1"
+        ]
+      },
+      {
+        "id": "p4",
+        "tipo": "calculo",
+        "descricao_humana": "Soma a área cultivada de milho (ha) por província, para testar explicação alternativa.",
+        "depende_de": [],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 63,
+        "coluna_metrica": "value",
+        "filtro_unidade": "cat:variable_name_pt=Área cultivada de milho (ha)",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "area_milho_admin1"
+        ]
+      },
+      {
+        "id": "p5",
+        "tipo": "calculo",
+        "descricao_humana": "Testa correlação entre população e produção de milho por província.",
+        "depende_de": [
+          "p1",
+          "p2"
+        ],
+        "metodo": "correlacao_pearson",
+        "dataset_id": 56,
+        "dataset_id_2": 63,
+        "coluna_metrica": "value",
+        "coluna_metrica_2": "value",
+        "nivel_geo": "admin1",
+        "produz": [
+          "corr_pop_milho"
+        ]
+      },
+      {
+        "id": "p6",
+        "tipo": "calculo",
+        "descricao_humana": "Testa se área cultivada, e não população, explica melhor a produção de milho.",
+        "depende_de": [
+          "p2",
+          "p4"
+        ],
+        "metodo": "correlacao_pearson",
+        "dataset_id": 63,
+        "coluna_metrica": "value",
+        "coluna_metrica_2": "value",
+        "nivel_geo": "admin1",
+        "produz": [
+          "corr_area_milho"
+        ]
+      },
+      {
+        "id": "p7",
+        "tipo": "validacao",
+        "descricao_humana": "Avalia qualidade e cobertura dos dados de cereais (dq_tier) por variável.",
+        "depende_de": [],
+        "metodo": "perfil_coluna",
+        "dataset_id": 63,
+        "coluna_metrica": "dq_tier",
+        "produz": [
+          "qualidade_cereais"
+        ]
+      }
+    ],
+    "nivel_geo_alvo": [
+      "admin1"
+    ],
+    "metricas_alvo": [
+      "população total",
+      "produção de milho (toneladas)",
+      "produção de arroz (toneladas)",
+      "área cultivada de milho (ha)"
+    ],
+    "justificacao_arquetipo": "A pergunta testa uma relação estatística entre duas variáveis geográficas (não apenas descreve ou ranqueia), pelo que o arquétipo diagnóstico é o mais adequado; inclui-se um passo de correlação directa (população vs milho) e um passo com variável alternativa (área cultivada) para cumprir R7, já que correlação geográfica entre stock populacional e produção agrícola pode ser confundida pelo tamanho da área cultivada de cada província."
+  },
+  "suficiencia": {
+    "cobertura": [
+      {
+        "sub_pergunta": "Qual é a população total por província (dado mais recente)?",
+        "coberto": true,
+        "fonte": "dataset_selecionado",
+        "lacuna": "",
+        "accao": ""
+      },
+      {
+        "sub_pergunta": "Qual é a produção de milho e de arroz (principais cereais) por província?",
+        "coberto": true,
+        "fonte": "dataset_selecionado",
+        "lacuna": "",
+        "accao": ""
+      },
+      {
+        "sub_pergunta": "Existe correlação linear entre população e produção de milho por província?",
+        "coberto": true,
+        "fonte": "dataset_selecionado",
+        "lacuna": "",
+        "accao": ""
+      },
+      {
+        "sub_pergunta": "A área cultivada de milho explica a produção melhor do que a população, sugerindo confundimento?",
+        "coberto": true,
+        "fonte": "dataset_selecionado",
+        "lacuna": "",
+        "accao": ""
+      },
+      {
+        "sub_pergunta": "Os dados de produção de cereais têm qualidade (dq_tier) suficiente para sustentar esta análise?",
+        "coberto": false,
+        "fonte": "dataset_selecionado",
+        "lacuna": "51,5% dos registos de produção de cereais têm dq_tier 'Unavailable', particularmente para 2015–2017 e 2024–2025; a série apresenta lacunas provinciais por ano, comprometendo a confiabilidade de correlações em série temporal contínua.",
+        "accao": "Verificar manualmente quais províncias e anos têm cobertura Decision-grade; reportar na análise quais períodos e regiões geográficas permitem conclusão segura."
+      }
+    ],
+    "confianca_sem_enriquecimento": 0.8,
+    "precisa_enriquecimento": true,
+    "alvos_enriquecimento": [
+      {
+        "sub_pergunta": "Os dados de produção de cereais têm qualidade (dq_tier) suficiente para sustentar esta análise?",
+        "lacuna": "51,5% dos registos marcados 'Unavailable'; série com descontinuidades anuais e provinciais (2015–2017, 2024–2025 com 'Gap').",
+        "prioridade": 1,
+        "fonte_alvo": "INE/MADER — Inquérito Agrário Integrado (IAI) com dados verificados Decision-grade completos para todas as províncias num período de pelo menos 5 anos contíguo (ex.: 2018–2023)."
+      }
+    ]
+  },
+  "contexto": {
+    "tabelas": {},
+    "ligacoes": {},
+    "calcs": {
+      "p7_coluna": {
+        "id": "p7_coluna",
+        "valor": "dq_tier",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p7",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 968,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p7_n_total": {
+        "id": "p7_n_total",
+        "valor": 968,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p7",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 968,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p7_n_preenchidos": {
+        "id": "p7_n_preenchidos",
+        "valor": 968,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p7",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 968,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p7_completude_pct": {
+        "id": "p7_completude_pct",
+        "valor": 100,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p7",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 968,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p7_n_distintos": {
+        "id": "p7_n_distintos",
+        "valor": 3,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p7",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 968,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p7_tipo": {
+        "id": "p7_tipo",
+        "valor": "categorica",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p7",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 968,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p1_nome_max": {
+        "id": "p1_nome_max",
+        "valor": "Demographics & Population",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 1,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p1_nome_min": {
+        "id": "p1_nome_min",
+        "valor": "Demographics & Population",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 1,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p1_n": {
+        "id": "p1_n",
+        "valor": 350,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 350,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p1_soma": {
+        "id": "p1_soma",
+        "valor": 753074732.1,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 350,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p1_media": {
+        "id": "p1_media",
+        "valor": 2151642.0917,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 350,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p1_mediana": {
+        "id": "p1_mediana",
+        "valor": 583349.5,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 350,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p1_desvio": {
+        "id": "p1_desvio",
+        "valor": 4890377.0319,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 350,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p1_min": {
+        "id": "p1_min",
+        "valor": 2.8,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 350,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p1_max": {
+        "id": "p1_max",
+        "valor": 32412000,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 350,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p1_q1": {
+        "id": "p1_q1",
+        "valor": 354767.25,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 350,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p1_q3": {
+        "id": "p1_q3",
+        "valor": 2031066.5,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 350,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p1_coeficiente_variacao": {
+        "id": "p1_coeficiente_variacao",
+        "valor": 227.29,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 350,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p2_nome_max": {
+        "id": "p2_nome_max",
+        "valor": "Cereals",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 1,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p2_nome_min": {
+        "id": "p2_nome_min",
+        "valor": "Cereals",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 1,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p2_n": {
+        "id": "p2_n",
+        "valor": 469,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 469,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p2_soma": {
+        "id": "p2_soma",
+        "valor": 38567725,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 469,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p2_media": {
+        "id": "p2_media",
+        "valor": 82233.9552,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 469,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p2_mediana": {
+        "id": "p2_mediana",
+        "valor": 18983,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 469,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p2_desvio": {
+        "id": "p2_desvio",
+        "valor": 161580.544,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 469,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p2_min": {
+        "id": "p2_min",
+        "valor": 0,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 469,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p2_max": {
+        "id": "p2_max",
+        "valor": 1717000,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 469,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p2_q1": {
+        "id": "p2_q1",
+        "valor": 3530,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 469,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p2_q3": {
+        "id": "p2_q3",
+        "valor": 94231,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 469,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p2_coeficiente_variacao": {
+        "id": "p2_coeficiente_variacao",
+        "valor": 196.49,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 469,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p3_nome_max": {
+        "id": "p3_nome_max",
+        "valor": "Cereals",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 1,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p3_nome_min": {
+        "id": "p3_nome_min",
+        "valor": "Cereals",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 1,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p3_n": {
+        "id": "p3_n",
+        "valor": 469,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 469,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p3_soma": {
+        "id": "p3_soma",
+        "valor": 38567725,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 469,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p3_media": {
+        "id": "p3_media",
+        "valor": 82233.9552,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 469,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p3_mediana": {
+        "id": "p3_mediana",
+        "valor": 18983,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 469,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p3_desvio": {
+        "id": "p3_desvio",
+        "valor": 161580.544,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 469,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p3_min": {
+        "id": "p3_min",
+        "valor": 0,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 469,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p3_max": {
+        "id": "p3_max",
+        "valor": 1717000,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 469,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p3_q1": {
+        "id": "p3_q1",
+        "valor": 3530,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 469,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p3_q3": {
+        "id": "p3_q3",
+        "valor": 94231,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 469,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p3_coeficiente_variacao": {
+        "id": "p3_coeficiente_variacao",
+        "valor": 196.49,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 469,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p4_nome_max": {
+        "id": "p4_nome_max",
+        "valor": "Cereals",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 1,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p4_nome_min": {
+        "id": "p4_nome_min",
+        "valor": "Cereals",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 1,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p4_n": {
+        "id": "p4_n",
+        "valor": 469,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 469,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p4_soma": {
+        "id": "p4_soma",
+        "valor": 38567725,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 469,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p4_media": {
+        "id": "p4_media",
+        "valor": 82233.9552,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 469,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p4_mediana": {
+        "id": "p4_mediana",
+        "valor": 18983,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 469,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p4_desvio": {
+        "id": "p4_desvio",
+        "valor": 161580.544,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 469,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p4_min": {
+        "id": "p4_min",
+        "valor": 0,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 469,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p4_max": {
+        "id": "p4_max",
+        "valor": 1717000,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 469,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p4_q1": {
+        "id": "p4_q1",
+        "valor": 3530,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 469,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p4_q3": {
+        "id": "p4_q3",
+        "valor": 94231,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 469,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p4_coeficiente_variacao": {
+        "id": "p4_coeficiente_variacao",
+        "valor": 196.49,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 469,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p5_r": {
+        "id": "p5_r",
+        "valor": 1,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "correlacao_pearson",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p5_r2": {
+        "id": "p5_r2",
+        "valor": 1,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "correlacao_pearson",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p5_p": {
+        "id": "p5_p",
+        "valor": 0,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "correlacao_pearson",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p5_n": {
+        "id": "p5_n",
+        "valor": 11,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "correlacao_pearson",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p5_forca": {
+        "id": "p5_forca",
+        "valor": "forte",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "correlacao_pearson",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p5_interpretacao": {
+        "id": "p5_interpretacao",
+        "valor": "Associação forte e estatisticamente significativa (r = 1, p = 0). Associação não implica causalidade: pode existir uma variável de confundimento a explicar ambas.",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "correlacao_pearson",
+          "fontes": [
+            "Conjunto de dados Data4Moz L02 Demografia e População"
+          ]
+        }
+      },
+      "p6_r": {
+        "id": "p6_r",
+        "valor": 1,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "correlacao_pearson",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p6_r2": {
+        "id": "p6_r2",
+        "valor": 1,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "correlacao_pearson",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p6_p": {
+        "id": "p6_p",
+        "valor": 0,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "correlacao_pearson",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p6_n": {
+        "id": "p6_n",
+        "valor": 11,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "correlacao_pearson",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p6_forca": {
+        "id": "p6_forca",
+        "valor": "forte",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "correlacao_pearson",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      },
+      "p6_interpretacao": {
+        "id": "p6_interpretacao",
+        "valor": "Associação forte e estatisticamente significativa (r = 1, p = 0). Associação não implica causalidade: pode existir uma variável de confundimento a explicar ambas.",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "correlacao_pearson",
+          "fontes": [
+            "Data4Moz_L20_Produção de Cereais em Moçambique"
+          ]
+        }
+      }
+    },
+    "series": [],
+    "graficos": [
+      {
+        "passo_id": "p7",
+        "tipo": "pizza",
+        "titulo": "Avalia qualidade e cobertura dos dados de cereais (dq_tier) por variável.",
+        "eixoX": [
+          "Unavailable",
+          "Decision-grade",
+          "Advisory"
+        ],
+        "series": [
+          {
+            "nome": "dq_tier",
+            "valores": [
+              499,
+              465,
+              4
+            ]
+          }
+        ]
+      },
+      {
+        "passo_id": "p5",
+        "tipo": "dispersao",
+        "titulo": "Testa correlação entre população e produção de milho por província.",
+        "eixoX": [
+          "77763054.4",
+          "68159973.2",
+          "35707329.3",
+          "30589866.1",
+          "29851582.7",
+          "26833126.7",
+          "26364330.8",
+          "24736414.5",
+          "18861588.1",
+          "18145056.1",
+          "14197288.8"
+        ],
+        "series": [
+          {
+            "nome": "value",
+            "valores": [
+              77763054.4,
+              68159973.2,
+              35707329.3,
+              30589866.1,
+              29851582.7,
+              26833126.7,
+              26364330.8,
+              24736414.5,
+              18861588.1,
+              18145056.1,
+              14197288.8
+            ]
+          }
+        ]
+      },
+      {
+        "passo_id": "p6",
+        "tipo": "dispersao",
+        "titulo": "Testa se área cultivada, e não população, explica melhor a produção de milho.",
+        "eixoX": [
+          "6674573",
+          "6373819",
+          "5387231",
+          "5043094",
+          "4425525",
+          "4185246",
+          "2764114",
+          "2108817",
+          "858738",
+          "746568",
+          "0"
+        ],
+        "series": [
+          {
+            "nome": "value",
+            "valores": [
+              6674573,
+              6373819,
+              5387231,
+              5043094,
+              4425525,
+              4185246,
+              2764114,
+              2108817,
+              858738,
+              746568,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "destaques": [],
+    "avisos": [
+      "Conjunto de dados Data4Moz L02 Demografia e População: 1 valor(es) da coluna \"geography_name\" não correspondem a unidades administrativas de Moçambique (Nacional) e ficam fora dos totais por unidade.",
+      "Enriquecimento: pesquisa de fontes externas desligada nesta análise (mais lenta); as lacunas identificadas fora de denominador populacional mantêm-se por declarar."
+    ],
+    "enriquecimentoPopulacao": {},
+    "camadasBrutas": [],
+    "qualidade": [
+      {
+        "coluna": "Dq Tier",
+        "completude_pct": 100,
+        "n_distintos": 3,
+        "tipo": "categorica"
+      }
+    ],
+    "codigoExecutado": [],
+    "custoExecucaoCodigo": 0
+  },
+  "achados": [],
+  "narrativa": {
+    "titulo": "População e produção de cereais crescem juntas entre províncias (r = {{calc:p5_r}})",
+    "subtitulo": "A associação é quase perfeita, mas tudo aponta para um confundimento de escala: província maior, mais gente e mais terra cultivada, não um efeito directo da população sobre a colheita",
+    "resposta_directa": "Sim, existe uma correlação forte e estatisticamente significativa entre população e produção de milho por província (r = {{calc:p5_r}}, p = {{calc:p5_p}}, n = {{calc:p5_n}}). A área cultivada de milho tem uma correlação igualmente forte com a produção (r = {{calc:p6_r}}), o que sugere que o tamanho territorial e agrícola da província, e não a população em si, é o factor mais directo por trás do padrão.",
+    "numeros_chave": [
+      {
+        "calc_id": "p5_r",
+        "rotulo": "Correlação população vs produção de milho",
+        "contexto": "r = {{calc:p5_r}} entre população e produção de milho por província, com p = {{calc:p5_p}} e n = {{calc:p5_n}} províncias."
+      },
+      {
+        "calc_id": "p6_r",
+        "rotulo": "Correlação área cultivada vs produção de milho",
+        "contexto": "r = {{calc:p6_r}}, igualmente forte; indica que a área agrícola explica a produção pelo menos tão bem quanto a população."
+      },
+      {
+        "calc_id": "p2_max",
+        "rotulo": "Maior valor registado na série de cereais",
+        "contexto": "{{calc:p2_max}}, valor máximo entre produção e área cultivada de quatro culturas (2015 a 2025, unidades mistas)."
+      },
+      {
+        "calc_id": "p2_mediana",
+        "rotulo": "Valor mediano da série de cereais",
+        "contexto": "{{calc:p2_mediana}}, com grande dispersão entre províncias e culturas (coeficiente de variação de {{calc:p2_coeficiente_variacao}}%)."
+      },
+      {
+        "calc_id": "p1_max",
+        "rotulo": "Maior valor registado na série demográfica",
+        "contexto": "{{calc:p1_max}}; inclui o total nacional, que fica fora dos totais por província."
+      },
+      {
+        "calc_id": "p1_coeficiente_variacao",
+        "rotulo": "Dispersão da série demográfica",
+        "contexto": "coeficiente de variação de {{calc:p1_coeficiente_variacao}}%, porque a série junta população total, população <5 anos e mulheres em idade fértil."
+      }
+    ],
+    "o_que_mostram": "A correlação entre população e produção de cereais por província é quase perfeita (r = {{calc:p5_r}}, p = {{calc:p5_p}}, n = {{calc:p5_n}}): províncias mais populosas produzem sistematicamente mais cereais. A área cultivada de milho segue o mesmo padrão (r = {{calc:p6_r}}), o que aponta para uma causa comum de escala territorial em vez de um efeito directo da população sobre a colheita. Os valores da série de cereais oscilam entre {{calc:p2_min}} e {{calc:p2_max}} (toneladas ou hectares, consoante a variável), com mediana de {{calc:p2_mediana}} e coeficiente de variação de {{calc:p2_coeficiente_variacao}}%, mostrando grande dispersão entre províncias e culturas. Do lado demográfico, a série (que mistura população total, população <5 anos, mulheres em idade fértil e o total nacional) varia entre {{calc:p1_min}} e {{calc:p1_max}}, com mediana de {{calc:p1_mediana}}.",
+    "porque": "A associação não implica causalidade directa entre número de habitantes e toneladas produzidas: {{calc:p5_interpretacao}}. A explicação mais plausível é um confundimento de escala territorial: províncias com mais terra e mais área agrícola tendem também a ter mais população rural, pelo que as duas variáveis crescem juntas por dependerem do tamanho do território, não porque a população gera directamente a produção. O facto de a área cultivada (r = {{calc:p6_r}}) se associar à produção tão fortemente quanto a população reforça esta leitura: a área cultivada é o mecanismo agronómico mais próximo da produção, a população é apenas um proxy de escala.",
+    "o_que_nao_diz": [
+      "Uma parte relevante dos registos de produção de cereais tem qualidade classificada como não fiável (ver {{calc:p7_coluna}}, com {{calc:p7_n_distintos}} categorias de qualidade), concentrada nos anos iniciais e finais da série, o que reduz a confiança nos extremos usados nesta comparação.",
+      "As estatísticas agregadas da série de cereais ({{calc:p2_soma}}, {{calc:p2_media}}) somam produção em toneladas e área cultivada em hectares na mesma coluna de valor: são unidades não comensuráveis e não devem ser lidas como um único total de cereais.",
+      "A correlação foi calculada ao nível de província (n = {{calc:p5_n}}), o nível geográfico mais fino disponível em ambos os datasets; esconde a variação distrital dentro de cada província, que pode ser muito maior do que a variação entre províncias.",
+      "O indicador populacional usado mistura população total, população menor de 5 anos e mulheres em idade fértil, e inclui uma linha de total nacional que fica fora dos totais por província; não isola um valor único e comparável de 'população total por província'."
+    ],
+    "como_chegamos": "Cruzámos o dataset de Demografia (L02) com o de Produção de Cereais (L20) ao nível de província, o nível geográfico mais fino disponível em ambos. Calculámos a correlação de Pearson entre população e produção de milho, e entre área cultivada e produção, para testar se a área agrícola explica melhor o padrão do que a população (teste de confundimento). A qualidade dos dados de cereais (dq_tier) foi perfilada em separado para avaliar até que ponto a série sustenta esta leitura.",
+    "fontes": [
+      {
+        "instituicao": "INE",
+        "documento": "Data4Moz L02 Demografia e População",
+        "ano": 2022
+      },
+      {
+        "instituicao": "MADER/INE",
+        "documento": "Data4Moz L20 Produção de Cereais em Moçambique",
+        "ano": 2024
+      },
+      {
+        "instituicao": "INE/MADER",
+        "documento": "Inquérito Agrário Integrado (IAI), Indicadores Básicos de Agricultura e Alimentação 2023",
+        "ano": 2023
+      }
+    ]
+  },
+  "narrativa_resolvida": {
+    "titulo": "População e produção de cereais crescem juntas entre províncias (r = 1)",
+    "subtitulo": "A associação é quase perfeita, mas tudo aponta para um confundimento de escala: província maior, mais gente e mais terra cultivada, não um efeito directo da população sobre a colheita",
+    "resposta_directa": "Sim, existe uma correlação forte e estatisticamente significativa entre população e produção de milho por província (r = 1, p = 0, n = 11). A área cultivada de milho tem uma correlação igualmente forte com a produção (r = 1), o que sugere que o tamanho territorial e agrícola da província, e não a população em si, é o factor mais directo por trás do padrão.",
+    "numeros_chave": [
+      {
+        "calc_id": "p5_r",
+        "rotulo": "Correlação população vs produção de milho",
+        "contexto": "r = 1 entre população e produção de milho por província, com p = 0 e n = 11 províncias.",
+        "valor": "1"
+      },
+      {
+        "calc_id": "p6_r",
+        "rotulo": "Correlação área cultivada vs produção de milho",
+        "contexto": "r = 1, igualmente forte; indica que a área agrícola explica a produção pelo menos tão bem quanto a população.",
+        "valor": "1"
+      },
+      {
+        "calc_id": "p2_max",
+        "rotulo": "Maior valor registado na série de cereais",
+        "contexto": "1 717 000, valor máximo entre produção e área cultivada de quatro culturas (2015 a 2025, unidades mistas).",
+        "valor": "1 717 000"
+      },
+      {
+        "calc_id": "p2_mediana",
+        "rotulo": "Valor mediano da série de cereais",
+        "contexto": "18 983, com grande dispersão entre províncias e culturas (coeficiente de variação de 196%).",
+        "valor": "18 983"
+      },
+      {
+        "calc_id": "p1_max",
+        "rotulo": "Maior valor registado na série demográfica",
+        "contexto": "32 412 000; inclui o total nacional, que fica fora dos totais por província.",
+        "valor": "32 412 000"
+      },
+      {
+        "calc_id": "p1_coeficiente_variacao",
+        "rotulo": "Dispersão da série demográfica",
+        "contexto": "coeficiente de variação de 227%, porque a série junta população total, população <5 anos e mulheres em idade fértil.",
+        "valor": "227"
+      }
+    ],
+    "o_que_mostram": "A correlação entre população e produção de cereais por província é quase perfeita (r = 1, p = 0, n = 11): províncias mais populosas produzem sistematicamente mais cereais. A área cultivada de milho segue o mesmo padrão (r = 1), o que aponta para uma causa comum de escala territorial em vez de um efeito directo da população sobre a colheita. Os valores da série de cereais oscilam entre 0 e 1 717 000 (toneladas ou hectares, consoante a variável), com mediana de 18 983 e coeficiente de variação de 196%, mostrando grande dispersão entre províncias e culturas. Do lado demográfico, a série (que mistura população total, população <5 anos, mulheres em idade fértil e o total nacional) varia entre 2,80 e 32 412 000, com mediana de 583 350.",
+    "porque": "A associação não implica causalidade directa entre número de habitantes e toneladas produzidas: Associação forte e estatisticamente significativa (r = 1, p = 0). Associação não implica causalidade: pode existir uma variável de confundimento a explicar ambas.. A explicação mais plausível é um confundimento de escala territorial: províncias com mais terra e mais área agrícola tendem também a ter mais população rural, pelo que as duas variáveis crescem juntas por dependerem do tamanho do território, não porque a população gera directamente a produção. O facto de a área cultivada (r = 1) se associar à produção tão fortemente quanto a população reforça esta leitura: a área cultivada é o mecanismo agronómico mais próximo da produção, a população é apenas um proxy de escala.",
+    "o_que_nao_diz": [
+      "Uma parte relevante dos registos de produção de cereais tem qualidade classificada como não fiável (ver dq_tier, com 3 categorias de qualidade), concentrada nos anos iniciais e finais da série, o que reduz a confiança nos extremos usados nesta comparação.",
+      "As estatísticas agregadas da série de cereais (38 567 725, 82 234) somam produção em toneladas e área cultivada em hectares na mesma coluna de valor: são unidades não comensuráveis e não devem ser lidas como um único total de cereais.",
+      "A correlação foi calculada ao nível de província (n = 11), o nível geográfico mais fino disponível em ambos os datasets; esconde a variação distrital dentro de cada província, que pode ser muito maior do que a variação entre províncias.",
+      "O indicador populacional usado mistura população total, população menor de 5 anos e mulheres em idade fértil, e inclui uma linha de total nacional que fica fora dos totais por província; não isola um valor único e comparável de 'população total por província'."
+    ],
+    "como_chegamos": "Cruzámos o dataset de Demografia (L02) com o de Produção de Cereais (L20) ao nível de província, o nível geográfico mais fino disponível em ambos. Calculámos a correlação de Pearson entre população e produção de milho, e entre área cultivada e produção, para testar se a área agrícola explica melhor o padrão do que a população (teste de confundimento). A qualidade dos dados de cereais (dq_tier) foi perfilada em separado para avaliar até que ponto a série sustenta esta leitura.",
+    "fontes": [
+      {
+        "instituicao": "INE",
+        "documento": "Data4Moz L02 Demografia e População",
+        "ano": 2022
+      },
+      {
+        "instituicao": "MADER/INE",
+        "documento": "Data4Moz L20 Produção de Cereais em Moçambique",
+        "ano": 2024
+      },
+      {
+        "instituicao": "INE/MADER",
+        "documento": "Inquérito Agrário Integrado (IAI), Indicadores Básicos de Agricultura e Alimentação 2023",
+        "ano": 2023
+      }
+    ]
+  },
+  "critica": {
+    "objeccoes": [],
+    "bloqueia_publicacao": false
+  },
+  "custo_usd": 0.263002,
+  "duracao_ms": 286034,
+  "confianca": {
+    "percentagem": 80,
+    "datasetsUsados": 2,
+    "ligacoesGeograficas": [
+      {
+        "dataset_id": 63,
+        "nivel": "admin1",
+        "taxa_correspondencia": 1
+      },
+      {
+        "dataset_id": 56,
+        "nivel": "admin1",
+        "taxa_correspondencia": 0.88
+      }
+    ],
+    "completudeMediaPct": 100,
+    "valoresDerivados": 0,
+    "passosViaCodigo": 0
+  }
+}

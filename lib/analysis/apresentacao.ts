@@ -1,6 +1,6 @@
 import { findDatasetById } from '@/lib/db'
 import { carregarGeoJSONUnidades } from './geo-render'
-import type { NivelAdmin } from './dados'
+import { carregarUnidades, type NivelAdmin } from './dados'
 
 /**
  * Carregamento de dados de apresentação partilhado entre a página de detalhe (/analise/[id]) e o
@@ -54,6 +54,13 @@ export async function carregarDatasetsInfo(
     })
   )
   return info.filter((d): d is NonNullable<typeof d> => d !== null)
+}
+
+/** Nomes de província por código — permite filtrar o mapa por província mesmo quando a série está
+ *  a um nível mais fino (distrito/posto), truncando o pcode para os primeiros 2 dígitos. */
+export async function carregarProvincias(): Promise<{ codigo: string; nome: string }[]> {
+  const unidades = await carregarUnidades('admin1')
+  return unidades.map((u) => ({ codigo: u.codigo, nome: u.nome }))
 }
 
 export async function carregarGeojsonPorNivel(series: any[]): Promise<Record<string, any>> {

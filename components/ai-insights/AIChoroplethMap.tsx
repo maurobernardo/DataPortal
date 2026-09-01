@@ -31,8 +31,8 @@ export function AIChoroplethMap({ map }: { map: ChoroplethPayload }) {
 
       if (!mapRef.current) {
         mapRef.current = L.map(containerRef.current, { scrollWheelZoom: false }).setView([-18.5, 35], 5)
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-          attribution: '&copy; OpenStreetMap, &copy; CARTO',
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; OpenStreetMap',
           maxZoom: 18,
         }).addTo(mapRef.current)
       }

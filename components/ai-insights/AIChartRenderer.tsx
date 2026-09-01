@@ -31,11 +31,11 @@ function toRowData(chart: ChartSpec) {
   })
 }
 
-export function AIChartRenderer({ chart }: { chart: ChartSpec }) {
+export function AIChartRenderer({ chart, transparent }: { chart: ChartSpec; transparent?: boolean }) {
   const data = toRowData(chart)
 
   return (
-    <div className="rounded-xl border border-[#E2E8E5] bg-white p-4">
+    <div className={transparent ? 'p-1' : 'rounded-xl border border-[#E2E8E5] bg-white p-4'}>
       {chart.title && <p className="text-sm font-semibold text-gray-800 mb-3">{chart.title}</p>}
       <ResponsiveContainer width="100%" height={260}>
         {chart.type === 'pie' ? (

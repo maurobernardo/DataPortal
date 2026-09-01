@@ -15,6 +15,10 @@ import {
   MapPinned,
   MessageSquare,
   FileText,
+  Users,
+  ScrollText,
+  Lightbulb,
+  Trash2,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
@@ -64,10 +68,34 @@ export function AdminSidebar({ user, activeTab }: AdminSidebarProps) {
       active: pathname === '/dashboard/ia-utilizacao',
     },
     {
+      icon: Lightbulb,
+      label: 'Sugestões de Datasets',
+      href: '/admin/sugestoes-datasets',
+      active: pathname === '/admin/sugestoes-datasets',
+    },
+    {
       icon: Globe2,
       label: 'Origem dos Utilizadores',
       href: '/admin/origem-utilizadores',
       active: pathname === '/admin/origem-utilizadores',
+    },
+    {
+      icon: Users,
+      label: 'Utilizadores',
+      href: '/admin/utilizadores',
+      active: pathname === '/admin/utilizadores',
+    },
+    {
+      icon: Trash2,
+      label: 'Lixeira',
+      href: '/admin/lixeira',
+      active: pathname === '/admin/lixeira',
+    },
+    {
+      icon: ScrollText,
+      label: 'Auditoria',
+      href: '/admin/auditoria',
+      active: pathname === '/admin/auditoria',
     },
   ]
   const mainLinks = [

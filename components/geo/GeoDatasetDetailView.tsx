@@ -1,10 +1,6 @@
 import type { ReactNode } from 'react'
 
-import Link from 'next/link'
-
 import {
-
-  ArrowLeft,
 
   Calendar,
 
@@ -33,6 +29,8 @@ import {
 import { DatasetPreview } from '@/components/DatasetPreview'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { RecordRecentlyViewed } from '@/components/RecordRecentlyViewed'
+import { ProvenanciaDataset } from '@/components/ProvenanciaDataset'
+import { VoltarComFiltro } from '@/components/VoltarComFiltro'
 
 
 
@@ -68,6 +66,12 @@ type DatasetDetail = {
 
   filePath: string | null
 
+  createdAt?: string | null
+
+  updatedAt?: string | null
+
+  certificacao?: string | null
+
   category: { id: number; name: string }
 
 }
@@ -82,7 +86,7 @@ export function GeoDatasetDetailView({ dataset }: { dataset: DatasetDetail }) {
 
   return (
 
-    <div className="geo-detail-page">
+    <div className="geo-detail-page animate-fade-in">
 
       <div className="geo-detail-inner">
 
@@ -103,13 +107,9 @@ export function GeoDatasetDetailView({ dataset }: { dataset: DatasetDetail }) {
           ]}
         />
 
-        <Link href="/dados-espaciais" className="geo-detail-back">
-
-          <ArrowLeft className="size-4" aria-hidden />
-
+        <VoltarComFiltro fallbackHref="/dados-espaciais" className="geo-detail-back">
           Voltar aos Dados Geoespaciais
-
-        </Link>
+        </VoltarComFiltro>
 
 
 
@@ -339,6 +339,13 @@ export function GeoDatasetDetailView({ dataset }: { dataset: DatasetDetail }) {
                   </div>
 
                 </div>
+
+                <ProvenanciaDataset
+                  datasetId={dataset.id}
+                  criadoEm={dataset.createdAt ?? null}
+                  actualizadoEm={dataset.updatedAt ?? null}
+                  certificacao={dataset.certificacao}
+                />
 
               </div>
 

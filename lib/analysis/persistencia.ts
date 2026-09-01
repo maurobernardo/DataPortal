@@ -1,6 +1,6 @@
 import { db } from '@/lib/db'
 import type { ResultadoPipeline } from './pipeline'
-import type { EstadoAnalise } from './types'
+import type { EstadoAnalise, EvidenciaLacuna, PerguntaViavel } from './types'
 import { compor } from './compositor'
 
 /**
@@ -9,6 +9,21 @@ import { compor } from './compositor'
  * Guarda-se o plano, os resultados brutos e os passos executados, não apenas o texto final:
  * sem isso não seria possível reproduzir nem auditar de onde veio cada número.
  */
+
+let colunaConfiancaDetalheGarantida = false
+
+/** PLANO-DATAPROPROMAX.md, Fase 1: o painel de confiança (ligações geográficas, completude,
+ *  valores derivados) é um objecto estruturado, não cabe na coluna `confianca` (um único float
+ *  já usado para outra coisa) — precisa da sua própria coluna. */
+async function garantirColunaConfiancaDetalhe() {
+  if (colunaConfiancaDetalheGarantida) return
+  try {
+    await db.execute('ALTER TABLE analises ADD COLUMN confianca_detalhe LONGTEXT NULL')
+  } catch {
+    // já existe
+  }
+  colunaConfiancaDetalheGarantida = true
+}
 
 export async function criarAnalise(
   id: string,
@@ -28,6 +43,7 @@ export async function actualizarEstado(id: string, estado: EstadoAnalise): Promi
 }
 
 export async function guardarResultado(r: ResultadoPipeline): Promise<void> {
+  await garantirColunaConfiancaDetalhe()
   const { contexto } = r
 
   // R5: a ordem dos blocos varia com o arquétipo, calculada aqui porque é o único ponto que já
@@ -41,7 +57,8 @@ export async function guardarResultado(r: ResultadoPipeline): Promise<void> {
   await db.execute(
     `UPDATE analises SET
        arquetipo = ?, estado = ?, plano = ?, resultados = ?, achados = ?,
-       narrativa = ?, dashboard_spec = ?, fontes = ?, confianca = ?, custo_usd = ?, duracao_ms = ?
+       narrativa = ?, dashboard_spec = ?, fontes = ?, confianca = ?, custo_usd = ?, duracao_ms = ?,
+       confianca_detalhe = ?
      WHERE id = ?`,
     [
       r.compreensao.arquetipo_sugerido,
@@ -53,6 +70,8 @@ export async function guardarResultado(r: ResultadoPipeline): Promise<void> {
         graficos: contexto.graficos,
         destaques: contexto.destaques,
         camadasBrutas: contexto.camadasBrutas,
+        listas: contexto.listas,
+        multiplos: contexto.multiplos,
         avisos: contexto.avisos,
         qualidade: contexto.qualidade,
         codigoExecutado: contexto.codigoExecutado,
@@ -68,6 +87,7 @@ export async function guardarResultado(r: ResultadoPipeline): Promise<void> {
       r.suficiencia.confianca_sem_enriquecimento,
       r.custo_usd,
       r.duracao_ms,
+      JSON.stringify(r.confianca),
       r.analise_id,
     ]
   )
@@ -97,6 +117,156 @@ export async function registarErro(id: string, mensagem: string): Promise<void> 
   ])
 }
 
+/**
+ * Quando o pipeline falha por completo (mesmo depois de repetir), o utilizador nunca pode ver o
+ * ecrã de "não publicada": isso já causou perda de confiança. Em vez disso, guarda-se uma análise
+ * válida (estado 'pronto', narrativa com `resolvida`) que explica honestamente a falha, para que a
+ * página de análise renderize o mesmo layout de sempre em vez do bloqueio.
+ */
+export async function registarFalhaDegradada(id: string, pergunta: string, mensagem: string): Promise<void> {
+  const resolvida = {
+    titulo: 'Não foi possível concluir esta análise',
+    subtitulo: pergunta,
+    resposta_directa: mensagem,
+    numeros_chave: [] as { calc_id: string; rotulo: string; contexto: string; valor: string }[],
+    o_que_mostram: 'Nenhum cálculo pôde ser produzido a partir dos dados seleccionados.',
+    porque:
+      'Pode ser uma falha temporária de rede ou de processamento, ou os dados seleccionados não terem ' +
+      'informação suficiente para responder a esta pergunta em concreto.',
+    o_que_nao_diz: [
+      'Esta resposta não contém números: nenhum cálculo foi validado.',
+      'Tente reformular a pergunta ou seleccionar outros datasets.',
+    ],
+    como_chegamos: 'A análise foi tentada, mas não produziu resultados suficientes para publicar.',
+    fontes: [] as { instituicao: string; documento?: string; ano?: number; url?: string }[],
+  }
+
+  await db.execute(
+    `UPDATE analises SET
+       estado = 'pronto', resultados = ?, achados = ?, narrativa = ?, dashboard_spec = ?
+     WHERE id = ?`,
+    [
+      JSON.stringify({ calcs: {}, series: [], graficos: [], destaques: [], camadasBrutas: [], avisos: [], qualidade: [], codigoExecutado: [] }),
+      JSON.stringify([]),
+      JSON.stringify({ bruta: resolvida, resolvida, critica: null }),
+      JSON.stringify(null),
+      id,
+    ]
+  )
+}
+
+/**
+ * Regista uma análise que o motor recusou por os dados não responderem à pergunta.
+ *
+ * Guarda-se em estado próprio ('inviavel'), e não como erro: nada falhou tecnicamente, e contar
+ * isto como falha estragaria as métricas de fiabilidade do motor. A pergunta fica registada de
+ * propósito: uma pergunta que o portal não conseguiu responder é o sinal mais forte que existe
+ * sobre que dados faltam ao catálogo, e é exactamente o que `sugestoes-datasets.ts` procura.
+ */
+let estadoInviavelGarantido = false
+
+/**
+ * `analises.estado` é um ENUM criado antes de existir o estado 'inviavel'. Sem esta migração o
+ * MySQL não rejeita o UPDATE: guarda string vazia em silêncio (verificado ao vivo, com a análise
+ * a ficar com estado '' e a evidência gravada na mesma). Corre uma vez por processo, como as
+ * outras garantias de esquema deste ficheiro.
+ */
+async function garantirEstadoInviavel() {
+  if (estadoInviavelGarantido) return
+  try {
+    const [linhas] = (await db.execute("SHOW COLUMNS FROM analises LIKE 'estado'")) as [any[], unknown]
+    const tipo = String(linhas[0]?.Type || '')
+    if (tipo && !tipo.includes("'inviavel'")) {
+      await db.execute(
+        `ALTER TABLE analises MODIFY COLUMN estado
+         ENUM('planeando','executando','compondo','pronto','erro','inviavel')
+         NOT NULL DEFAULT 'planeando'`
+      )
+    }
+    estadoInviavelGarantido = true
+  } catch {
+    // Falhar aqui não pode impedir o registo: sem a migração o estado fica vazio, mas a evidência
+    // e as sugestões continuam guardadas, que é o que o utilizador precisa de rever.
+  }
+}
+
+/**
+ * Uma recusa também se grava por inteiro.
+ *
+ * Antes escrevia-se só a narrativa, e `plano`, `resultados` e `achados` ficavam vazios. Ficava
+ * assim a impossibilidade de responder à única pergunta que interessa depois de uma recusa: o que
+ * é que o motor tentou, e onde é que parou. O plano e os avisos passam a ficar guardados nas
+ * mesmas colunas que uma análise publicada usa, porque é onde qualquer diagnóstico os vai
+ * procurar.
+ */
+let colunaTraducaoGarantida = false
+
+/**
+ * A coluna da versão inglesa, criada à chegada em vez de por migração à parte.
+ *
+ * É o mesmo padrão de `garantirEstadoInviavel`, e pela mesma razão: este portal corre em alojamento
+ * partilhado sem passo de migração no arranque, e uma coluna que só existe depois de alguém correr
+ * um comando à mão é uma coluna que não existe.
+ */
+async function garantirColunaTraducao() {
+  if (colunaTraducaoGarantida) return
+  try {
+    const [linhas] = (await db.execute("SHOW COLUMNS FROM analises LIKE 'narrativa_en'")) as [any[], unknown]
+    if (linhas.length === 0) {
+      await db.execute('ALTER TABLE analises ADD COLUMN narrativa_en LONGTEXT NULL')
+    }
+    colunaTraducaoGarantida = true
+  } catch {
+    // Sem a coluna a tradução não se guarda, e o relatório continua a sair em português: é uma
+    // funcionalidade a menos, não uma análise partida.
+  }
+}
+
+export async function guardarTraducao(id: string, traduzida: unknown): Promise<void> {
+  await garantirColunaTraducao()
+  await db.execute('UPDATE analises SET narrativa_en = ? WHERE id = ?', [JSON.stringify(traduzida), id])
+}
+
+export async function obterTraducao(id: string): Promise<any | null> {
+  await garantirColunaTraducao()
+  try {
+    const [linhas] = (await db.execute('SELECT narrativa_en FROM analises WHERE id = ? LIMIT 1', [id])) as [
+      any[],
+      unknown,
+    ]
+    const bruto = linhas[0]?.narrativa_en
+    if (!bruto) return null
+    return typeof bruto === 'string' ? JSON.parse(bruto) : bruto
+  } catch {
+    return null
+  }
+}
+
+export async function registarInviavel(
+  id: string,
+  evidencia: EvidenciaLacuna,
+  sugestoes: PerguntaViavel[],
+  diagnostico?: import('./viabilidade').DiagnosticoInviavel | null
+): Promise<void> {
+  await garantirEstadoInviavel()
+  await db.execute(
+    `UPDATE analises SET estado = 'inviavel', narrativa = ?, plano = ?, resultados = ? WHERE id = ?`,
+    [
+      JSON.stringify({ inviavel: { evidencia, sugestoes } }),
+      diagnostico?.plano ? JSON.stringify(diagnostico.plano) : null,
+      diagnostico
+        ? JSON.stringify({
+            portao: diagnostico.portao,
+            avisos: diagnostico.avisos,
+            passos_falhados: diagnostico.passos_falhados,
+            calcs: diagnostico.calcs,
+          })
+        : null,
+      id,
+    ]
+  )
+}
+
 export type AnaliseGuardada = {
   id: string
   pergunta: string
@@ -109,6 +279,7 @@ export type AnaliseGuardada = {
   narrativa: any
   dashboard_spec: import('./compositor').DashboardSpec | null
   confianca: number | null
+  confianca_detalhe: import('./confianca').ConfiancaAnalise | null
   custo_usd: number | null
   duracao_ms: number | null
   publico: boolean
@@ -131,6 +302,7 @@ function comoJson<T>(valor: unknown, porDefeito: T): T {
 }
 
 export async function obterAnalise(id: string): Promise<AnaliseGuardada | null> {
+  await garantirColunaConfiancaDetalhe()
   const [rows] = (await db.execute('SELECT * FROM analises WHERE id = ? LIMIT 1', [id])) as [
     any[],
     unknown,
@@ -150,6 +322,7 @@ export async function obterAnalise(id: string): Promise<AnaliseGuardada | null> 
     narrativa: comoJson(r.narrativa, null),
     dashboard_spec: comoJson(r.dashboard_spec, null),
     confianca: r.confianca != null ? Number(r.confianca) : null,
+    confianca_detalhe: comoJson(r.confianca_detalhe, null),
     custo_usd: r.custo_usd != null ? Number(r.custo_usd) : null,
     duracao_ms: r.duracao_ms,
     publico: Boolean(r.publico),
@@ -212,3 +385,4 @@ export async function listarAnalisesDoUtilizador(
   )) as [any[], unknown]
   return rows as any
 }
+

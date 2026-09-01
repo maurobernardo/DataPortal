@@ -1,0 +1,3315 @@
+/**
+ * Sistema de design das páginas de análise (AI Insights).
+ *
+ * Vive num âmbito próprio, `.pdx`, e não no `:root`: a paleta é quente (papel creme, verde-floresta,
+ * dourado, terracota) e diverge da do resto do portal, que é verde #064E2C sobre branco. Sem o
+ * âmbito, os tokens entrariam no catálogo, na homepage e nos mapas, que não foram redesenhados.
+ * Um relatório pode ter identidade própria; o portal inteiro mudar de cor por acidente, não.
+ *
+ * Referência de género: relatório de BI empresarial, não editorial de revista. Daí bordas de 1px,
+ * cantos discretos, repouso quase plano e sombra só na interacção.
+ */
+
+.pdx {
+  --forest-900: #0a2a20;
+  --forest-800: #0f3d2e;
+  --forest-700: #175a41;
+  --forest-600: #1f7752;
+
+  --paper: #faf6ec;
+  --paper-dim: #f2ecdc;
+  --card: #ffffff;
+
+  --ink: #1a2118;
+  --ink-soft: #535e52;
+  /*
+   * Este token pinta legendas de 10 a 12px, e não aparece só sobre branco: usa-se também sobre o
+   * papel (--paper-dim) e sobre a sálvia (--sage-soft), que são fundos mais escuros. Foi afinado
+   * contra o pior desses casos, não contra o melhor.
+   *   #8a9186 dava 3.2:1 sobre branco, e #677063 dava 4.4:1 sobre --paper-dim e 4.0:1 sobre
+   *   --sage-soft: os dois abaixo do mínimo de 4.5:1 para texto normal.
+   * #5c6459 dá 6.1:1 sobre branco, 5.7:1 sobre --paper, 5.2:1 sobre --paper-dim e 4.8:1 sobre
+   * --sage-soft.
+   */
+  --ink-faint: #5c6459;
+
+  --line: #e4dcc6;
+  --line-soft: #eee8d6;
+
+  --gold: #c7962c;
+  --gold-soft: #f4e3b8;
+  --terracotta: #be5433;
+  --terracotta-soft: #f1d2c1;
+  --sage: #5f8f6c;
+  --sage-soft: #d7e7d6;
+  --ruby: #8c3230;
+  --ruby-soft: #eac9c4;
+
+  /* Sombras tingidas de verde, nunca de preto puro: preto sobre papel creme suja o tom. */
+  --shadow-sm: 0 1px 2px rgba(15, 61, 46, 0.06), 0 1px 1px rgba(15, 61, 46, 0.04);
+  --shadow-md: 0 6px 20px rgba(15, 61, 46, 0.08), 0 2px 6px rgba(15, 61, 46, 0.05);
+  --shadow-lg: 0 20px 48px rgba(15, 61, 46, 0.14), 0 4px 14px rgba(15, 61, 46, 0.08);
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 64px;
+
+  --serif: var(--font-fraunces), "Fraunces", Georgia, "Times New Roman", serif;
+  --sans: var(--font-inter), Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+}
+
+/* Todo o valor numérico alinha em coluna: sem isto, uma tabela de números muda de largura por
+   dígito e as colunas dançam ao paginar. */
+.pdx [data-num],
+.pdx .pdx-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.pdx h1,
+.pdx h2,
+.pdx .pdx-serif {
+  font-family: var(--serif);
+  font-optical-sizing: auto;
+}
+
+/* ---------- Painel: a unidade de composição de todo o relatório ---------- */
+
+.pdx-panel {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+/* Cabeçalho consistente em cada painel (ícone + título + acções), como um visual de BI. */
+.pdx-panel-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--line-soft);
+  background: var(--card);
+}
+
+.pdx-panel-head h2,
+.pdx-panel-head h3 {
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+  margin: 0;
+}
+
+.pdx-panel-head .pdx-panel-sub {
+  font-size: 12px;
+  color: var(--ink-faint);
+  margin-left: auto;
+}
+
+.pdx-panel-body {
+  padding: var(--sp-4);
+}
+
+/* ---------- Chips (equivalente aos slicers) ---------- */
+
+.pdx-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: 32px;
+  /* O nome do indicador nunca é cortado: era o que estava a acontecer com um `truncate` e uma
+     largura máxima de 220px, e "Value (Data4Moz L09 Imunização…)" ficava indistinguível de
+     "Value (Data4Moz L09 Nutrição…)" ao lado. Prefere-se um chip que quebra em duas linhas a um
+     rótulo que não identifica o que filtra. */
+  max-width: 100%;
+  white-space: normal;
+  text-align: left;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  color: var(--ink-soft);
+  font-size: 12.5px;
+  font-weight: 550;
+  cursor: pointer;
+  transition: border-color 0.18s ease-out, color 0.18s ease-out, background-color 0.18s ease-out;
+}
+
+.pdx-chip:hover {
+  border-color: var(--forest-600);
+  color: var(--forest-700);
+}
+
+.pdx-chip[aria-pressed='true'],
+.pdx-chip[data-activo='true'] {
+  background: var(--forest-800);
+  border-color: var(--forest-800);
+  color: #fff;
+}
+
+/* ---------- Escala por quartil, partilhada por mapas, tabelas e barras ---------- */
+
+.pdx-q1 { background: var(--sage-soft); color: #2f4a35; }
+.pdx-q2 { background: var(--gold-soft); color: #6b5310; }
+.pdx-q3 { background: var(--terracotta-soft); color: #7a3520; }
+.pdx-q4 { background: var(--ruby-soft); color: #5e1f1e; }
+
+/* ---------- Acessibilidade e movimento ---------- */
+
+/* Foco sempre visível, e com desvio para não ficar colado ao conteúdo. */
+.pdx :focus-visible {
+  outline: 2px solid var(--forest-600);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Alvos de toque por tipo de ponteiro, e não por tipo de elemento.
+   A regra antiga era `.pdx button { min-height: 44px }`, que deixava de fora as acções feitas com
+   <a> (o "Voltar" da barra é um Link): na mesma barra, os botões mediam 44px e a hiperligação 33px,
+   desalinhadas. Aqui a altura vem da classe, por isso <a> e <button> medem sempre o mesmo.
+   Num rato, 34px é a densidade certa para chrome de BI; num dedo, 44px é o mínimo utilizável. */
+.pdx .pdx-btn,
+.pdx .pdx-chip {
+  min-height: 34px;
+}
+
+@media (pointer: coarse) {
+  .pdx .pdx-btn,
+  .pdx .pdx-btn-claro,
+  .pdx .pdx-chip,
+  .pdx button,
+  .pdx .pdx-abas button,
+  .pdx a[role='button'],
+  .pdx [role='tab'],
+  /* Campos de uma linha contam como alvo de toque: são onde o dedo tem de acertar para escrever. */
+  .pdx .pdx-campo,
+  .pdx .pdx-pesquisa {
+    min-height: 44px;
+  }
+
+  /* Excepção deliberada só para os chips: são filtros, aparecem em fila e a área de toque vem da
+     margem à volta. Tudo o que é acção, incluindo dentro de um cabeçalho de painel, fica nos
+     44px. */
+  .pdx .pdx-panel-head .pdx-chip {
+    min-height: 38px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pdx *,
+  .pdx *::before,
+  .pdx *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---------- Acções ---------- */
+
+/* Botão secundário. Partilha a caixa do chip, mas é acção e não filtro: por isso ganha peso de
+   texto e não muda de fundo quando activo. */
+.pdx-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 600;
+  /* Sem isto, "← Voltar" partia em duas linhas a 375px e ficava mais alto do que os botões ao lado. */
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color 0.18s ease-out, color 0.18s ease-out;
+}
+
+.pdx-btn:hover:not(:disabled) {
+  border-color: var(--forest-600);
+  color: var(--forest-700);
+}
+
+.pdx-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.pdx-btn-primary {
+  background: var(--forest-800);
+  border-color: var(--forest-800);
+  color: #fff;
+}
+
+.pdx-btn-primary:hover:not(:disabled) {
+  background: var(--forest-700);
+  border-color: var(--forest-700);
+  color: #fff;
+}
+
+/* Estado "já guardado": o verde diz que a acção está feita, sem trocar o rótulo por um ícone só. */
+.pdx-btn-activo {
+  border-color: var(--forest-600);
+  background: var(--sage-soft);
+  color: var(--forest-800);
+}
+
+.pdx-btn-activo:hover:not(:disabled) {
+  color: var(--forest-800);
+}
+
+/* ---------- Barra de acções do relatório ---------- */
+
+/*
+ * Colada ao topo só a partir de tablet. Num telemóvel as cinco acções não cabem numa linha, e
+ * mantê-la colada obrigaria a escolher entre cortar acções, escondê-las num scroll horizontal, ou
+ * gastar duas linhas fixas de chrome por cima de um relatório longo. Estática, pode quebrar as
+ * linhas que precisar sem roubar altura à leitura.
+ */
+.pdx-barra-accoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  padding: 10px var(--sp-4);
+  background: var(--paper-dim);
+  border-bottom: 1px solid var(--line);
+}
+
+.pdx-barra-grupo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+@media (min-width: 768px) {
+  .pdx-barra-accoes {
+    position: sticky;
+    /* 64px é a altura da navegação do portal, que é `sticky top-0 z-50`. A zero, esta barra era
+       desenhada por baixo dela e desaparecia ao primeiro scroll. */
+    top: 64px;
+    z-index: 40;
+    flex-wrap: nowrap;
+  }
+
+  .pdx-barra-grupo {
+    flex-wrap: nowrap;
+  }
+}
+
+/* ---------- Narrativa ---------- */
+
+/*
+ * A resposta directa à pergunta. É a única frase do relatório em serifa itálica: assinala que
+ * ali fala a análise, e não a interface. Fica curta por construção (o motor gera uma frase), que
+ * é a condição para o itálico não pesar na leitura.
+ */
+/*
+ * A resposta em cima, à largura toda do cartão, e as duas explicações lado a lado por baixo.
+ *
+ * A resposta não leva medida de linha: ocupa o cartão inteiro, por decisão do cliente. Para que
+ * uma linha larga não fique com caracteres a mais, o corpo cresce com a largura disponível: a
+ * 1400px são cerca de 24px, o que traz a linha para perto de 90 caracteres em vez de 130.
+ */
+.pdx-narrativa {
+  display: grid;
+  gap: var(--sp-5);
+}
+
+.pdx-lede {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 450;
+  font-size: 19px;
+  line-height: 1.55;
+  color: var(--forest-800);
+  margin: 0;
+}
+
+@media (min-width: 768px) {
+  .pdx-lede {
+    font-size: 21px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .pdx-lede {
+    font-size: 24px;
+    line-height: 1.5;
+  }
+}
+
+/* Quando não há visualização nenhuma, esta frase é o relatório inteiro e sobe um degrau. */
+.pdx-lede-so {
+  font-size: 21px;
+}
+
+@media (min-width: 768px) {
+  .pdx-lede-so {
+    font-size: 23px;
+  }
+}
+
+
+
+/* Duas colunas de explicação, distinguidas pela cor da barra e não por um título maior:
+   o que os dados mostram (verde, a evidência) e porquê (dourado, a interpretação). */
+/* As duas explicações ficam lado a lado por baixo da resposta, separadas dela por uma linha. */
+.pdx-narr {
+  display: grid;
+  gap: var(--sp-5);
+  padding-top: var(--sp-5);
+  border-top: 1px solid var(--line-soft);
+}
+
+@media (min-width: 900px) {
+  .pdx-narr {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--sp-6);
+  }
+}
+
+.pdx-narr-col {
+  border-left: 3px solid var(--forest-600);
+  padding-left: var(--sp-4);
+}
+
+.pdx-narr-col.alt {
+  border-left-color: var(--gold);
+}
+
+/* Sozinha, a coluna ocupa a largura toda: a narrativa nem sempre traz as duas partes, e meia
+   largura com metade do painel vazia lia-se como conteúdo em falta. */
+.pdx-narr-col:only-child {
+  grid-column: 1 / -1;
+}
+
+.pdx-narr-col h2 {
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--forest-800);
+  margin: 0 0 8px;
+}
+
+.pdx-narr-col.alt h2 {
+  color: #7a5c12;
+}
+
+.pdx-narr-col p {
+  font-size: 14.5px;
+  color: var(--ink-soft);
+  line-height: 1.75;
+  margin: 0;
+  white-space: pre-line;
+}
+
+/* ---------- KPIs ---------- */
+
+/*
+ * Grelha, e não uma faixa de `flex-wrap` com base de 150px: cada cartão passa a mostrar também a
+ * frase que explica o número (já vinha calculada e não era desenhada em lado nenhum), e uma frase
+ * de 70 caracteres em 150px de largura sairiam seis linhas.
+ */
+.pdx-kpi-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-5);
+}
+
+@media (min-width: 640px) {
+  .pdx-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (min-width: 1100px) {
+  .pdx-kpi-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+.pdx-kpi {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  text-align: left;
+  background: var(--card);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-md);
+  padding: var(--sp-5) var(--sp-4) var(--sp-4);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition: box-shadow 0.18s ease-out, transform 0.18s ease-out, border-color 0.18s ease-out;
+}
+
+/* Barra de acento no topo: é o único sinal de estado do cartão. Muda de cor quando o rótulo do
+   próprio KPI usa linguagem de carência ou risco, e nunca por causa do valor numérico. */
+.pdx-kpi::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: var(--kpi-acento, var(--forest-600));
+}
+
+.pdx-kpi-atencao {
+  --kpi-acento: var(--terracotta);
+}
+
+.pdx-kpi-clicavel {
+  cursor: pointer;
+}
+
+.pdx-kpi-clicavel:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+  border-color: var(--line);
+}
+
+.pdx-kpi-activo {
+  border-color: var(--forest-600);
+  box-shadow: 0 0 0 2px var(--sage-soft);
+}
+
+.pdx-kpi-tag {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  line-height: 1.35;
+  /* Reserva duas linhas: sem isto, um rótulo curto ao lado de um longo desalinhava os números
+     todos da fila, que é justamente o que uma faixa de KPIs existe para deixar comparar. */
+  min-height: 2.7em;
+}
+
+.pdx-kpi-val {
+  /* <span> e não <p>: quando o cartão é clicável passa a ser um <button>, e o conteúdo de um
+     botão só admite elementos de frase. */
+  display: block;
+  font-family: var(--serif);
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1.1;
+  margin-top: 6px;
+  color: var(--forest-900);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+  /*
+   * O valor fica sempre numa linha só. Com `overflow-wrap: anywhere`, o "%" de "76,5%" descia para
+   * uma segunda linha na exportação, e como a altura calculada era de uma linha só, essa segunda
+   * linha caía por cima da frase de contexto logo abaixo.
+   */
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+
+.pdx-kpi-atencao .pdx-kpi-val {
+  color: #7d3520;
+}
+
+.pdx-kpi-nota {
+  display: block;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  margin-top: 8px;
+}
+
+/*
+ * Antes era uma nota apagada de 11px, do mesmo tom das legendas, e ninguém percebia que o cartão
+ * era clicável. Passa a ler-se como a acção que é: fundo próprio, verde da marca e um ícone.
+ */
+.pdx-kpi-dica {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 12px;
+  border-radius: 999px;
+  background: var(--paper-dim);
+  padding: 3px 9px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--forest-800);
+}
+
+.pdx-kpi-clicavel:hover .pdx-kpi-dica {
+  background: var(--sage-soft);
+}
+
+/* Já destacado: deixa de convidar e passa a informar. */
+.pdx-kpi-dica[data-activo='true'] {
+  background: var(--forest-800);
+  color: #fff;
+}
+
+/* Espaço à direita para o botão de proveniência não passar por cima do rótulo. */
+.pdx-kpi-com-info .pdx-kpi-tag {
+  padding-right: 26px;
+}
+
+.pdx-kpi-info {
+  position: absolute;
+  border: 0;
+  top: 10px;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  color: var(--ink-faint);
+  background: transparent;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.pdx-kpi-info:hover {
+  background: var(--paper-dim);
+  color: var(--forest-700);
+}
+
+.pdx-popover {
+  position: absolute;
+  z-index: 20;
+  top: 100%;
+  left: 0;
+  margin-top: 6px;
+  width: 17rem;
+  max-width: calc(100vw - 32px);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  box-shadow: var(--shadow-lg);
+}
+
+.pdx-popover-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.pdx-popover-topo p {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--forest-800);
+  margin: 0;
+}
+
+.pdx-popover-topo button {
+  flex-shrink: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink-faint);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+}
+
+.pdx-popover-topo button:hover {
+  color: var(--ink);
+  background: var(--paper-dim);
+}
+
+.pdx-popover-rodape {
+  margin: 10px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--line-soft);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--ink-faint);
+}
+
+.pdx-popover dt {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-faint);
+}
+
+.pdx-popover dd {
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--ink);
+  margin: 2px 0 10px;
+}
+
+.pdx-popover dd:last-child {
+  margin-bottom: 0;
+}
+
+/* Ícone do cabeçalho de painel: quadrado arredondado em papel, como nos visuais de BI. */
+.pdx-panel-icone {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border-radius: 7px;
+  background: var(--paper-dim);
+  color: var(--forest-700);
+}
+
+.pdx-panel-head h2 {
+  color: var(--forest-800);
+}
+
+/* ---------- Achados ("o que não perguntou mas devia saber") ---------- */
+
+.pdx-achado {
+  background: var(--card);
+  border: 1px solid var(--line-soft);
+  border-left: 4px solid var(--achado-cor, var(--forest-600));
+  border-radius: var(--radius-md);
+  padding: var(--sp-4);
+  box-shadow: var(--shadow-sm);
+}
+
+.pdx-achado p {
+  margin: 0;
+}
+
+/* O título do achado. */
+.pdx-achado p:first-of-type {
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--ink);
+}
+
+/* A explicação, quando existe: mesma família, um degrau abaixo em peso e em cor. */
+.pdx-achado p + p {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--ink-soft);
+  margin-top: 6px;
+}
+
+/* ---------- Rodapé ---------- */
+
+.pdx-rodape {
+  border-top: 1px solid var(--line);
+  padding-top: var(--sp-4);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--ink-faint);
+}
+
+.pdx-rodape strong {
+  color: var(--ink-soft);
+}
+
+/* ---------- Legenda de contexto (nota debaixo de um gráfico ou mapa) ---------- */
+
+.pdx-nota {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 16px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-sm);
+  background: var(--paper-dim);
+  padding: 10px var(--sp-4);
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.pdx-nota strong {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Perguntas sugeridas ---------- */
+
+/* O único painel em tom de papel e não em cartão branco: é um convite a continuar, e não mais
+   uma peça de evidência do relatório. A diferença de fundo é o que o separa sem precisar de
+   moldura de cor. */
+.pdx-panel-convite {
+  background: var(--paper-dim);
+  border-color: var(--line);
+}
+
+.pdx-panel-convite .pdx-panel-head {
+  background: transparent;
+  border-bottom-color: var(--line);
+}
+
+.pdx-sugestao {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  padding: 12px var(--sp-4);
+  text-align: left;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink);
+  transition: border-color 0.18s ease-out, box-shadow 0.18s ease-out;
+}
+
+.pdx-sugestao:hover {
+  border-color: var(--forest-600);
+  box-shadow: var(--shadow-sm);
+}
+
+.pdx-sugestao svg {
+  flex-shrink: 0;
+  color: var(--ink-faint);
+  transition: color 0.18s ease-out;
+}
+
+.pdx-sugestao:hover svg {
+  color: var(--forest-700);
+}
+
+/* ---------- Metadados ---------- */
+
+.pdx-meta-cartao {
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-md);
+  padding: var(--sp-4);
+  background: var(--card);
+}
+
+.pdx-meta-titulo {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+
+.pdx-meta-desc {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  line-height: 1.6;
+  margin: 0 0 12px;
+}
+
+.pdx-meta-cartao dt {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-faint);
+}
+
+.pdx-meta-cartao dd {
+  font-size: 12.5px;
+  color: var(--ink);
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Aviso de dado antigo. Âmbar sobre creme fica turvo, por isso usa a terracota da paleta. */
+.pdx-selo-antigo {
+  flex-shrink: 0;
+  border-radius: 999px;
+  border: 1px solid var(--terracotta-soft);
+  background: #fbf0e9;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #7d3520;
+}
+
+/* ---------- Cabeçalho do relatório ---------- */
+
+/*
+ * Partilhado entre a página de detalhe da análise e o dashboard: eram dois blocos escritos à mão,
+ * e já tinham divergido (um com gradiente, o outro sem).
+ *
+ * Cor sólida em tudo aqui, de propósito: nada de gradientes nem de cores com opacidade
+ * (rgba/`/85`). O Tailwind v4 compila modificadores de opacidade com `color-mix()`, que o
+ * html2canvas-pro — usado na exportação para PDF e HTML — nem sempre sabe interpretar. O
+ * resultado era este bloco inteiro desaparecer do PDF, que saía sem cabeçalho, sem a pergunta
+ * feita e sem a data.
+ */
+.pdx-hero {
+  border-radius: var(--radius-lg);
+  background: var(--forest-800);
+  color: #ffffff;
+  padding: 32px 24px;
+  margin-bottom: var(--sp-5);
+}
+
+@media (min-width: 768px) {
+  .pdx-hero {
+    padding: 40px;
+  }
+}
+
+.pdx-hero-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--gold-soft);
+  margin: 0 0 12px;
+}
+
+/* A serifa aparece no relatório em dois sítios e só nesses: o título e a pergunta. É o que
+   assinala a voz da análise; o resto do painel fica em Inter para se ler como interface. */
+.pdx-hero-titulo {
+  font-family: var(--serif);
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+  max-width: 22ch;
+  margin: 0 0 12px;
+}
+
+@media (min-width: 768px) {
+  .pdx-hero-titulo {
+    font-size: 36px;
+    max-width: 26ch;
+  }
+}
+
+.pdx-hero-sub {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #cfe3d6;
+  max-width: 62ch;
+  margin: 0 0 20px;
+}
+
+@media (min-width: 768px) {
+  .pdx-hero-sub {
+    font-size: 17px;
+  }
+}
+
+.pdx-hero-pergunta {
+  display: inline-block;
+  max-width: 48rem;
+  border-radius: var(--radius-md);
+  background: var(--forest-700);
+  border: 1px solid var(--forest-600);
+  padding: 12px var(--sp-4);
+}
+
+.pdx-hero-pergunta p:first-child {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--gold-soft);
+  margin: 0 0 4px;
+}
+
+.pdx-hero-pergunta p:last-child {
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.4;
+  margin: 0;
+}
+
+@media (min-width: 768px) {
+  .pdx-hero-pergunta p:last-child {
+    font-size: 17px;
+  }
+}
+
+.pdx-hero-data {
+  margin-top: var(--sp-4);
+  font-size: 12px;
+  color: #a9c9b7;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Acção principal sobre o verde do cabeçalho. Fundo branco sólido, sem opacidade, pela mesma
+   razão que o resto do bloco. */
+.pdx-btn-claro {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 9px var(--sp-4);
+  border: 1px solid #ffffff;
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  color: var(--forest-800);
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.18s ease-out;
+}
+
+.pdx-btn-claro:hover {
+  background: var(--sage-soft);
+}
+
+/* ---------- Listas de prosa dentro de um painel ---------- */
+
+/*
+ * `padding-left: 0` aqui anulava o preenchimento esquerdo do `.pdx-panel-body` quando a própria
+ * <ul> era o corpo do painel, e as marcas verdes ficavam a 7px da borda do cartão, quase de fora.
+ * O recuo passou a ser do próprio item, que é onde a marca vive.
+ */
+.pdx-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pdx-lista li {
+  position: relative;
+  padding-left: 22px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--ink-soft);
+}
+
+.pdx-lista li + li {
+  margin-top: 10px;
+}
+
+/* Marca discreta em vez de bullet do browser: alinha com a régua de 4px do resto do sistema. */
+.pdx-lista li::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 0.62em;
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--sage);
+}
+
+/* ---------- Detalhes recolhidos (auditoria técnica) ---------- */
+
+.pdx-detalhes > summary {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.pdx-detalhes > summary:hover {
+  color: var(--forest-700);
+}
+
+.pdx-detalhes ul {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.pdx-detalhes li {
+  font-size: 11.5px;
+  line-height: 1.65;
+  color: var(--ink-soft);
+}
+
+/* ---------- Pódio ---------- */
+
+.pdx-podio-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-md);
+  background: var(--card);
+  padding: 14px;
+}
+
+/* Só o primeiro lugar muda de fundo. Pintar os três em tons diferentes fazia a grelha parecer
+   três categorias, e não uma ordem. */
+.pdx-podio-item[data-lugar='1'] {
+  border-color: var(--gold);
+  background: #fdf7e8;
+}
+
+.pdx-podio-medalha {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+
+.pdx-podio-item[data-lugar='1'] .pdx-podio-medalha { background: #856211; }
+/* Sálvia escurecida: a --sage da paleta dava só 3.7:1 com o texto branco por cima. */
+.pdx-podio-item[data-lugar='2'] .pdx-podio-medalha { background: #4e7a5a; }
+.pdx-podio-item[data-lugar='3'] .pdx-podio-medalha { background: var(--terracotta); }
+
+.pdx-podio-nome {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+
+.pdx-podio-valor {
+  font-family: var(--serif);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--forest-800);
+  font-variant-numeric: tabular-nums;
+}
+
+.pdx-podio-face {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Fora do padrão ---------- */
+
+/* Dourado, e não vermelho nem âmbar de alarme: um valor fora do padrão é um facto interessante
+   dos dados, não um defeito da análise. O índigo que aqui estava dizia a mesma coisa, mas era a
+   única cor do relatório que não pertencia à paleta. */
+.pdx-fora {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  border: 1px solid var(--gold-soft);
+  border-radius: 999px;
+  background: var(--card);
+  padding: 5px 12px;
+}
+
+.pdx-fora-nome {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.pdx-fora-valor {
+  font-size: 12px;
+  font-weight: 700;
+  color: #7a5c12;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Tendência ---------- */
+
+/*
+ * A direcção vive na seta, não na cor. Verde a subir e vermelho a descer diziam "bom" e "mau",
+ * um juízo que os dados não sustentam: uma subida de casos de cólera não é uma boa notícia, e o
+ * componente não sabe qual é a métrica.
+ */
+.pdx-tendencia-icone {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: var(--paper-dim);
+  color: var(--forest-700);
+}
+
+.pdx-tendencia-valor {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--forest-800);
+  font-variant-numeric: tabular-nums;
+}
+
+.pdx-tendencia-intervalo {
+  font-size: 12px;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Tabelas e listas hierárquicas ---------- */
+
+.pdx-tabela-caixa {
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.pdx-linha-grupo {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: 10px 14px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  transition: background-color 0.15s ease-out;
+}
+
+.pdx-linha-grupo:hover {
+  background: var(--paper-dim);
+}
+
+.pdx-linha-grupo-nome {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.pdx-linha-grupo-conta {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.pdx-linha-grupo-valor {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--forest-800);
+  font-variant-numeric: tabular-nums;
+}
+
+.pdx-sublista {
+  list-style: none;
+  margin: 0;
+  padding: 0 14px 8px;
+  background: var(--paper);
+}
+
+.pdx-sublista li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: 4px 0 4px 20px;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.pdx-sublista li span:last-child {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.pdx-linha-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: 10px 14px;
+  background: var(--sage-soft);
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--forest-800);
+}
+
+.pdx-linha-total span:last-child {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Controlo segmentado (tipo de gráfico, ordenação) ---------- */
+
+.pdx-segmentado {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  padding: 2px;
+}
+
+.pdx-segmentado button {
+  display: grid;
+  place-items: center;
+  min-width: 30px;
+  min-height: 28px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: background-color 0.15s ease-out, color 0.15s ease-out;
+}
+
+.pdx-segmentado button:hover {
+  background: var(--paper-dim);
+  color: var(--forest-700);
+}
+
+.pdx-segmentado button[aria-pressed='true'] {
+  background: var(--forest-800);
+  color: #fff;
+}
+
+@media (pointer: coarse) {
+  .pdx .pdx-segmentado button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* ---------- Legenda ---------- */
+
+.pdx-legenda {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  margin-top: var(--sp-3);
+}
+
+.pdx-legenda-titulo {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-faint);
+}
+
+.pdx-legenda-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--ink-soft);
+}
+
+.pdx-legenda-chave {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* ---------- Tabela exploratória ---------- */
+
+.pdx-campo {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  color: var(--ink);
+  font-size: 12.5px;
+  padding: 7px 10px;
+}
+
+.pdx-campo::placeholder {
+  color: var(--ink-faint);
+}
+
+/*
+ * Campo com uma lupa por cima. O recuo vem daqui e não de uma classe utilitária: `.pdx-campo`
+ * declara `padding` na forma curta, que reescreve o `padding-left` de qualquer utilitário
+ * carregado antes — e o resultado era o texto a começar por baixo do ícone.
+ */
+.pdx-campo-com-icone {
+  padding-left: 38px;
+}
+
+/* Acção principal: maior do que um botão de barra, porque é a que fecha o ecrã.
+   Prefixado com `.pdx` para ganhar à regra de densidade `.pdx .pdx-btn`, que de outra forma
+   mantinha o botão nos 34px. */
+.pdx .pdx-btn-grande {
+  min-height: 48px;
+  padding: 12px 28px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+/* Desactivado continua a ler-se. A 55% de opacidade o rótulo caía para 2,4:1 e ninguém via o que
+   o botão dizia nem porque estava inerte. */
+.pdx-btn-primary:disabled {
+  opacity: 1;
+  background: var(--line);
+  border-color: var(--line);
+  color: var(--ink-soft);
+}
+
+.pdx-tabela-scroll {
+  overflow: auto;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-sm);
+  max-height: 420px;
+}
+
+.pdx-tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+.pdx-tabela thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--paper-dim);
+  border-bottom: 1px solid var(--line);
+  padding: 9px 12px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+
+.pdx-tabela tbody td {
+  padding: 6px 12px;
+  border-top: 1px solid var(--line-soft);
+  color: var(--ink-soft);
+  white-space: nowrap;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Números à direita e em algarismos de largura fixa: é o que deixa comparar uma coluna de valores
+   de relance, sem os dígitos a dançar de linha para linha. */
+.pdx-tabela td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* Zebra em papel, não em cinzento: sobre o creme, um cinzento-azulado suja o tom. */
+.pdx-tabela tbody tr:nth-child(even) {
+  background: #fcfaf4;
+}
+
+.pdx-tabela tbody tr:hover {
+  background: var(--paper-dim);
+}
+
+.pdx-tabela tbody tr.seleccionada {
+  background: var(--sage-soft);
+}
+
+.pdx-tabela tbody tr.destacada {
+  background: var(--sage-soft);
+  box-shadow: inset 3px 0 0 var(--forest-600);
+}
+
+.pdx-tabela tbody tr.destacada td.marcada {
+  font-weight: 700;
+  color: var(--forest-800);
+}
+
+.pdx-tabela-clicavel tbody tr {
+  cursor: pointer;
+}
+
+.pdx-tabela-conta {
+  font-size: 11px;
+  color: var(--ink-faint);
+  margin-top: 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Separador de secção dentro de um painel com abas de dataset. */
+.pdx-abas {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  padding: 2px;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.pdx-abas button {
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  padding: 5px 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.15s ease-out, color 0.15s ease-out;
+}
+
+.pdx-abas button:hover {
+  background: var(--paper-dim);
+  color: var(--forest-700);
+}
+
+.pdx-abas button[aria-selected='true'],
+.pdx-abas button[aria-pressed='true'] {
+  background: var(--forest-800);
+  color: #fff;
+}
+
+/* ---------- Mapas ---------- */
+
+/* O contentor do Leaflet. A moldura fica aqui e não no elemento do mapa: o Leaflet escreve no
+   próprio nó, e uma borda posta lá acaba cortada pelos tiles. */
+.pdx-mapa {
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--paper-dim);
+}
+
+/* Painel da legenda ao lado do mapa. */
+.pdx-legenda-caixa {
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-sm);
+  background: var(--paper-dim);
+  padding: 12px;
+}
+
+.pdx-legenda-caixa > p:first-child {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-faint);
+  margin: 0 0 8px;
+}
+
+.pdx-legenda-linha {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: 11.5px;
+  color: var(--ink-soft);
+}
+
+.pdx-legenda-linha + .pdx-legenda-linha {
+  margin-top: 6px;
+}
+
+.pdx-legenda-linha .chave {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.pdx-legenda-linha .intervalo {
+  margin-left: auto;
+  font-size: 10.5px;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* "Sem dados" separa-se das classes por uma linha, não por outra cor: é ausência de valor, não
+   mais uma classe da escala. */
+.pdx-legenda-vazio {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+/* Barra de resultado de uma selecção no mapa (área desenhada, unidades comparadas). */
+.pdx-mapa-barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  margin-top: var(--sp-2);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-sm);
+  background: var(--paper-dim);
+  padding: 12px var(--sp-4);
+  font-size: 12.5px;
+  color: var(--ink);
+}
+
+.pdx-ligacao {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--forest-700);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.pdx-ligacao:hover {
+  text-decoration: underline;
+}
+
+/* Painel de comparação entre duas unidades. Verde-floresta com fundo sálvia, e não o azul que
+   aqui estava: o azul era a única cor fria do relatório e destoava do papel. O contorno azul
+   fica onde é mesmo preciso, nos polígonos por cima do mapa base. */
+.pdx-comparacao {
+  margin-top: var(--sp-3);
+  border: 1px solid var(--forest-600);
+  border-radius: var(--radius-md);
+  background: var(--sage-soft);
+  padding: var(--sp-4);
+}
+
+.pdx-comparacao-titulo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--forest-800);
+  margin: 0;
+}
+
+/* ---------- Lista com barra de magnitude ---------- */
+
+/* A barra é fundo da linha, não um elemento separado ao lado: assim o nome e o valor ficam sempre
+   legíveis por cima dela, e a linha inteira continua a alinhar com o resto do painel. */
+.pdx-barras {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pdx-barras li {
+  position: relative;
+}
+
+.pdx-barras li + li {
+  margin-top: 6px;
+}
+
+.pdx-barras .fundo {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 4px;
+  background: var(--sage-soft);
+}
+
+.pdx-barras .linha {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: 6px 10px;
+}
+
+.pdx-barras .nome {
+  font-size: 13px;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pdx-barras .posicao {
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+  margin-right: 8px;
+}
+
+.pdx-barras .valor {
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--forest-800);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Migalhas do filtro geográfico ---------- */
+
+.pdx-migalhas {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--ink-faint);
+  margin-bottom: var(--sp-2);
+}
+
+.pdx-migalhas button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+
+.pdx-migalhas button:hover {
+  color: var(--forest-700);
+  text-decoration: underline;
+}
+
+.pdx-migalhas .actual {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.pdx-rotulo-filtro {
+  font-size: 11px;
+  color: var(--ink-faint);
+}
+
+/* ---------- Pesquisa dentro do mapa ---------- */
+
+.pdx-pesquisa {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  padding: 6px 10px;
+  color: var(--ink-faint);
+}
+
+.pdx-pesquisa input {
+  width: 8rem;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font-size: 12px;
+  color: var(--ink);
+}
+
+.pdx-pesquisa input::placeholder {
+  color: var(--ink-faint);
+}
+
+/* z-50: o Leaflet leva as suas camadas internas acima de z-index 650 dentro do próprio
+   contentor, e sem isto a lista de resultados parecia ficar por baixo do mapa. */
+.pdx-resultados {
+  position: absolute;
+  z-index: 50;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  width: 12rem;
+  max-height: 14rem;
+  overflow-y: auto;
+  list-style: none;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  box-shadow: var(--shadow-lg);
+}
+
+.pdx-resultados button {
+  width: 100%;
+  text-align: left;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.pdx-resultados button:hover {
+  background: var(--paper-dim);
+  color: var(--forest-800);
+}
+
+/* ---------- Cartões da comparação ---------- */
+
+.pdx-comparacao-cartao {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  padding: 12px;
+}
+
+.pdx-comparacao-cartao .nome {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 4px;
+}
+
+.pdx-comparacao-cartao .valor {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--forest-800);
+  font-variant-numeric: tabular-nums;
+  margin: 0;
+}
+
+.pdx-comparacao-cartao .metrica {
+  font-size: 10.5px;
+  color: var(--ink-faint);
+  margin: 2px 0 0;
+}
+
+.pdx-comparacao-cartao.linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: 8px 12px;
+}
+
+.pdx-comparacao-cartao.linha .rotulo {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.pdx-comparacao-cartao.linha .valor {
+  font-size: 16px;
+}
+
+.pdx-comparacao-cartao .face {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-faint);
+  margin-left: 6px;
+  font-family: var(--sans);
+}
+
+/* Legenda que também filtra (mapa de pontos): cada linha é um botão que mostra ou esconde a
+   categoria. A que está escondida perde cor e peso, mas continua legível: se desaparecesse, o
+   utilizador não teria por onde a trazer de volta. */
+.pdx-legenda-filtro {
+  width: 100%;
+  text-align: left;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  padding: 3px 4px;
+  cursor: pointer;
+  transition: background-color 0.15s ease-out;
+}
+
+.pdx-legenda-filtro:hover {
+  background: var(--card);
+}
+
+.pdx-legenda-filtro[aria-pressed='true'] {
+  background: var(--card);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.pdx-legenda-filtro.apagada {
+  color: var(--ink-faint);
+}
+
+/* ---------- Lista de pontos ---------- */
+
+.pdx-lista-pontos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pdx-lista-pontos li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.pdx-lista-pontos li + li {
+  border-top: 1px solid var(--line-soft);
+}
+
+.pdx-lista-pontos .etiqueta {
+  flex-shrink: 0;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #fff;
+}
+
+/* Objecções fatais da revisão automática: rubi, que na paleta é o degrau de gravidade máxima. */
+.pdx-objeccoes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pdx-objeccoes li {
+  border-left: 4px solid var(--ruby);
+  padding: 4px 0 4px 12px;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--ink-soft);
+}
+
+.pdx-objeccoes li + li {
+  margin-top: 8px;
+}
+
+/* ---------- Ecrã de nova análise ---------- */
+
+.pdx-cabecalho-pagina {
+  margin-bottom: var(--sp-6);
+}
+
+.pdx-selo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  background: var(--sage-soft);
+  padding: 4px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--forest-800);
+  margin: 0 0 var(--sp-3);
+}
+
+/*
+ * Sem serifa, ao contrário dos títulos dos relatórios. A serifa marca a voz da análise, e este
+ * ecrã é o formulário que a antecede: aqui ainda ninguém perguntou nada. A cor é a do sistema.
+ */
+/*
+ * O selo precisa de ganhar a `.pdx-cabecalho-pagina p`, que lhe zera a margem.
+ *
+ * O selo é um <p>, e aquela regra (0,2 de especificidade) foi escrita a pensar no parágrafo de
+ * descrição por baixo do título. Ao passar por cima de `.pdx-selo` (0,1), engolia em silêncio os
+ * 12px que o selo declarava: as duas caixas ficavam encostadas, e o único ar entre a pilula e o
+ * título eram os 8,5px de meia entrelinha que sobram dentro da caixa do h1. Medido no browser,
+ * caixa a caixa: 0,0px.
+ *
+ * O valor é maior do que os 12px originais porque uma pilula PREENCHIDA precisa de mais ar do que
+ * uma linha de texto: o fundo termina a pique na borda, sem os brancos internos que uma linha de
+ * texto oferece ao olho. 16px de margem dão cerca de 24px ópticos até ao topo das maiúsculas.
+ */
+.pdx-cabecalho-pagina .pdx-selo {
+  margin: 0 0 var(--sp-4);
+}
+
+.pdx-cabecalho-pagina h1 {
+  font-family: var(--sans);
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin: 0 0 var(--sp-2);
+}
+
+@media (min-width: 768px) {
+  .pdx-cabecalho-pagina h1 {
+    font-size: 30px;
+  }
+}
+
+.pdx-cabecalho-pagina p {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--ink-soft);
+  max-width: 68ch;
+  margin: 0;
+}
+
+.pdx-textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.6;
+  padding: 10px 12px;
+  resize: none;
+}
+
+.pdx-textarea::placeholder {
+  color: var(--ink-faint);
+}
+
+/* Etiqueta de um dataset já escolhido, com o seu próprio botão de remover. */
+.pdx-etiqueta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  border: 1px solid var(--forest-600);
+  border-radius: 999px;
+  background: var(--sage-soft);
+  padding: 3px 4px 3px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--forest-800);
+}
+
+.pdx-etiqueta button {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.pdx-etiqueta button:hover {
+  background: var(--card);
+}
+
+.pdx-contador {
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--paper-dim);
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.pdx-contador[data-completo="true"] {
+  background: var(--sage-soft);
+  color: var(--forest-800);
+}
+
+/* Cartão de dataset por escolher. */
+.pdx-dataset {
+  text-align: left;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  padding: 12px;
+  cursor: pointer;
+  transition: border-color 0.18s ease-out, background-color 0.18s ease-out;
+}
+
+.pdx-dataset:hover:not(:disabled) {
+  border-color: var(--forest-600);
+}
+
+.pdx-dataset[aria-pressed="true"] {
+  border-color: var(--forest-600);
+  background: var(--sage-soft);
+}
+
+.pdx-dataset:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pdx-dataset .titulo {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--ink);
+  margin: 0;
+}
+
+.pdx-dataset .desc {
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  margin: 6px 0 0;
+}
+
+.pdx-dataset .rodape {
+  font-size: 11px;
+  color: var(--ink-faint);
+  margin: 6px 0 0;
+}
+
+.pdx-dataset .caixa {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pdx-dataset[aria-pressed="true"] .caixa {
+  background: var(--forest-800);
+  border-color: var(--forest-800);
+  color: #fff;
+}
+
+/* Geoespacial e tabular são identidades, não uma ordem: cores distintas da paleta, e não dois
+   degraus do mesmo verde. */
+.pdx-tipo {
+  border-radius: 999px;
+  padding: 1px 7px;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pdx-tipo[data-tipo="geoespacial"] {
+  background: var(--sage-soft);
+  color: #2f4a35;
+}
+
+.pdx-tipo[data-tipo="tabular"] {
+  background: var(--gold-soft);
+  color: #6b5310;
+}
+
+.pdx-formato {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 1px 7px;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* Cabeçalho de um grupo de datasets por categoria. */
+.pdx-grupo {
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.pdx-grupo > button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  padding: 10px 14px;
+  border: 0;
+  border-bottom: 1px solid var(--line-soft);
+  background: var(--paper-dim);
+  cursor: pointer;
+  transition: background-color 0.15s ease-out;
+}
+
+.pdx-grupo > button:hover {
+  background: var(--sage-soft);
+}
+
+.pdx-grupo .icone {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: var(--forest-800);
+  color: #fff;
+}
+
+.pdx-grupo .nome {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--forest-800);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pdx-grupo .nome .tipo {
+  color: #7a5c12;
+}
+
+.pdx-grupo .conta {
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: var(--forest-800);
+  padding: 1px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Recusa fundamentada ---------- */
+
+/*
+ * Dourado na barra lateral, e deliberadamente sem vermelho nem ícone de alarme: nada falhou aqui.
+ * Pintar isto como avaria ensinava o utilizador a ler uma decisão correcta do motor como um
+ * defeito do portal.
+ */
+.pdx-recusa {
+  border-left: 3px solid var(--gold);
+}
+
+.pdx-recusa h2 {
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 6px;
+}
+
+.pdx-recusa .explicacao {
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--ink-soft);
+  max-width: 70ch;
+  margin: 0;
+}
+
+.pdx-confronto {
+  display: grid;
+  gap: var(--sp-3);
+  margin-top: var(--sp-4);
+}
+
+@media (min-width: 640px) {
+  .pdx-confronto {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.pdx-confronto > div {
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-sm);
+  background: var(--paper-dim);
+  padding: 12px 14px;
+}
+
+.pdx-confronto dt {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
+  margin-bottom: 4px;
+}
+
+.pdx-confronto dd {
+  font-size: 13px;
+  color: var(--ink);
+  margin: 0;
+}
+
+.pdx-recusa-nota {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  margin-top: 14px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--ink-faint);
+}
+
+.pdx-sugestao-porque {
+  display: block;
+  font-size: 12px;
+  color: var(--ink-faint);
+  margin-top: 2px;
+}
+
+/* ---------- Erro ---------- */
+
+.pdx-erro {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  margin-top: var(--sp-4);
+  border: 1px solid var(--ruby-soft);
+  border-radius: var(--radius-sm);
+  background: #fbf1ef;
+  padding: 12px var(--sp-4);
+  font-size: 13px;
+  color: #6d2321;
+}
+
+/* ---------- Ecrã de progresso ---------- */
+
+.pdx-progresso-anel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--paper-dim);
+  color: var(--forest-700);
+}
+
+.pdx-barra-progresso {
+  height: 6px;
+  max-width: 24rem;
+  margin: 0 auto 4px;
+  border-radius: 999px;
+  background: var(--line-soft);
+  overflow: hidden;
+}
+
+.pdx-barra-progresso > div {
+  height: 100%;
+  background: var(--forest-700);
+  transition: width 0.7s ease-out;
+}
+
+.pdx-calc-vivo {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  border: 1px solid var(--forest-600);
+  border-radius: 999px;
+  background: var(--sage-soft);
+  padding: 4px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--forest-800);
+  font-variant-numeric: tabular-nums;
+}
+
+.pdx-calc-vivo .unidade {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--forest-700);
+}
+
+.pdx-aviso-espera {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--gold-soft);
+  border-radius: 999px;
+  background: #fdf7e8;
+  padding: 6px 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #6b5310;
+}
+
+.pdx-passo {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--ink-faint);
+}
+
+.pdx-passo.feito {
+  color: var(--ink-soft);
+}
+
+.pdx-passo + .pdx-passo {
+  margin-top: 8px;
+}
+
+.pdx-caixa-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--paper-dim);
+  padding: 12px var(--sp-4);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.pdx-ponto {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--line);
+  transition: background-color 0.2s ease-out;
+}
+
+.pdx-ponto[data-activo="true"] {
+  background: var(--forest-700);
+}
+
+/* Barra de acção colada ao fundo do ecrã de nova análise. */
+/*
+ * O estado em cima, a acção a toda a largura por baixo.
+ *
+ * Antes eram lado a lado, e o botão que fecha o ecrã ficava do tamanho de um botão de barra,
+ * encostado à direita de uma barra larga: a peça mais importante da página era a mais pequena.
+ */
+.pdx-accoes-fundo {
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--sp-3);
+  margin-top: var(--sp-4);
+  padding: var(--sp-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--paper);
+  box-shadow: var(--shadow-md);
+}
+
+.pdx-accoes-fundo .pdx-btn-grande {
+  width: 100%;
+  justify-content: center;
+}
+
+/* Pronto a correr: ganha sombra própria, para se destacar do papel da barra. */
+.pdx-accoes-fundo .pdx-btn-primary:not(:disabled) {
+  box-shadow: var(--shadow-md);
+}
+
+.pdx-estado-pronto {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-faint);
+}
+
+.pdx-estado-pronto[data-ok="true"] {
+  color: var(--forest-800);
+}
+
+/* ---------- Marca e autoria ---------- */
+
+/* Logótipo no cabeçalho do relatório. O PNG tem fundo transparente, por isso assenta directamente
+   sobre o verde sem precisar de uma caixa branca à volta. */
+.pdx-marca {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.pdx-marca img {
+  width: 34px;
+  height: auto;
+  flex-shrink: 0;
+}
+
+.pdx-marca .pdx-hero-eyebrow {
+  margin: 0;
+}
+
+/*
+ * Selo de autoria. Fica no fim do relatório e vai dentro do que é exportado: um PDF que circula
+ * fora do portal tem de dizer sozinho de onde veio.
+ */
+.pdx-selo-autoria {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--card);
+  padding: 14px 18px;
+  margin-bottom: var(--sp-4);
+}
+
+.pdx-selo-autoria img {
+  width: 40px;
+  height: auto;
+  flex-shrink: 0;
+}
+
+.pdx-selo-autoria .texto {
+  min-width: 0;
+}
+
+.pdx-selo-autoria .titulo {
+  font-family: var(--serif);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--forest-800);
+  margin: 0;
+}
+
+.pdx-selo-autoria .sub {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  margin: 2px 0 0;
+}
+
+.pdx-selo-autoria .ref {
+  font-size: 11px;
+  color: var(--ink-faint);
+  margin: 4px 0 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Heatmap ---------- */
+
+/* Uma matriz larga rola dentro da própria caixa: o painel nunca empurra a página para o lado. */
+.pdx-heatmap-scroll {
+  overflow-x: auto;
+}
+
+.pdx-heatmap {
+  display: grid;
+  gap: 2px;
+  min-width: max-content;
+}
+
+.pdx-heatmap-canto {
+  background: transparent;
+}
+
+.pdx-heatmap-coluna,
+.pdx-heatmap-linha {
+  font-size: 10.5px;
+  color: var(--ink-soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Os rótulos das colunas ficam na diagonal só quando são muitos: na horizontal, seis nomes de
+   província já se sobrepõem, e na diagonal um nome curto fica desnecessariamente torto. */
+.pdx-heatmap-coluna {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  text-align: center;
+  padding-bottom: 4px;
+  font-weight: 600;
+  max-width: 92px;
+}
+
+.pdx-heatmap-linha {
+  display: flex;
+  align-items: center;
+  padding-right: 10px;
+  font-weight: 600;
+  color: var(--ink);
+  max-width: 200px;
+}
+
+.pdx-heatmap-celula {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* Ausência de valor não é um valor baixo: fica em papel liscado, fora da escala de cor. */
+.pdx-heatmap-celula.vazia {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--paper-dim),
+    var(--paper-dim) 4px,
+    var(--card) 4px,
+    var(--card) 8px
+  );
+}
+
+.pdx-heatmap-legenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-top: var(--sp-3);
+  font-size: 11px;
+  color: var(--ink-soft);
+}
+
+.pdx-heatmap-legenda span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pdx-heatmap-legenda i {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* A razão por que o relatório desenhou esta forma e não outra. Fica debaixo do gráfico, em voz
+   baixa: é contexto para quem pergunta "porquê um treemap aqui?", não um título. */
+.pdx-porque-forma {
+  margin: var(--sp-3) 0 0;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--ink-faint);
+}
+
+/* ---------- Lista de análises guardadas ---------- */
+
+.pdx-lista-analises {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  /* `minmax(0, 1fr)` e não `1fr`: um item de grelha não encolhe abaixo do seu conteúdo por
+     omissão, e uma pergunta longa esticava a linha para fora da janela em vez de cortar com
+     reticências. */
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--sp-2);
+}
+
+.pdx-lista-analises > li {
+  min-width: 0;
+}
+
+.pdx-analise-item {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-md);
+  background: var(--card);
+  padding: 14px var(--sp-5);
+  transition: border-color 0.18s ease-out, box-shadow 0.18s ease-out;
+}
+
+.pdx-analise-item:hover {
+  border-color: var(--forest-600);
+  box-shadow: var(--shadow-sm);
+}
+
+.pdx-analise-item .texto {
+  min-width: 0;
+}
+
+/* Inter, como o resto do portal. A serifa fica reservada ao título e à pergunta DENTRO de um
+   relatório, onde marca a voz da análise; numa lista de navegação é só uma fonte diferente. */
+.pdx-analise-item .pergunta {
+  display: block;
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pdx-analise-item .quando {
+  display: block;
+  font-size: 11.5px;
+  color: var(--ink-faint);
+  margin-top: 3px;
+}
+
+.pdx-analise-item .seta {
+  color: var(--ink-faint);
+  transition: color 0.18s ease-out;
+}
+
+.pdx-analise-item:hover .seta {
+  color: var(--forest-700);
+}
+
+.pdx-estado {
+  flex-shrink: 0;
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.pdx-estado.a-curso {
+  background: var(--gold-soft);
+  color: #6b5310;
+}
+
+.pdx-estado.pronta {
+  background: var(--sage-soft);
+  color: var(--forest-800);
+}
+
+.pdx-estado.recusada {
+  background: #fbf1ef;
+  color: #6d2321;
+}
+
+/* ---------- Funil ---------- */
+
+.pdx-funil {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.pdx-funil .etapa {
+  display: grid;
+  gap: 4px;
+}
+
+/* A largura é a proporção que sobrevive da primeira etapa: é essa a leitura da forma. */
+.pdx-funil .faixa {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  min-height: 44px;
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: width 0.3s ease-out;
+}
+
+.pdx-funil .faixa .nome {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pdx-funil .faixa .valor {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+.pdx-funil .nota {
+  font-size: 11.5px;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Diagrama de caixa ---------- */
+
+.pdx-caixas {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.pdx-caixa-linha,
+.pdx-caixas .caixa-linha {
+  display: grid;
+  grid-template-columns: minmax(0, 150px) minmax(0, 1fr) minmax(0, max-content);
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+@media (max-width: 640px) {
+  .pdx-caixas .caixa-linha {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+  }
+}
+
+.pdx-caixas .rotulo {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pdx-caixas .pista {
+  position: relative;
+  height: 34px;
+}
+
+.pdx-caixas .bigode {
+  position: absolute;
+  top: 50%;
+  height: 1px;
+  background: var(--ink-faint);
+  transform: translateY(-50%);
+}
+
+.pdx-caixas .ponta {
+  position: absolute;
+  top: 50%;
+  width: 1px;
+  height: 14px;
+  background: var(--ink-faint);
+  transform: translate(-50%, -50%);
+}
+
+/* O rectângulo onde vive metade das unidades. */
+.pdx-caixas .miolo {
+  position: absolute;
+  top: 50%;
+  height: 20px;
+  border: 1px solid var(--forest-600);
+  border-radius: 3px;
+  background: var(--sage-soft);
+  transform: translateY(-50%);
+}
+
+.pdx-caixas .mediana {
+  position: absolute;
+  top: 50%;
+  width: 3px;
+  height: 22px;
+  border-radius: 2px;
+  background: var(--forest-800);
+  transform: translate(-50%, -50%);
+}
+
+/* Fora do padrão: pontos, e não um prolongamento do bigode. São unidades concretas, e cada uma
+   diz o seu nome ao passar o rato. */
+.pdx-caixas .fora {
+  position: absolute;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--card);
+  border: 2px solid var(--terracotta);
+  transform: translate(-50%, -50%);
+}
+
+.pdx-caixas .numeros {
+  font-size: 11.5px;
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+
+.pdx-caixas .numeros strong {
+  color: var(--forest-800);
+}
+
+.pdx-caixas-legenda {
+  margin: var(--sp-2) 0 0;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--ink-faint);
+}
+
+/* ---------- Diagrama de cordas ---------- */
+
+.pdx-cordas {
+  display: flex;
+  justify-content: center;
+}
+
+.pdx-cordas svg {
+  max-width: 420px;
+}
+
+.pdx-cordas path {
+  transition: stroke-opacity 0.18s ease-out;
+}
+
+.pdx-cordas svg:hover path {
+  stroke-opacity: 0.2;
+}
+
+.pdx-cordas svg path:hover {
+  stroke-opacity: 0.9;
+}
+
+/* ---------- Legenda de símbolos proporcionais ---------- */
+
+/*
+ * Três círculos desenhados na mesma proporção que os do mapa, do maior para o menor. Não é uma
+ * escala de cor com outro nome: o que o leitor tem de calibrar aqui é o tamanho, e a única forma
+ * honesta de o mostrar é desenhá-lo.
+ */
+.pdx-legenda-tamanhos {
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+  padding-top: 4px;
+}
+
+.pdx-legenda-tamanhos .linha {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.pdx-legenda-tamanhos .disco {
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: #175a41;
+  opacity: 0.72;
+  border: 1.5px solid var(--paper);
+}
+
+.pdx-legenda-tamanhos .valor {
+  font-size: 11.5px;
+  color: var(--ink-soft);
+}
+
+
+/* ---------- Lista de registos nomeados ---------- */
+
+/*
+ * Uma lista de nomes não é prosa nem é tabela: é um inventário que se percorre com os olhos à
+ * procura de um nome conhecido. Por isso vai em colunas, com `column-width` em vez de um número
+ * fixo de colunas: cento e cinco escolas numa coluna só dariam uma página de scroll, e três
+ * colunas rígidas partiam-se num telemóvel. A largura manda, e o número de colunas é consequência.
+ */
+.pdx .pdx-lista-registos {
+  columns: 18rem auto;
+  column-gap: var(--sp-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pdx .pdx-lista-registos li {
+  /* Sem isto um nome longo parte-se ao meio entre o fim de uma coluna e o topo da seguinte. */
+  break-inside: avoid;
+  padding: 5px 0 5px var(--sp-3);
+  border-left: 2px solid var(--line);
+  margin-bottom: 2px;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--ink);
+}
+
+.pdx .pdx-lista-registos li:hover {
+  border-left-color: var(--gold);
+}
+
+
+/* ---------- Referencia do KPI ---------- */
+
+/*
+ * Fica abaixo da nota e um degrau mais discreta: e contexto, nao e a resposta. Se competisse com
+ * o valor, o cartao passava a ter dois numeros grandes e nenhum deles a mandar.
+ */
+.pdx .pdx-kpi-ref {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.pdx .pdx-kpi-barra {
+  position: relative;
+  display: block;
+  height: 3px;
+  margin-bottom: 5px;
+  border-radius: 2px;
+  background: var(--line);
+}
+
+/* A mediana e uma referencia, nao um valor: fica como risco fino, sem preenchimento. */
+.pdx .pdx-kpi-barra-mediana {
+  position: absolute;
+  top: -2px;
+  width: 1px;
+  height: 7px;
+  background: var(--ink-faint);
+  opacity: 0.55;
+}
+
+.pdx .pdx-kpi-barra-marca {
+  position: absolute;
+  top: -2.5px;
+  width: 8px;
+  height: 8px;
+  margin-left: -4px;
+  border-radius: 50%;
+  background: var(--forest-600);
+  border: 1.5px solid var(--card);
+}
+
+.pdx .pdx-kpi-atencao .pdx-kpi-barra-marca {
+  background: var(--terracotta);
+}
+
+
+/* ---------- Marca do parceiro no cabecalho ---------- */
+
+.pdx .pdx-hero-parceiro {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(250, 246, 236, 0.72);
+}
+
+/* Uma barra fina a separar as duas marcas: encostadas, pareciam uma so organizacao. */
+.pdx .pdx-hero-parceiro-risco {
+  display: block;
+  width: 1px;
+  height: 22px;
+  background: rgba(250, 246, 236, 0.28);
+}
+
+/*
+ * O logotipo do parceiro define-se pela ALTURA, nao pela largura.
+ * `.pdx-marca img` fixa 34px de largura para o nosso simbolo, que e quase quadrado. Um logotipo de
+ * parceiro e quase sempre uma faixa larga e baixa: forcado a 34px de largura ficava ilegivel. Com
+ * altura fixa e largura automatica, marcas de proporcoes diferentes alinham pela mesma linha de
+ * base, que e como um par de logotipos se compoe.
+ */
+.pdx .pdx-hero-parceiro img {
+  width: auto;
+  height: 26px;
+  max-width: 150px;
+  object-fit: contain;
+  /* Muitas destas marcas sao escuras e vivem aqui sobre o verde-floresta do cabecalho. */
+  background: rgba(250, 246, 236, 0.94);
+  border-radius: 4px;
+  padding: 3px 6px;
+}
+
+@media (max-width: 640px) {
+  .pdx .pdx-hero-parceiro {
+    /* Em ecra estreito a marca passa para a linha de baixo em vez de espremer o nome do portal. */
+    width: 100%;
+    margin-top: 8px;
+  }
+  .pdx .pdx-hero-parceiro-risco {
+    display: none;
+  }
+}
+
+/* ---------- Lista dentro de um popover ---------- */
+
+.pdx .pdx-popover-lista {
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 6px;
+  min-width: 232px;
+}
+
+.pdx .pdx-popover-lista button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--ink);
+  text-align: left;
+}
+
+.pdx .pdx-popover-lista button:hover {
+  background: var(--paper-dim);
+}
+
+.pdx .pdx-popover-lista img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.pdx .pdx-parceiro-vazio {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  border: 1px dashed var(--line);
+  border-radius: 4px;
+}
+
+
+/* ---------- Notas escritas por pessoas ---------- */
+
+/*
+ * A fronteira entre o que o motor mediu e o que alguem escreveu tem de ser visivel sem se ler nada.
+ * Por isso as notas nao usam o fundo de cartao dos paineis de resultado: usam o tom de papel, com
+ * uma barra lateral dourada. E a mesma distincao tipografica que uma citacao tem num relatorio
+ * impresso, e serve o mesmo proposito, que e dizer "isto nao e a voz do documento".
+ */
+.pdx .pdx-anotacoes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.pdx .pdx-anotacoes li {
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--paper-dim);
+  border-left: 3px solid var(--gold);
+  border-radius: 0 6px 6px 0;
+}
+
+.pdx .pdx-anotacoes li > p:first-child {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink);
+  /* Uma nota e texto escrito a mao: as quebras de linha de quem escreveu sao intencionais. */
+  white-space: pre-wrap;
+}
+
+.pdx .pdx-anotacao-pe {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0 0;
+  font-size: 11px;
+  color: var(--ink-faint);
+}
+
+.pdx .pdx-nota-erro {
+  color: var(--ruby);
+}
+
+
+/* ---------- Multiplos pequenos ---------- */
+
+/*
+ * `auto-fit` com um minimo, e nao um numero fixo de colunas: a serie pode ter tres momentos ou
+ * seis, e uma grelha rigida deixaria buracos numa e espremeria a outra. O minimo de 190px e o
+ * ponto abaixo do qual as provincias deixam de se distinguir umas das outras.
+ */
+.pdx .pdx-multiplos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: var(--sp-4);
+}
+
+.pdx .pdx-multiplos figure {
+  margin: 0;
+}
+
+.pdx .pdx-multiplos svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  background: var(--paper-dim);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-sm);
+}
+
+/*
+ * O rotulo do periodo e a unica coisa que distingue um mapa do seguinte, por isso e o unico
+ * elemento com peso tipografico nesta grelha. Numeros tabulares para os anos alinharem entre si.
+ */
+.pdx .pdx-multiplos figcaption {
+  margin-top: 6px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.pdx .pdx-multiplos-legenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-4);
+  margin-top: var(--sp-4);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--line-soft);
+  font-size: 11px;
+  color: var(--ink-soft);
+}
+
+.pdx .pdx-multiplos-legenda > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pdx .pdx-multiplos-legenda .chave {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.pdx .pdx-multiplos-legenda .intervalo {
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+
+/* ---------- O que mudou desde a ultima corrida ---------- */
+
+.pdx .pdx-mudancas {
+  display: grid;
+  gap: 2px;
+}
+
+/*
+ * Tres colunas com o valor a alinhar: a do meio leva `1fr` para as setas ficarem todas na mesma
+ * vertical, que e o que permite percorrer a lista de cima a baixo sem ler cada linha.
+ */
+.pdx .pdx-mudanca {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: var(--sp-3);
+  padding: 7px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.pdx .pdx-mudanca:nth-child(odd) {
+  background: var(--paper-dim);
+}
+
+.pdx .pdx-mudanca .nome {
+  color: var(--ink);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pdx .pdx-mudanca .valores,
+.pdx .pdx-mudanca .delta {
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+/* A seta diz a direccao e NAO o juizo: nao ha verde nem vermelho, pela mesma razao que a
+   referencia do KPI tambem nao tem. Mais escolas e bom, mais casos de colera e o contrario. */
+.pdx .pdx-mudanca .delta {
+  text-align: right;
+  white-space: nowrap;
+}
+
+
+/* ---------- Painel do parceiro ---------- */
+
+.pdx .pdx-painel-grelha {
+  display: grid;
+  /* `minmax(0, ...)` e nao `minmax(320px, ...)` na primeira posicao: sem o zero, um titulo longo
+     empurra o cartao para alem da coluna e a pagina ganha barra horizontal. */
+  grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr));
+  gap: var(--sp-4);
+}
+
+.pdx .pdx-painel-resposta {
+  margin: 0 0 var(--sp-4);
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink);
+}
+
+.pdx .pdx-painel-numeros {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  gap: var(--sp-3);
+  padding: var(--sp-3) 0;
+  border-top: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.pdx .pdx-painel-numeros > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pdx .pdx-painel-numeros .valor {
+  font-family: var(--serif);
+  font-size: 22px;
+  line-height: 1.1;
+  color: var(--forest-800, var(--ink));
+  font-variant-numeric: tabular-nums;
+  /* Uma percentagem nunca deve partir-se ao meio entre o numero e o simbolo. */
+  white-space: nowrap;
+}
+
+.pdx .pdx-painel-numeros .rotulo {
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--ink-faint);
+}
+
+.pdx .pdx-painel-estado {
+  margin: var(--sp-3) 0 0;
+  font-size: 11px;
+  color: var(--ink-faint);
+}
+
+/*
+ * O aviso de mudanca e sobrio de proposito: um ponto e uma linha, sem cor de alarme. Um painel que
+ * grita a cada variacao ensina as pessoas a ignora-lo, e a partir dai a variacao que interessava
+ * passa tambem despercebida.
+ */
+.pdx .pdx-painel-mudou {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.pdx .pdx-painel-mudou::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--gold);
+  flex-shrink: 0;
+}
+
+.pdx .pdx-painel-parceiro {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: var(--sp-3) 0 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.pdx .pdx-painel-parceiro img {
+  width: auto;
+  height: 24px;
+  max-width: 140px;
+  object-fit: contain;
+}

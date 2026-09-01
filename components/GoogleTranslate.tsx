@@ -64,14 +64,26 @@ function patchDomForTranslateConflicts() {
   }
 }
 
+// Zonas autenticadas da app (não o portal público de catálogo): trocam de conteúdo reescrevendo
+// sub-árvores inteiras do DOM sem recarregar a página. Se a Google reescrever nós de texto no meio
+// dessa troca, o React pode reconciliar o fibre errado com uma árvore de hooks diferente e rebentar
+// com "Rendered more/fewer hooks than during the previous render" (erros #310/#300) — visto ao vivo
+// em produção em /dashboard, /dashboard/ia-utilizacao e /admin. A tradução pública nunca foi pensada
+// para estas zonas, por isso desliga-se ali por completo em vez de tentar tornar mais uma interacção
+// tolerante ao widget.
+const ZONAS_SEM_TRADUCAO = ['/admin', '/dashboard', '/perfil', '/analise', '/ai-insights']
+
 export function GoogleTranslate() {
   const pathname = usePathname()
+  const desligadoNoAdmin = !!pathname && ZONAS_SEM_TRADUCAO.some((zona) => pathname.startsWith(zona))
 
   useEffect(() => {
+    if (desligadoNoAdmin) return
     patchDomForTranslateConflicts()
-  }, [])
+  }, [desligadoNoAdmin])
 
   useEffect(() => {
+    if (desligadoNoAdmin) return
     if (window.google?.translate || document.getElementById('google-translate-script')) return
 
     window.googleTranslateElementInit = () => {
@@ -90,16 +102,18 @@ export function GoogleTranslate() {
     script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit'
     script.async = true
     document.body.appendChild(script)
-  }, [])
+  }, [desligadoNoAdmin])
 
   useEffect(() => {
+    if (desligadoNoAdmin) return
     // Pequeno atraso para dar tempo ao React de terminar de montar o conteúdo da nova rota
     // antes de pedir à Google para o varrer.
     const timeout = window.setTimeout(retriggerTranslation, 300)
     return () => window.clearTimeout(timeout)
-  }, [pathname])
+  }, [pathname, desligadoNoAdmin])
 
   useEffect(() => {
+    if (desligadoNoAdmin) return
     // Conteúdo que aparece sem mudar de rota (menus, modais, cards carregados por fetch) também
     // fica por traduzir, porque a Google só varre o DOM no carregamento e nas trocas de rota
     // acima. Observa-se o DOM e, sempre que aparecem nós novos que não vieram da própria Google,
@@ -133,9 +147,10 @@ export function GoogleTranslate() {
       observer.disconnect()
       if (debounceId) window.clearTimeout(debounceId)
     }
-  }, [])
+  }, [desligadoNoAdmin])
 
   useEffect(() => {
+    if (desligadoNoAdmin) return
     // O widget da Google reafirma a barra de topo e o deslocamento do <body>
     // periodicamente; o CSS sozinho não é suficiente, por isso reforça-se via JS.
     const enforce = () => {
@@ -161,7 +176,7 @@ export function GoogleTranslate() {
       observer.disconnect()
       window.clearInterval(interval)
     }
-  }, [])
+  }, [desligadoNoAdmin])
 
   return <div id="google_translate_element" className="pd-google-translate-hidden" aria-hidden="true" />
 }

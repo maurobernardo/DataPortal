@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
-import { Menu, X, Database, FileText, BarChart3, Map, MapPinned, Home, LogIn, UserPlus, LayoutGrid } from 'lucide-react'
+import { Menu, X, Database, FileText, Map, MapPinned, Home, LogIn, UserPlus, LayoutGrid, Search, ShieldCheck, PlusCircle, ArrowRight } from 'lucide-react'
 import Image from 'next/image'
 import { NavUserMenu } from '@/components/NavUserMenu'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
@@ -35,11 +35,11 @@ export function Navigation() {
   }, [])
 
   useEffect(() => {
-    // 1240px deixava uma faixa larga (~1241-1480px, larguras de portátil muito comuns como
-    // 1280/1366) onde os rótulos completos não cabiam mas o modo compacto ainda não tinha
-    // activado — o texto ficava cortado a meio por "text-overflow: ellipsis" em vez de mostrar a
-    // versão curta. 1480px cobre essa faixa.
-    const mq = window.matchMedia('(max-width: 1480px)')
+    // O cabeçalho completo (logo + links + AI + idioma + Entrar) precisa de ~1360px para caber
+    // sem cortar nada (.pd-nav-inner tem max-width: 1360px). 1400px dá uma margem pequena e evita
+    // tanto o corte a meio (ellipsis) em larguras de portátil comuns como 1280/1366px, como o modo
+    // compacto activar cedo demais e deixar espaço vazio no cabeçalho em larguras maiores.
+    const mq = window.matchMedia('(max-width: 1400px)')
     const update = () => setCompactNav(mq.matches)
     update()
     mq.addEventListener('change', update)
@@ -94,7 +94,6 @@ export function Navigation() {
     { href: '/', label: 'Início', compactLabel: 'Início', icon: Home },
     { href: '/dados-espaciais', label: 'Geoespaciais', compactLabel: 'Geo', icon: Map },
     { href: '/dados-alfanumericos', label: 'Alfanuméricos', compactLabel: 'Alfanum.', icon: Database },
-    { href: '/dashboards-alfanumericos', label: 'Dashboards', compactLabel: 'Dash.', icon: BarChart3 },
     { href: '/maps', label: 'Mapas Inteligentes', compactLabel: 'Mapas', icon: MapPinned },
     { href: '/relatorios', label: 'Relatórios', compactLabel: 'Relat.', icon: FileText },
     { href: '/servicos', label: 'Serviços', compactLabel: 'Serviços', icon: LayoutGrid },
@@ -120,14 +119,38 @@ export function Navigation() {
 
           <div className="pd-nav-right">
             <div className="pd-nav-links">
-              {navLinks.slice(0, 3).map(renderNavLink)}
-              <Link href="/ai-insights" className="pd-nav-link-ai notranslate" title="AI Insights">
-                AI
-                <span className="pd-pill-new">NEW</span>
-              </Link>
-              {navLinks.slice(3).map(renderNavLink)}
+              {navLinks.map(renderNavLink)}
+              <div className="pd-nav-ai-wrap">
+                <Link href="/ai-insights" className="pd-nav-link-ai notranslate">
+                  AI Insights
+                  <span className="pd-pill-new">NEW</span>
+                </Link>
+                <div className="pd-nav-ai-dropdown" role="menu">
+                  <div className="pd-nav-ai-dropdown-eyebrow">Ferramentas de IA Insights</div>
+                  <Link href="/analise/nova" className="pd-nav-ai-dropdown-link" role="menuitem">
+                    <span className="pd-nav-ai-dropdown-icon">
+                      <PlusCircle className="size-4" aria-hidden />
+                    </span>
+                    <span className="pd-nav-ai-dropdown-text">
+                      <span className="pd-nav-ai-dropdown-title">Nova Análise</span>
+                      <span className="pd-nav-ai-dropdown-desc">Faça uma pergunta sobre os dados</span>
+                    </span>
+                    <ArrowRight className="size-4 pd-nav-ai-dropdown-arrow" aria-hidden />
+                  </Link>
+                </div>
+              </div>
             </div>
             <div className="pd-nav-actions" aria-label="Acções">
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new Event('pd:open-search'))}
+                className="pd-nav-cmdk-btn"
+                aria-label="Pesquisar em todo o portal"
+                title="Pesquisar em todo o portal"
+              >
+                <Search className="size-3.5" aria-hidden />
+                <kbd>⌘K</kbd>
+              </button>
               {/* Sempre compacto no cabeçalho (só ícone / só iniciais): o nome, email e idioma por
                   extenso continuam visíveis no painel que abre ao clicar — o cabeçalho não precisa
                   de repetir essa informação, só de dar acesso a ela. */}
@@ -162,7 +185,7 @@ export function Navigation() {
         </div>
 
         <div className={`pd-mobile-menu${mobileMenuOpen ? ' open' : ''}`}>
-          {navLinks.slice(0, 3).map(({ href, label, icon: Icon }) => {
+          {navLinks.map(({ href, label, icon: Icon }) => {
             const active = isNavLinkActive(pathname, href)
             return (
               <Link
@@ -185,21 +208,14 @@ export function Navigation() {
             AI Insights
             <span className="pd-pill-new">NEW</span>
           </Link>
-          {navLinks.slice(3).map(({ href, label, icon: Icon }) => {
-            const active = isNavLinkActive(pathname, href)
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={`pd-mobile-link${active ? ' active' : ''}`}
-                aria-current={active ? 'page' : undefined}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <Icon size={18} strokeWidth={2} />
-                {label}
-              </Link>
-            )
-          })}
+          <Link
+            href="/abordagem-etica"
+            className="pd-mobile-link"
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            <ShieldCheck size={18} strokeWidth={2} />
+            Abordagem ética de dados
+          </Link>
 
           <div className="pd-mobile-divider" />
 

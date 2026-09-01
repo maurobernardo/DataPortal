@@ -13,10 +13,20 @@ const app = next({ dev: false, dir: __dirname })
 const handle = app.getRequestHandler()
 
 app.prepare().then(() => {
-  createServer((req, res) => {
+  const server = createServer((req, res) => {
     const parsedUrl = parse(req.url, true)
     handle(req, res, parsedUrl)
-  }).listen(process.env.PORT || 3000, () => {
+  })
+
+  // Por omissão o Node corta qualquer pedido aos 5 minutos (requestTimeout), mesmo com dados a
+  // fluir — a análise por IA (SSE, pode legitimamente levar 10+ minutos) cai a meio por causa
+  // disto, sem relação nenhuma com maxDuration da rota (isso só tem efeito na Vercel). Desligado
+  // aqui porque este servidor corre atrás de um proxy do cPanel que já impõe o seu próprio limite.
+  server.requestTimeout = 0
+  server.headersTimeout = 65000
+  server.keepAliveTimeout = 65000
+
+  server.listen(process.env.PORT || 3000, () => {
     console.log('> Server ready')
   })
 })

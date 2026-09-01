@@ -8,9 +8,11 @@ import { AlfCatalogToolbar } from '@/components/alf/AlfCatalogToolbar'
 import { AlfInfiniteList, AlfEmptyState } from '@/components/alf/AlfInfiniteList'
 import { AlfDataDetailPanel } from '@/components/alf/AlfDataDetailPanel'
 import { BatchActionBar } from '@/components/geo/BatchActionBar'
+import { AlfCompareModal } from '@/components/alf/AlfCompareModal'
 import { pickMostPopular } from '@/components/geo/geo-utils'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { RecentlyViewedRail } from '@/components/RecentlyViewedRail'
+import { EticaBadgeCatalogo } from '@/components/EticaBadgeCatalogo'
 import type { GeoDataset } from '@/components/geo/types'
 
 type Category = {
@@ -43,6 +45,7 @@ export function AlfCatalogClient({
   const [favoriteIds, setFavoriteIds] = useState<Set<number>>(new Set())
   const [selectionMode, setSelectionMode] = useState(false)
   const [selectedForBatch, setSelectedForBatch] = useState<Set<number>>(new Set())
+  const [compareOpen, setCompareOpen] = useState(false)
 
   useEffect(() => {
     setSelected((prev) => {
@@ -91,7 +94,9 @@ export function AlfCatalogClient({
 
   return (
     <>
-      <section className="geo-catalog-header alf-catalog-header">
+      <section className="geo-catalog-header alf-catalog-header pd-photo-hero">
+        <div className="pd-photo-hero-bg" style={{ backgroundImage: "url('/images/fundo8.webp')" }} aria-hidden />
+        <div className="pd-photo-hero-scrim" aria-hidden />
         <div className="geo-ch-inner">
           <Breadcrumbs
             items={[
@@ -101,7 +106,10 @@ export function AlfCatalogClient({
           />
           <div className="geo-ch-row">
             <div>
-              <div className="geo-ch-eyebrow alf-ch-eyebrow">Conjuntos de dados tabulares</div>
+              <div className="geo-ch-eyebrow-row">
+                <div className="geo-ch-eyebrow alf-ch-eyebrow">Conjuntos de dados tabulares</div>
+                <EticaBadgeCatalogo />
+              </div>
               <h1 className="geo-ch-title">Dados Alfanuméricos</h1>
               <p className="geo-ch-lede">
                 Explore séries temporais, indicadores sectoriais e registos administrativos em CSV, Excel,
@@ -213,6 +221,8 @@ export function AlfCatalogClient({
                 <BatchActionBar
                   selectedIds={Array.from(selectedForBatch)}
                   onClear={() => setSelectedForBatch(new Set())}
+                  onCompare={() => setCompareOpen(true)}
+                  compareLabel="Comparar"
                 />
               )}
             </div>
@@ -223,6 +233,10 @@ export function AlfCatalogClient({
           </div>
         </main>
       </div>
+
+      {compareOpen && selectedForBatch.size >= 2 && (
+        <AlfCompareModal ids={Array.from(selectedForBatch)} onClose={() => setCompareOpen(false)} />
+      )}
     </>
   )
 }

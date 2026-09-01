@@ -135,7 +135,7 @@ export const MAP_CATALOG: PublicMapDashboard[] = [
       'Dashboard analítico da produção de cereais por província: mapa coroplético com símbolos proporcionais, mistura de culturas, radar comparando as rondas do Inquérito Agrário Integrado e ranking de ganhos e perdas entre rondas consecutivas.',
     coverage: 'Moçambique: 10 províncias, 12 rondas do IAI/TIA (2002–2023)',
     category: 'Agricultura',
-    badges: ['10 Províncias', '12 Rondas 2002–2023', '4 Culturas'],
+    badges: [],
     kind: 'cereals',
     experienceType: 'map-dashboard',
     highlights: [

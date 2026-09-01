@@ -1,5 +1,6 @@
 import { Suspense } from 'react'
 import { db, findDatasets } from '@/lib/db'
+import { obterCoberturaGeograficaPorProvincia } from '@/lib/cobertura-geografica'
 import { GeoCatalogClient } from '@/components/geo/GeoCatalogClient'
 import '../geo-catalog.css'
 
@@ -113,7 +114,9 @@ async function getData(searchParams: { [key: string]: string | string[] | undefi
     })(),
   ])
 
-  return { datasets, categories, totalCount, stats, availableFormats, availableSources, availableYears }
+  const coberturaGeografica = await obterCoberturaGeograficaPorProvincia().catch(() => null)
+
+  return { datasets, categories, totalCount, stats, availableFormats, availableSources, availableYears, coberturaGeografica }
 }
 
 export default async function DadosEspaciaisPage({
@@ -121,7 +124,7 @@ export default async function DadosEspaciaisPage({
 }: {
   searchParams: { [key: string]: string | string[] | undefined }
 }) {
-  const { datasets, categories, totalCount, stats, availableFormats, availableSources, availableYears } =
+  const { datasets, categories, totalCount, stats, availableFormats, availableSources, availableYears, coberturaGeografica } =
     await getData(searchParams)
 
   return (
@@ -136,6 +139,7 @@ export default async function DadosEspaciaisPage({
           availableSources={availableSources}
           availableYears={availableYears}
           searchParams={searchParams}
+          coberturaGeografica={coberturaGeografica}
         />
       </Suspense>
     </div>

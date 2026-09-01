@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { FileText, FolderTree, MapPin, Calendar, Package, Database, FileCode, Tag, Save, X, Edit, Trash2, Loader2, Plus, Upload, CheckCircle2, Globe, XCircle } from 'lucide-react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { FileText, FolderTree, MapPin, Calendar, Package, Database, FileCode, Tag, Save, X, Edit, Trash2, Loader2, Plus, Upload, CheckCircle2, Globe, XCircle, ScanSearch, AlertTriangle } from 'lucide-react'
+import { DatasetInteligenciaPainel } from '@/components/admin/DatasetInteligenciaPainel'
 
 interface Category {
   id: number
@@ -29,6 +30,7 @@ interface Dataset {
 
 export function DatasetForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [categories, setCategories] = useState<Category[]>([])
   const [datasets, setDatasets] = useState<Dataset[]>([])
   const [loading, setLoading] = useState(true)
@@ -60,6 +62,121 @@ export function DatasetForm() {
   })
   const [editingId, setEditingId] = useState<number | null>(null)
 
+  // Pré-preenchimento por IA e aviso de duplicados (PLANO-INTELIGENCIA-PORTAL.md): sempre sob
+  // pedido explícito do admin — nunca corre sozinho ao digitar ou ao fazer upload.
+  const [aSugerir, setASugerir] = useState(false)
+  const [aVerificarSemelhantes, setAVerificarSemelhantes] = useState(false)
+  const [datasetsSemelhantes, setDatasetsSemelhantes] = useState<
+    { id: number; title: string; categoryName: string | null; source: string | null; similaridade: number }[]
+  >([])
+
+  // Verificação de qualidade já ao cadastrar (PLANO-INTELIGENCIA-PORTAL.md): antes só existia
+  // depois de guardar, ao voltar a abrir o dataset em "editar" — o admin não devia ter de guardar
+  // primeiro só para descobrir que o ficheiro tem problemas.
+  const [aVerificarQualidadePrevia, setAVerificarQualidadePrevia] = useState(false)
+  const [qualidadePrevia, setQualidadePrevia] = useState<{
+    nivel: 'ok' | 'aviso' | 'critico'
+    avisos: string[]
+  } | null>(null)
+
+  async function verificarQualidadePrevia() {
+    if (!formData.filePath) return
+    setAVerificarQualidadePrevia(true)
+    setQualidadePrevia(null)
+    try {
+      const res = await fetch('/api/admin/datasets/verificar-qualidade-previa', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filePath: formData.filePath,
+          dataType: formData.dataType,
+          description: formData.description,
+          source: formData.source,
+          year: formData.year,
+          keywords: formData.keywords,
+        }),
+      })
+      const dados = await res.json()
+      if (!res.ok) throw new Error(dados.error || 'Falha ao verificar qualidade')
+      setQualidadePrevia(dados)
+    } catch (erro: any) {
+      showFeedback(erro?.message || 'Erro ao verificar qualidade', 'error')
+    } finally {
+      setAVerificarQualidadePrevia(false)
+    }
+  }
+
+  async function sugerirComIA() {
+    if (!formData.filePath) return
+    setASugerir(true)
+    try {
+      const res = await fetch('/api/admin/datasets/sugerir-metadados', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filePath: formData.filePath,
+          dataType: formData.dataType,
+          titulo: formData.title,
+          categoryId: formData.categoryId || null,
+          source: formData.source,
+        }),
+      })
+      const dados = await res.json()
+      if (!res.ok) throw new Error(dados.error || 'Falha ao gerar sugestões')
+
+      const sugestao = dados.sugestao || {}
+      setFormData((prev) => {
+        const categoriaCorrespondente = sugestao.categoriaSugerida
+          ? categories.find(
+              (c) => c.dataType === prev.dataType && c.name.toLowerCase() === String(sugestao.categoriaSugerida).toLowerCase()
+            )
+          : null
+        return {
+          ...prev,
+          description: sugestao.descricao || prev.description,
+          keywords: sugestao.palavrasChave || prev.keywords,
+          coverage: sugestao.coberturaSugerida || prev.coverage,
+          geometry: sugestao.geometriaSugerida || prev.geometry,
+          minimumUnit: sugestao.unidadeMinimaSugerida || prev.minimumUnit,
+          categoryId: categoriaCorrespondente ? String(categoriaCorrespondente.id) : prev.categoryId,
+        }
+      })
+      setDatasetsSemelhantes(Array.isArray(dados.semelhantes) ? dados.semelhantes : [])
+      showFeedback('Sugestões da IA aplicadas; reveja antes de guardar.', 'success')
+    } catch (erro: any) {
+      showFeedback(erro?.message || 'Erro ao gerar sugestões com IA', 'error')
+    } finally {
+      setASugerir(false)
+    }
+  }
+
+  async function verificarSemelhantesAoSairDoTitulo() {
+    if (!formData.title.trim() || formData.title.trim().length < 4) {
+      setDatasetsSemelhantes([])
+      return
+    }
+    setAVerificarSemelhantes(true)
+    try {
+      const res = await fetch('/api/admin/datasets/verificar-semelhantes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          titulo: formData.title,
+          dataType: formData.dataType,
+          categoryId: formData.categoryId || null,
+          source: formData.source,
+          excluirId: editingId,
+        }),
+      })
+      const dados = await res.json().catch(() => null)
+      setDatasetsSemelhantes(Array.isArray(dados?.semelhantes) ? dados.semelhantes : [])
+    } catch {
+      /* aviso best-effort: falhar em silêncio não deve impedir o resto do formulário */
+    } finally {
+      setAVerificarSemelhantes(false)
+    }
+  }
+
   function showFeedback(message: string, type: 'success' | 'error') {
     setToastMessage(message);
     setToastType(type);
@@ -73,6 +190,20 @@ export function DatasetForm() {
   useEffect(() => {
     loadData()
   }, [])
+
+  // Preenchimento vindo da página "Sugestões de Datasets": abre o formulário já com título, tipo e
+  // palavras-chave sugeridos, para não obrigar a copiar isto à mão de outra página.
+  useEffect(() => {
+    const sugerirTitulo = searchParams?.get('sugerirTitulo')
+    if (!sugerirTitulo) return
+    setFormData((anterior) => ({
+      ...anterior,
+      title: sugerirTitulo,
+      description: searchParams.get('sugerirDescricao') || anterior.description,
+      keywords: searchParams.get('sugerirPalavrasChave') || anterior.keywords,
+      dataType: searchParams.get('sugerirTipo') || anterior.dataType,
+    }))
+  }, [searchParams])
 
   useEffect(() => {
     // Recarregar categorias quando o dataType mudar
@@ -241,7 +372,8 @@ export function DatasetForm() {
       '.zip': 'Shapefile',
       '.xlsx': 'Excel',
       '.xls': 'Excel',
-      '.json': 'JSON',
+      '.geojson': 'GeoJSON',
+      '.json': formData.dataType === 'geoespacial' ? 'GeoJSON' : 'JSON',
       '.xml': 'XML',
     }
     return formatMap[ext] || (formData.dataType === 'geoespacial' ? 'Shapefile' : 'CSV')
@@ -269,6 +401,7 @@ export function DatasetForm() {
     setSubmitting(true)
 
     try {
+      const wasCreating = !editingId
       const url = editingId
         ? `/api/datasets/${editingId}`
         : '/api/datasets'
@@ -280,31 +413,45 @@ export function DatasetForm() {
         body: JSON.stringify(formData),
       })
 
+      const savedDataset = await response.json()
+
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Erro ao salvar dataset')
+        throw new Error(savedDataset.error || 'Erro ao salvar dataset')
       }
-      
+
       router.refresh()
       await loadData(currentPage)
       showFeedback('Dataset salvo com sucesso!', 'success')
-      setFormData({
-        title: '',
-        description: '',
-        categoryId: '',
-        source: '',
-        year: new Date().getFullYear(),
-        format: formData.dataType === 'geoespacial' ? 'Shapefile' : 'CSV',
-        fileSize: '',
-        filePath: '',
-        geometry: '',
-        coverage: '',
-        minimumUnit: '',
-        keywords: '',
-        dataType: 'geoespacial',
-  })
-      setUploadedFile(null)
-      setEditingId(null)
+
+      if (wasCreating && savedDataset?.id) {
+        // Entra logo em modo de edição do dataset recém-criado: é isso que mostra o painel de
+        // Inteligência (resumo automático por IA, verificação de qualidade, certificação,
+        // histórico) — antes disto, esse painel só aparecia se o admin voltasse a abrir o dataset
+        // manualmente na lista, o que dava a impressão de que a geração por IA "não existia" ao
+        // cadastrar.
+        setEditingId(savedDataset.id)
+      } else {
+        // Mantém o tipo de dados (geoespacial/alfanumérico) que o admin tinha seleccionado: quem
+        // está a cadastrar vários datasets alfanuméricos seguidos não devia ver o formulário voltar
+        // a "geoespacial" a cada envio.
+        setFormData({
+          title: '',
+          description: '',
+          categoryId: '',
+          source: '',
+          year: new Date().getFullYear(),
+          format: formData.dataType === 'geoespacial' ? 'Shapefile' : 'CSV',
+          fileSize: '',
+          filePath: '',
+          geometry: '',
+          coverage: '',
+          minimumUnit: '',
+          keywords: '',
+          dataType: formData.dataType,
+        })
+        setUploadedFile(null)
+        setEditingId(null)
+      }
     } catch (error: any) {
       console.error('Error saving dataset:', error)
       showFeedback(error.message || 'Erro ao salvar dataset', 'error')
@@ -425,10 +572,30 @@ export function DatasetForm() {
                 type="text"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                onBlur={verificarSemelhantesAoSairDoTitulo}
                 required
                 placeholder="Digite o título do dataset..."
                 className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-300 bg-white hover:border-gray-300"
               />
+              {aVerificarSemelhantes && (
+                <p className="mt-1.5 text-xs text-gray-400 flex items-center gap-1.5">
+                  <Loader2 className="w-3 h-3 animate-spin" /> A verificar datasets parecidos...
+                </p>
+              )}
+              {!aVerificarSemelhantes && datasetsSemelhantes.length > 0 && (
+                <div className="mt-2 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                  <p className="text-xs font-semibold text-amber-800 mb-1.5">
+                    Já existem datasets parecidos com este título; confirme que não é duplicado:
+                  </p>
+                  <ul className="space-y-1">
+                    {datasetsSemelhantes.map((d) => (
+                      <li key={d.id} className="text-xs text-amber-700">
+                        • {d.title} {d.categoryName ? `(${d.categoryName})` : ''}: {Math.round(d.similaridade * 100)}% de semelhança
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
 
             <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
@@ -511,6 +678,7 @@ export function DatasetForm() {
                     <>
                       <option value="Shapefile">Shapefile</option>
                       <option value="GeoTiff">GeoTiff</option>
+                      <option value="GeoJSON">GeoJSON</option>
                       <option value="Shapefile/Csv">Shapefile/Csv</option>
                     </>
                   ) : (
@@ -566,6 +734,71 @@ export function DatasetForm() {
                       Remover
                     </button>
                   </div>
+                  <button
+                    type="button"
+                    onClick={sugerirComIA}
+                    disabled={aSugerir}
+                    className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white border-2 border-green-300 text-green-700 rounded-lg hover:bg-green-50 transition text-sm font-semibold disabled:opacity-60"
+                  >
+                    {aSugerir ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" /> A ler o ficheiro e a gerar sugestões...
+                      </>
+                    ) : (
+                      <>Sugerir descrição, categoria e palavras-chave com IA</>
+                    )}
+                  </button>
+                  <p className="mt-1.5 text-[11px] text-gray-400">
+                    Lê uma amostra do ficheiro e preenche um rascunho; reveja e corrija antes de guardar.
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={verificarQualidadePrevia}
+                    disabled={aVerificarQualidadePrevia}
+                    className="mt-2 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white border-2 border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition text-sm font-semibold disabled:opacity-60"
+                  >
+                    {aVerificarQualidadePrevia ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" /> A verificar o ficheiro...
+                      </>
+                    ) : (
+                      <>
+                        <ScanSearch className="w-4 h-4" /> Verificar qualidade do ficheiro
+                      </>
+                    )}
+                  </button>
+                  {qualidadePrevia && (
+                    <div
+                      className={`mt-2 rounded-lg border px-3.5 py-3 text-xs ${
+                        qualidadePrevia.nivel === 'ok'
+                          ? 'text-green-700 bg-green-50 border-green-200'
+                          : qualidadePrevia.nivel === 'aviso'
+                            ? 'text-amber-700 bg-amber-50 border-amber-200'
+                            : 'text-red-700 bg-red-50 border-red-200'
+                      }`}
+                    >
+                      <div className="flex items-center gap-1.5 font-bold mb-1">
+                        {qualidadePrevia.nivel === 'ok' ? (
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                        ) : (
+                          <AlertTriangle className="w-3.5 h-3.5" />
+                        )}
+                        {qualidadePrevia.nivel === 'ok'
+                          ? 'Sem problemas encontrados'
+                          : qualidadePrevia.nivel === 'aviso'
+                            ? 'Avisos'
+                            : 'Problemas críticos'}
+                      </div>
+                      {qualidadePrevia.avisos.length > 0 && (
+                        <ul className="space-y-1 list-disc list-inside">
+                          {qualidadePrevia.avisos.map((a, i) => (
+                            <li key={i}>{a}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="relative">
@@ -750,6 +983,8 @@ export function DatasetForm() {
           </form>
         </div>
       </div>
+
+      {editingId && <DatasetInteligenciaPainel datasetId={editingId} />}
 
       {/* Lista de Datasets */}
       <div className="animate-slide-up" style={{ animationDelay: '0.2s' }}>

@@ -3,7 +3,7 @@
 .rpt-page {
   font-family: var(--pd-font-sans);
   color: var(--pd-ink-700);
-  background: linear-gradient(180deg, #f8faf8 0%, var(--pd-surface-50) 100%);
+  background: #f8faf8;
   min-height: 100vh;
 }
 
@@ -19,16 +19,20 @@
 
 /* Hero */
 .rpt-hero {
-  background: linear-gradient(180deg, var(--pd-surface-0), #f2f7f3);
-  border-bottom: 1px solid #E2E8E5;
-  padding: 28px 0 24px;
+  position: relative;
+  border-bottom: none;
+  padding: 44px 0 36px;
+  min-height: 260px;
+  display: flex;
+  align-items: center;
 }
 @media (min-width: 768px) {
-  .rpt-hero { padding: 36px 0 28px; }
+  .rpt-hero { padding: 48px 0 40px; }
 }
 @media (min-width: 1024px) {
-  .rpt-hero { padding: 40px 0 32px; }
+  .rpt-hero { padding: 52px 0 44px; }
 }
+.rpt-hero > .rpt-inner { position: relative; z-index: 2; width: 100%; }
 
 .rpt-eyebrow {
   display: inline-flex;
@@ -38,12 +42,12 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--pd-green-700);
+  color: #EAF5EE;
   margin-bottom: 12px;
   padding: 6px 12px;
   border-radius: 100px;
-  background: var(--pd-green-50);
-  border: 1px solid #CFE3D6;
+  background: rgba(255,255,255,.12);
+  border: 1px solid rgba(255,255,255,.24);
 }
 
 .rpt-eyebrow::before { content: '◧'; font-size: 13px; }
@@ -52,16 +56,16 @@
   font-size: clamp(32px, 5vw, 44px);
   font-weight: 800;
   letter-spacing: -0.02em;
-  color: var(--pd-ink-900);
+  color: #fff;
   line-height: 1.08;
   margin-bottom: 12px;
 }
 
-.rpt-hero h1 .accent { color: var(--pd-green-700); }
+.rpt-hero h1 .accent { color: #7FD7A4; }
 
 .rpt-hero-lede {
   font-size: 17px;
-  color: var(--pd-ink-500);
+  color: rgba(255,255,255,.82);
   max-width: 620px;
   line-height: 1.55;
   margin-bottom: 24px;
@@ -72,7 +76,7 @@
   grid-template-columns: 1fr;
   gap: 12px;
   padding-top: 16px;
-  border-top: 1px solid #E2E8E5;
+  border-top: 1px solid rgba(255,255,255,.2);
 }
 @media (min-width: 480px) {
   .rpt-hero-stats {
@@ -82,30 +86,30 @@
   }
 }
 @media (min-width: 640px) {
-  .rpt-hero-stats { grid-template-columns: repeat(4, 1fr); }
+  .rpt-hero-stats { grid-template-columns: repeat(5, 1fr); }
 }
 
 .rpt-hero-stats strong {
   font-size: 22px;
   font-weight: 800;
-  color: var(--pd-green-700);
+  color: #fff;
   display: block;
 }
 
 .rpt-hero-stats span {
   font-size: 11px;
-  color: var(--pd-ink-500);
+  color: rgba(255,255,255,.68);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
 
 /* Filtros */
-.rpt-main { padding: 24px 0 48px; }
+.rpt-main { padding: 18px 0 36px; }
 @media (min-width: 768px) {
-  .rpt-main { padding: 32px 0 56px; }
+  .rpt-main { padding: 24px 0 42px; }
 }
 @media (min-width: 1024px) {
-  .rpt-main { padding: 32px 0 64px; }
+  .rpt-main { padding: 24px 0 48px; }
 }
 
 .rpt-inner-narrow {
@@ -115,23 +119,88 @@
 .rpt-filters {
   background: var(--pd-surface-0);
   border: 1px solid #E2E8E5;
-  border-radius: 14px;
-  padding: 18px 20px;
+  border-radius: 16px;
+  padding: 20px 22px 22px;
   margin-bottom: 28px;
-  box-shadow: var(--pd-shadow-sm);
+  box-shadow: 0 12px 28px -18px rgba(15, 23, 20, 0.25);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Um risco fino de topo, verde, para o cartão se distinguir de um cartão qualquer da página
+   (relatório, dataset) só pelo contorno — sem precisar de mais cor à volta. */
+.rpt-filters::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--pd-green-700), #7FD7A4);
 }
 
 .rpt-filters-head {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
-  font-size: 14px;
+  gap: 10px;
+  margin-bottom: 18px;
+  font-size: 14.5px;
   font-weight: 700;
   color: var(--pd-ink-900);
 }
 
-.rpt-filters-head svg { color: var(--pd-green-700); }
+.rpt-filters-head svg {
+  width: 30px !important;
+  height: 30px !important;
+  padding: 6px;
+  border-radius: 9px;
+  background: var(--pd-green-50, #E9F5EC);
+  color: var(--pd-green-700);
+  box-sizing: border-box;
+}
+
+/* Filtro por sector: destacado como fila de chips, acima dos outros campos (dropdowns), para se
+   distinguir como o filtro principal de tema em vez de mais um campo igual aos outros. */
+.rpt-sector-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #E2E8E5;
+}
+
+.rpt-sector-chip {
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: 100px;
+  border: 1px solid #E2E8E5;
+  background: var(--pd-surface-50);
+  color: var(--pd-ink-700);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s, transform 0.1s;
+}
+
+.rpt-sector-chip:hover {
+  border-color: var(--pd-green-300, #A9D3B8);
+  background: var(--pd-green-50, #E9F5EC);
+}
+
+.rpt-sector-chip:active { transform: scale(0.97); }
+
+.rpt-sector-chip.active {
+  background: var(--pd-green-700);
+  border-color: var(--pd-green-700);
+  color: #fff;
+}
+
+.rpt-sector-chips-empty {
+  font-size: 12.5px;
+  color: var(--pd-ink-400, #94A3B8);
+  align-self: center;
+}
 
 .rpt-filters-grid {
   display: grid;
@@ -217,6 +286,14 @@
   .rpt-filters-actions {
     flex-direction: row;
     flex-wrap: wrap;
+  }
+}
+/* No desktop a grelha passa a 4 colunas e este bloco caía na 4ª, com o traço de cima a aparecer só
+   ali (uma linha curta e desalinhada, em vez de um separador da fila inteira). Ocupando a grelha
+   toda ele volta a ficar por baixo de Ano/Cobertura/Parceiros, com o traço a atravessar tudo. */
+@media (min-width: 768px) {
+  .rpt-filters-actions {
+    grid-column: 1 / -1;
   }
 }
 .rpt-filters-actions .rpt-btn {
@@ -307,18 +384,25 @@
   top: 10px;
   right: 10px;
   z-index: 4;
-  background: color-mix(in srgb, var(--pd-ink-900) 55%, transparent);
-  color: white;
-  border-color: transparent;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(8px) saturate(160%);
+  -webkit-backdrop-filter: blur(8px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  color: #fff;
 }
 
 .rpt-card-favorite:hover {
   color: #fff;
-  background: color-mix(in srgb, #DC2626 70%, var(--pd-ink-900));
+  background: color-mix(in srgb, #DC2626 65%, rgba(255, 255, 255, 0.22));
+  border-color: color-mix(in srgb, #DC2626 50%, transparent);
 }
 
 .rpt-card-favorite.active {
   background: #DC2626;
+  border-color: #DC2626;
   color: white;
 }
 
@@ -333,29 +417,26 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 120px;
-  background: linear-gradient(135deg, var(--pd-green-50), #eef5f0);
+  height: 120px;
+  flex-shrink: 0;
+  overflow: hidden;
   border-bottom: 1px solid #E2E8E5;
-}
-
-.rpt-card-thumb-icon {
-  width: 40px;
-  height: 40px;
-  color: var(--pd-green-700);
-  opacity: 0.35;
 }
 
 .rpt-card-year {
   position: absolute;
   top: 12px;
-  right: 12px;
+  left: 12px;
+  z-index: 4;
   font-size: 11px;
   font-weight: 700;
   padding: 4px 10px;
   border-radius: 100px;
-  background: var(--pd-surface-0);
-  color: var(--pd-green-700);
-  border: 1px solid #CFE3D6;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(8px) saturate(160%);
+  -webkit-backdrop-filter: blur(8px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.28);
 }
 
 .rpt-card-body {
@@ -517,7 +598,7 @@
 .rpt-detail-hero-top {
   padding: 20px 18px 18px;
   border-bottom: 1px solid #E2E8E5;
-  background: linear-gradient(180deg, var(--pd-surface-0), #f6faf7);
+  background: var(--pd-surface-0);
 }
 @media (min-width: 640px) {
   .rpt-detail-hero-top { padding: 28px 28px 24px; }
@@ -575,8 +656,12 @@
 }
 
 .rpt-detail-body h2 {
-  font-size: 18px;
-  font-weight: 700;
+  /* Maior do que antes de propósito: é o título de cada bloco de análise, e tinha o mesmo peso de
+     um sub-título qualquer. Continua abaixo do título do relatório (que vai até 32px), mas acima
+     de tudo o resto nesta página. */
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
   color: var(--pd-ink-900);
   margin-bottom: 12px;
 }
@@ -610,15 +695,64 @@
   margin-top: 20px;
   border: 1px solid #E2E8E5;
   border-radius: 14px;
-  overflow: hidden;
-  height: min(75vh, 800px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: min(75vh, 800px);
+  background: var(--pd-surface-50);
 }
 
-.rpt-detail-pdf-preview iframe {
-  width: 100%;
-  height: 100%;
-  border: none;
+/*
+ * As páginas desenhadas pelo pdf.js. Cada uma é um <canvas> a sério, não uma peça de UI: o próprio
+ * componente decide a largura de cada canvas a partir de `clientWidth`, por isso aqui só se
+ * centra a coluna e se dá espaço entre páginas.
+ */
+.rpt-pdf-preview-paginas {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
 }
+
+/*
+ * `width: 100%` e não `max-width: 100%`: a versão anterior deixava cada página no seu tamanho
+ * nativo (a resolução em que foi desenhada), que era sempre mais pequena do que o cartão largo, e
+ * ficava uma miniatura centrada com muito vazio à volta. Aqui a página ocupa sempre a largura toda
+ * do cartão; a resolução de desenho (mais alta, ver PreVisualizacaoPdf.tsx) é o que mantém a
+ * nitidez apesar de esticada.
+ */
+.rpt-pdf-pagina {
+  display: block;
+  width: 100%;
+  height: auto;
+  box-shadow: var(--pd-shadow-sm);
+  border-radius: 4px;
+}
+
+.rpt-pdf-preview-estado {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--pd-ink-500);
+  font-size: 14px;
+}
+
+.rpt-pdf-preview-nota {
+  padding: 4px 16px 16px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--pd-ink-500);
+}
+
+.rpt-pdf-preview-nota a {
+  color: var(--pd-green-700);
+  font-weight: 600;
+  text-decoration: underline;
+}
+
 
 .rpt-detail-author {
   margin-top: 20px;
@@ -632,3 +766,974 @@
 }
 
 .rpt-detail-author svg { color: var(--pd-green-700); }
+
+
+/* ---------- Leitura estruturada do relatório (digesto, perguntas, verificação) ---------- */
+
+.rpt-digesto-a-processar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--pd-ink-500);
+  font-size: 14px;
+}
+
+.rpt-digesto-cabecalho {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.rpt-digesto-controlos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.rpt-digesto-abas {
+  display: inline-flex;
+  border: 1px solid #E2E8E5;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.rpt-digesto-abas button {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pd-ink-500);
+  background: var(--pd-surface-0);
+  border: none;
+  border-right: 1px solid #E2E8E5;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.rpt-digesto-abas button:last-child { border-right: none; }
+
+.rpt-digesto-abas button[aria-pressed="true"] {
+  background: var(--pd-green-700);
+  color: white;
+}
+
+.rpt-digesto-abas button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/*
+ * O cartão de números: a primeira coisa a aparecer no resumo, antes de qualquer parágrafo. Quem
+ * não gosta de ler quer ver o essencial num relance; isto é o "relance", com os números grandes o
+ * suficiente para se lerem de relance mesmo, não escondidos no meio de uma frase.
+ */
+.rpt-digesto-destaques {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.rpt-digesto-destaque {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 12px;
+  border-radius: 10px;
+  background: var(--pd-green-50, #E9F5EC);
+  border: 1px solid var(--pd-green-300, #A9D3B8);
+  text-align: center;
+}
+
+.rpt-digesto-destaque strong {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--pd-green-700);
+  line-height: 1.15;
+  word-break: break-word;
+}
+
+.rpt-digesto-destaque span {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--pd-ink-500);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/*
+ * Maior, e em coluna própria por campo, não uma fila de texto miúdo a competir por espaço: "sobre
+ * o quê", "onde" e "quando" são o resumo do resumo, a primeira coisa que alguém devia conseguir ler
+ * sem esforço, e o tamanho anterior (13px, tudo espremido numa só linha) escondia isso.
+ */
+.rpt-digesto-contexto {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px 24px;
+  font-size: 14.5px;
+  line-height: 1.5;
+  margin-bottom: 18px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #EEF2EF;
+}
+
+/*
+ * O rótulo ("Sobre o quê", "Onde", "Quando") em laranja, e o conteúdo em verde: as duas cores que
+ * este pedido definiu para esta faixa. Não são as mesmas duas cores do resto do resumo (verde para
+ * página, dourado para número) — aqui a distinção é outra, rótulo contra conteúdo, e por isso o
+ * portal ganha uma terceira cor só para este contexto, em vez de sobrepor um significado a outro.
+ */
+.rpt-digesto-contexto strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #c2570b;
+  margin-bottom: 3px;
+}
+
+.rpt-digesto-contexto span {
+  color: var(--pd-green-700);
+  font-weight: 600;
+}
+
+.rpt-digesto-metodologia {
+  font-size: 13px;
+  color: var(--pd-ink-500);
+  margin-top: -4px;
+  margin-bottom: 12px;
+}
+
+.rpt-digesto-seccao {
+  margin-top: 20px;
+}
+
+.rpt-digesto-seccao h3 {
+  /* Um risco dourado à esquerda, o mesmo desenho do PDF descarregável (`tituloSeccao` em
+     exportar-resumo-pdf.ts): a mesma peça visual nos dois formatos, e maior do que o corpo do
+     texto o suficiente para se ver a separação de secção ao correr o olho pela página. */
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--pd-ink-900);
+  margin: 22px 0 10px;
+  padding-left: 12px;
+  border-left: 3px solid var(--pd-gold, #c7962c);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rpt-digesto-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.rpt-digesto-lista li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--pd-ink-700);
+  padding: 8px 10px;
+  background: var(--pd-surface-50);
+  border-radius: 8px;
+}
+
+/*
+ * Um achado sobre uma queda e um achado sobre um ganho ficavam com o mesmo aspecto visual: só a
+ * cor do ícone distingue "isto é um risco" de "isto é uma oportunidade" sem ler a frase toda.
+ * Classificação por palavra-chave (`classificar-achado.ts`), por isso "neutro" (o traço) é o
+ * resultado mais comum, e está certo ser discreto.
+ */
+.rpt-digesto-achado-icone {
+  flex-shrink: 0;
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  margin-top: 1px;
+}
+
+.rpt-digesto-achado-icone-risco {
+  background: #FBEAEA;
+  color: #B91C1C;
+}
+
+.rpt-digesto-achado-icone-oportunidade {
+  background: var(--pd-green-50, #E9F5EC);
+  color: var(--pd-green-700);
+}
+
+.rpt-digesto-achado-icone-neutro {
+  background: #EEF2EF;
+  color: var(--pd-ink-400, #94A3B8);
+}
+
+.rpt-digesto-lista-simples li {
+  background: none;
+  padding: 2px 0;
+  display: block;
+}
+
+/*
+ * Antes era só texto a seguir à frase ("... página 12"), fácil de saltar ao ler. Como selo (fundo,
+ * borda arredondada, cor própria) fica visualmente separado do resto da frase, e quem só quer
+ * saber "em que página está isto" encontra-o num relance em vez de ler a frase toda.
+ */
+.rpt-digesto-pagina {
+  flex-shrink: 0;
+  margin-left: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: var(--pd-green-700);
+  background: var(--pd-green-50, #E9F5EC);
+  border: 1px solid var(--pd-green-300, #A9D3B8);
+  border-radius: 100px;
+  padding: 2px 8px;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.rpt-digesto-meta-recomendacao {
+  display: block;
+  font-size: 12px;
+  color: var(--pd-ink-500);
+  margin-top: 2px;
+}
+
+/* ---------- Resultado obtido / esperado ---------- */
+
+/*
+ * Vem logo a seguir ao resumo rápido, não escondido lá em baixo em "Tudo": para quem só quer saber
+ * "e então, resultou?", esta é a frase mais importante da página inteira depois do próprio resumo.
+ * Duas variantes de cor: sólida a verde quando já há um resultado real, contorno a dourado quando é
+ * só o que se espera (uma expectativa não é um facto consumado, e a cor não pode fingir que é).
+ */
+.rpt-digesto-resultado {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  margin: 4px 0 16px;
+}
+
+.rpt-digesto-resultado svg { flex-shrink: 0; margin-top: 2px; }
+
+.rpt-digesto-resultado strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.rpt-digesto-resultado p {
+  font-size: 14px;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.rpt-digesto-resultado-obtido {
+  background: var(--pd-green-50, #E9F5EC);
+  border: 1px solid var(--pd-green-300, #A9D3B8);
+  color: var(--pd-green-700);
+}
+.rpt-digesto-resultado-obtido strong,
+.rpt-digesto-resultado-obtido svg { color: var(--pd-green-700); }
+.rpt-digesto-resultado-obtido p { color: var(--pd-ink-900); }
+
+.rpt-digesto-resultado-esperado {
+  background: var(--pd-surface-0);
+  border: 1px solid #E8D3A8;
+  color: #a5760f;
+}
+.rpt-digesto-resultado-esperado strong,
+.rpt-digesto-resultado-esperado svg { color: #a5760f; }
+.rpt-digesto-resultado-esperado p { color: var(--pd-ink-900); }
+
+/* ---------- Variáveis e dados usados (tabela + gráficos) ---------- */
+
+.rpt-digesto-tabela-wrap {
+  overflow-x: auto;
+  border: 1px solid #E2E8E5;
+  border-radius: 10px;
+}
+
+.rpt-digesto-tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.rpt-digesto-tabela th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #fff;
+  background: var(--pd-green-700);
+  padding: 10px 14px;
+}
+
+.rpt-digesto-tabela td {
+  padding: 9px 14px;
+  color: var(--pd-ink-700);
+  border-top: 1px solid #E2E8E5;
+}
+
+.rpt-digesto-tabela tbody tr:nth-child(even) { background: var(--pd-surface-50); }
+
+.rpt-digesto-graficos {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+@media (min-width: 900px) {
+  .rpt-digesto-graficos { grid-template-columns: repeat(2, 1fr); }
+}
+
+.rpt-digesto-nao-diz {
+  padding-top: 12px;
+  border-top: 1px solid #EEF2EF;
+}
+
+/* ---------- Credibilidade metodológica ---------- */
+
+.rpt-digesto-credibilidade {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--pd-ink-500);
+  margin-top: -4px;
+  margin-bottom: 16px;
+}
+
+.rpt-digesto-credibilidade svg { flex-shrink: 0; margin-top: 2px; color: var(--pd-green-700); }
+
+.rpt-digesto-credibilidade-selo {
+  display: inline-block;
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--pd-green-700);
+  margin-right: 4px;
+}
+
+/* ---------- Linha do tempo ---------- */
+
+.rpt-digesto-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  position: relative;
+}
+
+.rpt-digesto-timeline-item {
+  display: flex;
+  gap: 14px;
+  padding: 0 0 16px 0;
+  position: relative;
+}
+
+.rpt-digesto-timeline-item::before {
+  content: '';
+  position: absolute;
+  left: 21px;
+  top: 20px;
+  bottom: 0;
+  width: 1px;
+  background: #E2E8E5;
+}
+
+.rpt-digesto-timeline-item:last-child::before { display: none; }
+
+.rpt-digesto-timeline-ano {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: #fff;
+  background: var(--pd-green-700);
+}
+
+.rpt-digesto-timeline-dado .rpt-digesto-timeline-ano { background: var(--pd-gold, #c7962c); }
+
+.rpt-digesto-timeline-texto {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--pd-ink-700);
+  padding-top: 10px;
+}
+
+/* ---------- Mapa da geografia ---------- */
+
+.rpt-digesto-mapa-canvas {
+  width: 100%;
+  height: 280px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #E2E8E5;
+}
+
+.rpt-digesto-mapa-estado {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--pd-ink-500);
+  padding: 12px 0;
+}
+
+.rpt-digesto-mapa-legenda {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--pd-ink-500);
+  margin-top: 8px;
+}
+
+.rpt-digesto-mapa-legenda svg { color: var(--pd-green-700); }
+
+/* ---------- Glossário ---------- */
+
+/*
+ * Antes era uma lista vertical com as dez definições já abertas: para ver o que significa uma
+ * sigla no meio do texto, era preciso rolar por todas as outras. Como etiquetas clicáveis, só a
+ * sigla que interessa abre, e o resto do espaço fica compacto.
+ */
+.rpt-digesto-glossario-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.rpt-digesto-glossario-pill {
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 100px;
+  border: 1px solid #E2E8E5;
+  background: var(--pd-surface-0);
+  color: var(--pd-green-700);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.rpt-digesto-glossario-pill:hover {
+  border-color: var(--pd-green-300, #A9D3B8);
+}
+
+.rpt-digesto-glossario-pill[aria-pressed='true'] {
+  background: var(--pd-green-700);
+  border-color: var(--pd-green-700);
+  color: #fff;
+}
+
+.rpt-digesto-glossario-definicao {
+  margin-top: 12px;
+  padding: 12px 14px;
+  background: var(--pd-surface-50);
+  border-radius: 10px;
+  border-left: 3px solid var(--pd-green-700);
+}
+
+.rpt-digesto-glossario-definicao strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--pd-green-700);
+  margin-bottom: 4px;
+}
+
+.rpt-digesto-glossario-definicao p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--pd-ink-700);
+}
+
+.rpt-digesto-admin {
+  margin-top: 14px;
+}
+
+.rpt-digesto-erro {
+  font-size: 13px;
+  color: #B3261E;
+  margin-top: 8px;
+}
+
+/* Perguntar ao relatório */
+
+.rpt-pergunta-historico {
+  list-style: none;
+  margin: 0 0 14px;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.rpt-pergunta-texto {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--pd-ink-900);
+  margin-bottom: 4px;
+}
+
+.rpt-pergunta-resposta {
+  font-size: 14px;
+  color: var(--pd-ink-700);
+  line-height: 1.55;
+}
+
+.rpt-pergunta-caixa {
+  display: flex;
+  gap: 8px;
+}
+
+.rpt-pergunta-input {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid #CFE3D6;
+  font-size: 14px;
+  background: var(--pd-surface-0);
+}
+
+/* Verificação contra dados do portal */
+
+.rpt-verificacao-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.rpt-verificacao-form label {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pd-ink-500);
+}
+
+.rpt-verificacao-form input,
+.rpt-verificacao-form select {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #CFE3D6;
+  font-size: 13px;
+  background: var(--pd-surface-0);
+}
+
+.rpt-verificacao-lista {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.rpt-verificacao-item {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border-left: 4px solid #CFE3D6;
+  background: var(--pd-surface-50);
+}
+
+/*
+ * Cor por veredicto, sem julgar quem tem razão: verde para o que bate certo, âmbar para o que
+ * diverge (uma diferença, não uma acusação), cinza para o que nem chegou a ser comparado.
+ */
+.rpt-verificacao-confirma { border-left-color: var(--pd-green-700); }
+.rpt-verificacao-diverge { border-left-color: #C08A00; }
+.rpt-verificacao-nao_comparavel { border-left-color: var(--pd-ink-300); }
+
+.rpt-verificacao-razao {
+  font-size: 13px;
+  color: var(--pd-ink-500);
+  margin-top: 4px;
+}
+
+
+/* ---------- Bloqueio por sessão (analise do relatorio) ---------- */
+
+.rpt-digesto-bloqueado {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  color: var(--pd-green-700);
+}
+
+.rpt-digesto-bloqueado h2 {
+  margin-bottom: 6px;
+}
+
+.rpt-digesto-bloqueado .rpt-btn {
+  margin-top: 10px;
+}
+
+/*
+ * "Analisar" precisa de se distinguir das outras duas acções do cartão ("Ver detalhes" é outline
+ * verde, "Solicitar relatório" é preenchido verde): a mesma cor nos três esconde qual é a acção
+ * nova. Dourado preenchido, a cor de destaque do sistema, marca-a como a funcionalidade especial
+ * sem inventar uma cor fora da paleta do portal.
+ */
+.rpt-btn-analise {
+  background: var(--pd-gold, #c7962c);
+  border: 1px solid var(--pd-gold, #c7962c);
+  color: #2b1f05;
+  font-weight: 700;
+}
+
+.rpt-btn-analise:hover {
+  background: #b3841f;
+  border-color: #b3841f;
+}
+
+
+/* ---------- Realce de texto nos resumos (paginas e anos) ---------- */
+
+/*
+ * Verde para a citacao de pagina: e a mesma cor que "esta confirmado" usa no resto do portal, e
+ * uma pagina e precisamente isso, o sitio onde a afirmacao se confirma no documento original.
+ * Dourado para o ano: a cor de destaque do sistema (--pd-green-700 e o dourado da paleta .pdx sao
+ * as duas cores "do sistema" a que o pedido se refere), usada aqui para que uma data nunca se perca
+ * dentro de um paragrafo denso.
+ */
+.rpt-realce-pagina {
+  color: var(--pd-green-700);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.rpt-realce-numero {
+  color: #9a6b0f;
+  font-weight: 700;
+}
+
+
+/* ---------- Espera interactiva enquanto o resumo e preparado ---------- */
+
+.rpt-emanalise {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  padding: 28px 16px;
+  text-align: center;
+}
+
+.rpt-emanalise-topo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--pd-ink-500);
+  font-size: 14px;
+}
+
+.rpt-emanalise-facto {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  max-width: 520px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--pd-green-50);
+  border: 1px solid #CFE3D6;
+  text-align: left;
+}
+
+.rpt-emanalise-facto p {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--pd-ink-700);
+}
+
+.rpt-emanalise-icone {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  background: var(--pd-surface-0);
+  color: var(--pd-green-700);
+}
+
+.rpt-emanalise-pontos {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rpt-ponto {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #CFE3D6;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.rpt-ponto[data-activo="true"] {
+  background: var(--pd-green-700);
+  transform: scale(1.3);
+}
+
+/* ---------- Rodape do resumo (descarregar em PDF) ---------- */
+
+.rpt-digesto-rodape {
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid #EEF2EF;
+}
+
+
+/* ---------- Titulo com icone, consistente entre os cartoes de analise ---------- */
+
+.rpt-digesto-titulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rpt-digesto-titulo svg {
+  color: var(--pd-green-700);
+  flex-shrink: 0;
+}
+
+
+.rpt-pdf-preview-erro-tecnico {
+  font-size: 11px;
+  font-family: ui-monospace, monospace;
+  color: var(--pd-ink-400, #94A3B8);
+  max-width: 460px;
+  word-break: break-word;
+}
+
+
+/* ---------- "Nao precisa de ler o relatorio todo" (pagina de listagem) ---------- */
+
+/*
+ * Já foi um bloco verde-escuro, um "cartão" a mais dentro da página — pedido explícito para tirar
+ * daí: isto é uma secção da página, com o mesmo fundo claro do resto, não outra caixa fechada.
+ * O que a distingue do resto agora é só tipografia e uma régua fina no topo, como um separador de
+ * secção normal.
+ */
+.rpt-explica {
+  padding: 32px 0 36px;
+  margin-bottom: 8px;
+  border-top: 1px solid #E2E8E5;
+}
+
+.rpt-explica-cabecalho {
+  max-width: 640px;
+  margin-bottom: 28px;
+}
+
+.rpt-explica-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pd-green-700);
+  margin-bottom: 10px;
+}
+
+.rpt-explica-cabecalho h2 {
+  font-size: clamp(20px, 3vw, 26px);
+  font-weight: 800;
+  color: var(--pd-ink-900);
+  letter-spacing: -0.01em;
+  margin-bottom: 8px;
+}
+
+.rpt-explica-cabecalho p {
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--pd-ink-500);
+}
+
+.rpt-explica-passos {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 22px;
+  margin-bottom: 28px;
+  padding-bottom: 28px;
+  border-bottom: 1px solid #E2E8E5;
+}
+@media (min-width: 768px) {
+  .rpt-explica-passos { grid-template-columns: repeat(3, 1fr); }
+}
+
+.rpt-explica-passos > div {
+  position: relative;
+  padding-left: 40px;
+}
+
+.rpt-explica-numero {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--pd-green-50, #E9F5EC);
+  border: 1px solid var(--pd-green-300, #A9D3B8);
+  font-weight: 800;
+  font-size: 13px;
+  color: var(--pd-green-700);
+}
+
+.rpt-explica-passos h3 {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--pd-ink-900);
+  margin-bottom: 4px;
+}
+
+.rpt-explica-passos p {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--pd-ink-500);
+}
+
+.rpt-explica-passos strong { color: var(--pd-green-700); }
+
+/*
+ * Antes era uma grelha de 2 colunas com cada motivo a parecer um mini-cartão isolado, dentro do
+ * bloco verde. Agora é uma lista corrida, com um rótulo pequeno a abrir o bloco e um traço fino a
+ * separar cada linha — lê-se como continuação da secção, não como mais uma caixa.
+ */
+.rpt-explica-razoes {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.rpt-explica-razoes-rotulo {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pd-green-700);
+}
+
+.rpt-explica-razoes-lista > div {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 0;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--pd-ink-700);
+  border-top: 1px solid #E2E8E5;
+}
+
+.rpt-explica-razoes-lista > div:last-child {
+  padding-bottom: 0;
+}
+
+.rpt-explica-razoes-lista svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--pd-green-700);
+}
+
+/* ---------- Botao "Voltar" ---------- */
+
+/*
+ * Antes era so texto sublinhado ao passar o rato, com um circulo isolado ao lado que nao lia como
+ * fazendo parte do mesmo controlo. Agora e um botao a serio, com fundo e borda, como qualquer
+ * outra accao da pagina.
+ */
+.rpt-detail-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px 8px 8px;
+  border-radius: 999px;
+  border: 1px solid #CFE3D6;
+  background: var(--pd-surface-0);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--pd-green-700);
+  text-decoration: none;
+  margin-bottom: 24px;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.rpt-detail-back:hover {
+  background: var(--pd-green-50);
+  border-color: var(--pd-green-300, #A9D3B8);
+}
+
+.rpt-detail-back-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--pd-green-700);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ---------- Descricao do estudo (antigo "Resumo do relatorio") ---------- */
+
+/*
+ * Chamava-se "Resumo do relatorio", a mesma palavra que a analise por IA usa para o SEU resultado
+ * ("Analise deste relatorio" -> resumos). As duas coisas sao diferentes (uma e a ficha que a
+ * equipa escreveu a mao, a outra e gerada a partir do PDF) e o nome igual confundia as duas.
+ */
+.rpt-detail-body .rpt-descricao-titulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rpt-detail-body .rpt-descricao-titulo svg {
+  color: var(--pd-green-700);
+}
+
+.rpt-detail-text {
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: var(--pd-ink-700);
+}

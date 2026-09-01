@@ -18,6 +18,7 @@ export type GeoDataset = {
   bboxMinY?: number | null
   bboxMaxX?: number | null
   bboxMaxY?: number | null
+  certificacao?: string | null
   category: {
     id: number
     name: string

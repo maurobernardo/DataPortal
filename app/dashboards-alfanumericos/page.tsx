@@ -9,7 +9,34 @@ import '../dashboards-catalog.css'
 
 export const dynamic = 'force-dynamic'
 
+/* Página desactivada a pedido (mantém-se todo o código e dados, só deixa de estar acessível):
+   basta mudar isto para `false` para reactivar sem reescrever nada. */
+const PAGINA_ACTIVA = false
+
 export default async function AlphanumericDashboardsPage() {
+  if (!PAGINA_ACTIVA) {
+    return (
+      <div className="db-page">
+        <section className="db-hero">
+          <div className="db-hero-inner">
+            <div>
+              <div className="db-eyebrow">Dashboards · Dados tabulares</div>
+              <h1>Página temporariamente indisponível.</h1>
+              <p className="db-hero-lede">
+                Este serviço está desactivado neste momento. Volte a consultar mais tarde, ou explore os
+                outros serviços do portal.
+              </p>
+            </div>
+          </div>
+        </section>
+      </div>
+    )
+  }
+
+  return <AlphanumericDashboardsPageContent />
+}
+
+async function AlphanumericDashboardsPageContent() {
   const session = await getCurrentUser()
   const [dashboards, featured, favoriteIds] = await Promise.all([
     findAllAlphanumericDashboards(),
@@ -42,7 +69,7 @@ export default async function AlphanumericDashboardsPage() {
                 <span>Dashboards</span>
               </div>
               <div>
-                <strong>{categoryCount || '—'}</strong>
+                <strong>{categoryCount || 'N/D'}</strong>
                 <span>Sectores</span>
               </div>
               <div>

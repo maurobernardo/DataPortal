@@ -7,13 +7,17 @@
   font-family:var(--pd-font-sans),Inter,ui-sans-serif,system-ui,sans-serif;
   background:var(--cr-paper);color:var(--cr-g900);flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;
 }
-.cr-root .hm-header{flex-shrink:0;background:linear-gradient(135deg,#04361f 0%,#064e2c 55%,#0a5c38 100%)!important;border-bottom:2px solid #e7f3eb;z-index:2}
+.cr-root .hm-header{flex-shrink:0;position:relative;background:
+    linear-gradient(135deg,rgba(4,54,31,.72) 0%,rgba(6,78,44,.64) 55%,rgba(10,92,56,.56) 100%),
+    url('/images/xina.webp') center/cover no-repeat!important;border-bottom:2px solid #e7f3eb;z-index:2}
 .cr-root .hm-header h1{color:#fff!important}
 .cr-root .hm-header p{color:rgba(231,243,235,.95)!important}
 .cr-root .hm-badge{background:#e7f3eb;color:#064e2c;font-weight:700}
 .cr-scroll{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
 
-.cr-toolbar{position:sticky;top:0;z-index:20;background:linear-gradient(90deg,var(--cr-g900) 0%,var(--cr-g800) 100%);
+.cr-toolbar{position:sticky;top:0;z-index:20;background:
+    linear-gradient(90deg,rgba(4,54,31,.72) 0%,rgba(6,78,44,.64) 100%),
+    url('/images/xina.webp') center/cover no-repeat;
   color:#fff;padding:12px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;box-shadow:0 2px 14px rgba(6,43,30,.28)}
 .cr-toolbar .filters{display:flex;gap:10px;margin-left:auto;flex-wrap:wrap;align-items:flex-end}
 .cr-toolbar .f{display:flex;flex-direction:column;gap:4px}

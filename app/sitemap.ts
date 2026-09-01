@@ -19,8 +19,15 @@ const staticPages: Array<{
   { path: '/catalogo', changeFrequency: 'daily', priority: 0.9 },
   { path: '/relatorios', changeFrequency: 'weekly', priority: 0.8 },
   { path: '/ai-insights', changeFrequency: 'weekly', priority: 0.88 },
+  { path: '/analise/nova', changeFrequency: 'weekly', priority: 0.85 },
+  { path: '/servicos', changeFrequency: 'monthly', priority: 0.75 },
+  { path: '/novidades', changeFrequency: 'weekly', priority: 0.6 },
+  { path: '/estatisticas', changeFrequency: 'weekly', priority: 0.6 },
+  { path: '/parceiros', changeFrequency: 'monthly', priority: 0.5 },
   { path: '/politica-cookies', changeFrequency: 'yearly', priority: 0.4 },
+  { path: '/politica-privacidade', changeFrequency: 'yearly', priority: 0.4 },
   { path: '/termos-condicoes', changeFrequency: 'yearly', priority: 0.4 },
+  { path: '/abordagem-etica', changeFrequency: 'yearly', priority: 0.4 },
 ]
 
 async function datasetEntries(baseUrl: string): Promise<MetadataRoute.Sitemap> {

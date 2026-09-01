@@ -133,7 +133,7 @@ export function ContactsSection({ variant = 'page' }: ContactsSectionProps) {
     <section
       id={isModal ? undefined : 'contato'}
       className={`font-body-stack relative overflow-hidden bg-gradient-to-b from-[#f0f5f1] to-[#e8f0ea] ${
-        isModal ? 'rounded-b-2xl py-10 md:py-11' : 'border-t border-[#E2E8E5] py-16 md:py-24'
+        isModal ? 'rounded-b-2xl py-10 md:py-11' : 'border-t border-[#E2E8E5] py-9 md:py-12'
       }`}
     >
       {/* Ambient glows */}

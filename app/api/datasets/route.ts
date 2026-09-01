@@ -5,6 +5,7 @@ import { createDataset, findCategoryById, findDatasets, setDatasetPreviewMeta } 
 import { getCurrentAdmin } from '@/lib/auth'
 import { getDatasetPreview } from '@/lib/dataset-preview'
 import { notifyUsersOfNewContent } from '@/lib/notifications'
+import { logAudit } from '@/lib/audit'
 import { logger } from '@/lib/logger'
 
 const ALLOWED_DATA_TYPES = new Set(['geoespacial', 'alfanumerico'])
@@ -132,6 +133,14 @@ export async function POST(request: NextRequest) {
 
       notifyUsersOfNewContent('dataset', dataset.title, `/dataset/${dataset.id}`).catch((error) => {
         logger.error('error_notifying_users_of_new_dataset', { error, datasetId: dataset.id })
+      })
+
+      logAudit({
+        actorEmail: user.email,
+        action: 'criar_dataset',
+        entityType: 'dataset',
+        entityId: dataset.id,
+        details: dataset.title,
       })
     }
 

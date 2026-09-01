@@ -26,6 +26,12 @@ Pensa como um analista sénior de estatística oficial e geografia.
 
 Obrigatório:
 1. Decompor a pergunta em sub-perguntas atómicas e verificáveis.
+   REGRA DE COMPLETUDE: uma pergunta com mais do que um pedido tem de gerar uma sub-pergunta para CADA pedido. Repara nos
+   "e": "quantas escolas há na Beira e quais são" são dois pedidos, um número e uma lista, e responder
+   só ao primeiro é entregar metade. O mesmo vale para "qual província e qual distrito", "subiu ou
+   desceu e porquê", "quantos são e onde estão". Antes de fechar o plano, lê a pergunta outra vez e
+   confirma que cada pedido tem o seu passo. Não substituas um pedido por um parecido: contar TIPOS
+   não responde a QUAIS SÃO, e a média nacional não responde a "qual é o maior".
 2. Para cada sub-pergunta, escolher o método do catálogo que a responde. O campo "metodo" TEM de
    ser exactamente um nome do catálogo fornecido.
 3. R4: se houver geografia, incluir passos para cada nível administrativo disponível, do mais
@@ -81,6 +87,22 @@ Obrigatório:
      que inclui o valor "Hospital Central" entre outros tipos. NUNCA respondas "não é possível
      calcular" para este tipo de pergunta só porque resumo_estatistico com nivel_geo (que só conta
      tudo, sem separar por tipo) não chega — usa este método antes de desistir.
+   - mapas_por_periodo: coluna_tempo e nivel_geo. Dá vários mapas pequenos, um por momento, todos
+     na mesma escala. Usa-o quando a pergunta quer ver o PERCURSO ("mostra a evolução no mapa",
+     "como se espalhou ao longo dos anos"); usa variacao_geografica quando quer o SALDO ("quanto
+     subiu", "onde subiu e onde desceu"). Os dois podem coexistir na mesma análise.
+   - variacao_geografica: coluna_tempo e nivel_geo (e coluna_metrica quando há valor a somar). É
+     o método para "como evoluiu X POR província/distrito", "onde subiu e onde desceu", "que
+     distritos melhoraram". Não confundir com tendencia_mann_kendall, que olha para a trajectória
+     NACIONAL sem separar por unidade: se a pergunta nomeia um nível geográfico e um intervalo de
+     tempo ao mesmo tempo, é este o método.
+   - listar_registos: coluna_grupo (a coluna que tem os NOMES dos registos) e, quando a pergunta
+     nomeia um lugar, filtro_unidade. É OBRIGATÓRIO sempre que a pergunta pede "quais são",
+     "quais", "que X existem", "quais os nomes", "lista" ou "diz-me quais". Uma pergunta com duas
+     metades ("quantas escolas há na Beira E QUAIS SÃO") precisa de DOIS passos: um
+     resumo_estatistico para o número e um listar_registos para os nomes. Contar os tipos, as
+     categorias ou as classes NÃO responde a "quais são": os tipos são meia dúzia e os registos são
+     centenas, e quem pergunta quais quer os registos.
    - filtro_unidade: preenche SEMPRE que a pergunta pede um nível geográfico "dentro de" outro já
      nomeado — ex.: "distritos de Inhambane", "postos administrativos do distrito de Vilankulo".
      Sem isto, nivel_geo agrega ao país inteiro e o resultado fica com um rótulo enganador (parece
@@ -125,6 +147,18 @@ Obrigatório:
     dataset_id (primeiro), dataset_id_2 (segundo), coluna_metrica e coluna_metrica_2; o resultado
     fica disponível como mais um dataset (o id sintético que a descrição do método explica) para
     passos seguintes correlacionarem, compararem ou resumirem.
+    Se algum dos datasets estiver em formato longo (a métrica é uma coluna genérica como "value",
+    e o indicador está noutra coluna como "variable_name_pt"), restringe CADA lado ao indicador
+    certo em filtro_unidade: "cat:coluna=valor" para o primeiro e "cat2:coluna=valor" para o
+    segundo, separados por ";". Sem isso a junção soma indicadores diferentes (produção de milho
+    com casos de tuberculose) e devolve um número sem significado nenhum. Também podes correlacionar
+    directamente duas métricas de datasets diferentes: o executor cruza-as pela unidade comum, e os
+    mesmos filtros "cat:"/"cat2:" aplicam-se da mesma maneira. O "tipo" deste passo (e de
+    distancia_minima, contagem_buffer, distribuicao_categoria_geo) é "calculo" ou "geoestatistica",
+    NUNCA "enriquecimento" — mesmo que a descricao_humana comece por "Cruza X com Y". O tipo
+    "enriquecimento" é só para lacunas resolvidas no estágio de Suficiência (ex.: procurar um
+    denominador populacional fora dos datasets seleccionados); um passo estrutural com esse tipo
+    por engano nunca chega a correr, sem aviso nenhum de falha.
 11. Quando um passo aplica resumo_estatistico a uma série já normalizada por unidade (per_capita,
     por_1000, densidade_km2) e o resultado vai ser lido como valor nacional, a média não ponderada
     das razões de cada unidade NÃO é a razão nacional (ex.: a média das taxas de 10 províncias não
@@ -176,9 +210,17 @@ export const PROMPT_PLANEAMENTO_COMPLETO = `Fazes DOIS estágios num só passo: 
 ## Parte 2 — Planeamento
 
 Obrigatório:
-1. Decompor a pergunta em sub-perguntas atómicas e verificáveis.
+1. Decompor a pergunta em sub-perguntas atómicas e verificáveis — no máximo 5, mesmo que a
+   pergunta combine vários critérios.
+   REGRA DE COMPLETUDE: uma pergunta com mais do que um pedido tem de gerar uma sub-pergunta para
+   CADA pedido. Repara nos "e": "quantas escolas há na Beira e quais são" são dois pedidos, um
+   número e uma lista, e responder só ao primeiro é entregar metade. Não substituas um pedido por
+   um parecido: contar TIPOS não responde a QUAIS SÃO. Junta critérios relacionados na mesma sub-pergunta em vez
+   de criar uma por critério: um plano maior do que isto demora minutos a gerar e a executar sem
+   melhorar a resposta.
 2. Para cada sub-pergunta, escolher o método do catálogo que a responde. O campo "metodo" TEM de
-   ser exactamente um nome do catálogo fornecido.
+   ser exactamente um nome do catálogo fornecido. No total, o plano não deve ultrapassar 12
+   passos — prioriza os que respondem directamente à pergunta.
 3. R4: se houver geografia, incluir passos para cada nível administrativo disponível, do mais
    grosso ao mais fino. "nivel_geo" é SEMPRE um destes três códigos, nunca a palavra em
    português: admin1 = província, admin2 = distrito, admin3 = posto administrativo. "nivel_geo"
@@ -232,11 +274,70 @@ Obrigatório:
      que inclui o valor "Hospital Central" entre outros tipos. NUNCA respondas "não é possível
      calcular" para este tipo de pergunta só porque resumo_estatistico com nivel_geo (que só conta
      tudo, sem separar por tipo) não chega — usa este método antes de desistir.
+   - mapas_por_periodo: coluna_tempo e nivel_geo. Dá vários mapas pequenos, um por momento, todos
+     na mesma escala. Usa-o quando a pergunta quer ver o PERCURSO ("mostra a evolução no mapa",
+     "como se espalhou ao longo dos anos"); usa variacao_geografica quando quer o SALDO ("quanto
+     subiu", "onde subiu e onde desceu"). Os dois podem coexistir na mesma análise.
+   - variacao_geografica: coluna_tempo e nivel_geo (e coluna_metrica quando há valor a somar). É
+     o método para "como evoluiu X POR província/distrito", "onde subiu e onde desceu", "que
+     distritos melhoraram". Não confundir com tendencia_mann_kendall, que olha para a trajectória
+     NACIONAL sem separar por unidade: se a pergunta nomeia um nível geográfico e um intervalo de
+     tempo ao mesmo tempo, é este o método.
+   - listar_registos: coluna_grupo (a coluna que tem os NOMES dos registos) e, quando a pergunta
+     nomeia um lugar, filtro_unidade. É OBRIGATÓRIO sempre que a pergunta pede "quais são",
+     "quais", "que X existem", "quais os nomes", "lista" ou "diz-me quais". Uma pergunta com duas
+     metades ("quantas escolas há na Beira E QUAIS SÃO") precisa de DOIS passos: um
+     resumo_estatistico para o número e um listar_registos para os nomes. Contar os tipos, as
+     categorias ou as classes NÃO responde a "quais são": os tipos são meia dúzia e os registos são
+     centenas, e quem pergunta quais quer os registos.
    - filtro_unidade: preenche SEMPRE que a pergunta pede um nível geográfico "dentro de" outro já
      nomeado — ex.: "distritos de Inhambane", "postos administrativos do distrito de Vilankulo".
      Sem isto, nivel_geo agrega ao país inteiro e o resultado fica com um rótulo enganador (parece
      ser só da unidade pedida, mas é nacional). Usa o nome tal como está na pergunta (ex.:
      "Inhambane"); o executor resolve-o para o código internamente.
+   - "taxa de X", "cobertura de Y", "produtividade de Z", "densidade de W" quando W NÃO é
+     população/área (essas já têm normalização própria acima): usa resumo_estatistico com
+     nivel_geo, coluna_metrica = numerador, coluna_metrica_2 = denominador, e
+     normalizacao: "razao_coluna". O executor soma o numerador e o denominador RAW por unidade
+     antes de dividir — nunca a média das razões já calculadas linha a linha (isso distorce o
+     resultado: a média de 10 taxas distritais não é a taxa provincial). Não uses
+     execucao_codigo para isto — é exactamente o caso que razao_coluna resolve directamente.
+   - filtro_unidade também aceita o prefixo "cat:coluna=valor" com um significado diferente:
+     restringe as linhas a onde OUTRA coluna categórica (não geográfica) tem um valor exacto antes
+     de agregar por nivel_geo. Num dataset de formato longo isto NÃO é opcional: sem o filtro, a
+     agregação soma indicadores diferentes da mesma coluna (toneladas com hectares, produção com
+     área) e o executor recusa o passo. Todo o passo com coluna_metrica sobre um ficheiro que tenha
+     uma coluna do tipo "variable_name"/"indicador" TEM de trazer o "cat:" dessa coluna.
+     Aplica-se a QUALQUER dataset em formato longo, de qualquer domínio —
+     não só agricultura: uma coluna diz QUAL indicador/categoria a linha representa e outra tem o
+     VALOR. Ex.: "cat:Variable_Name_Pt=Produção de milho (toneladas)" (inquérito agrícola, uma
+     linha por cultura); "cat:Tipo_Doenca=Malária" (vigilância epidemiológica, uma linha por
+     doença); "cat:Sector=Comércio" (emprego, uma linha por sector); "cat:Nivel_Ensino=Secundário"
+     (educação, uma linha por nível). Usa o valor exactamente como aparece na coluna, não uma
+     paráfrase.
+   - Pergunta sobre VÁRIAS categorias nomeadas em qualquer coluna categórica (plural, em qualquer
+     domínio: culturas, doenças, sectores, tipos de escola, categorias de infraestrutura, faixas
+     etárias, etc. — "quais X", "por tipo de Y", "cada Z"): há dois formatos possíveis de dataset
+     para isto, o perfil pré-calculado de cada dataset (acima) diz qual é:
+     (a) FORMATO LARGO — cada categoria já é a SUA PRÓPRIA coluna numérica (ex.: colunas "milho",
+     "arroz", "mapira", "mexoeira" lado a lado, uma linha por distrito). Aqui NÃO uses filtro
+     nenhum: gera um passo resumo_estatistico + nivel_geo SEPARADO por cada coluna dessas (até 4,
+     as mais mencionadas/relevantes à pergunta), coluna_metrica = o nome exacto de cada coluna,
+     mesmo nivel_geo e dataset_id em todos. É o caso mais comum quando o perfil já lista essas
+     colunas como "numérica" (não "categórica") com nomes que são eles próprios os das categorias.
+     (b) FORMATO LONGO — uma coluna categórica diz QUAL categoria a linha representa e outra coluna
+     tem o valor genérico (ex.: "variable_name_pt"/"Variable_Name" + "value"/"Valor"). Aqui gera um
+     passo resumo_estatistico + nivel_geo SEPARADO por categoria, cada um com
+     filtro_unidade="cat:coluna=valor" a isolar essa categoria (coluna_metrica = a coluna genérica
+     de valor, igual em todos). filtro_unidade="cat:..." só funciona com resumo_estatistico e
+     métodos que passam por agregação geográfica normal — NÃO funciona com juntar_datasets (que lê
+     o dataset inteiro sem filtrar linha a linha); se precisares de juntar dois datasets e um deles
+     é formato longo, usa antes um passo resumo_estatistico + cat: separado para extrair essa
+     categoria, e junta o RESULTADO, não o dataset bruto.
+     Em ambos os casos: nunca um só passo/coluna quando a pergunta pede várias categorias — isso
+     responde só sobre uma e ignora as outras. A resposta final tem de nomear qual categoria lidera
+     E mostrar as outras (tabela, mapa e gráfico incluem todas as séries geradas, não só a maior) —
+     vale para todo tipo de pergunta comparativa entre categorias, não só para culturas.
    - execucao_codigo: ÚLTIMO RECURSO, só quando NENHUM outro método do catálogo acima consegue
      responder à sub-pergunta, nem sequer com uma coluna aproximada (regra abaixo). O schema não
      tem um campo dedicado para isto (cada propriedade a mais em "passos" aproxima-o do limite de
@@ -276,12 +377,37 @@ Obrigatório:
     dataset_id (primeiro), dataset_id_2 (segundo), coluna_metrica e coluna_metrica_2; o resultado
     fica disponível como mais um dataset (o id sintético que a descrição do método explica) para
     passos seguintes correlacionarem, compararem ou resumirem.
+    Se algum dos datasets estiver em formato longo (a métrica é uma coluna genérica como "value",
+    e o indicador está noutra coluna como "variable_name_pt"), restringe CADA lado ao indicador
+    certo em filtro_unidade: "cat:coluna=valor" para o primeiro e "cat2:coluna=valor" para o
+    segundo, separados por ";". Sem isso a junção soma indicadores diferentes (produção de milho
+    com casos de tuberculose) e devolve um número sem significado nenhum. Também podes correlacionar
+    directamente duas métricas de datasets diferentes: o executor cruza-as pela unidade comum, e os
+    mesmos filtros "cat:"/"cat2:" aplicam-se da mesma maneira. O "tipo" deste passo (e de
+    distancia_minima, contagem_buffer, distribuicao_categoria_geo) é "calculo" ou "geoestatistica",
+    NUNCA "enriquecimento" — mesmo que a descricao_humana comece por "Cruza X com Y". O tipo
+    "enriquecimento" é só para lacunas resolvidas no estágio de Suficiência (ex.: procurar um
+    denominador populacional fora dos datasets seleccionados); um passo estrutural com esse tipo
+    por engano nunca chega a correr, sem aviso nenhum de falha.
+    Quando os datasets seleccionados têm níveis geográficos nativos DIFERENTES (ex.: um só tem
+    dados a admin1/província, outro tem admin3/distrito), qualquer passo que cruze os dois
+    (juntar_datasets, correlação entre séries dos dois) TEM de usar o nível mais grosso comum aos
+    dois — nunca o nível mais fino de só um deles. Isto vale mesmo que a pergunta peça "distrito"
+    explicitamente: responde ao nível mais fino que os dois datasets realmente partilham (regista
+    isto na descricao_humana, ex.: "ao nível de província, porque X só tem dados provinciais"), em
+    vez de falhar a sub-pergunta inteira só porque um dos dois não tem a granularidade pedida. Além
+    do passo que tenta juntar/correlacionar os dois, inclui sempre pelo menos um gráfico
+    comparativo independente por dataset a esse mesmo nível comum (dois passos resumo_estatistico
+    com o mesmo nivel_geo, um por dataset) — garante uma comparação visual mesmo que a correlação
+    formal falhe por incompatibilidade de unidades ou de linhas.
 11. Quando um passo aplica resumo_estatistico a uma série já normalizada por unidade (per_capita,
-    por_1000, densidade_km2) e o resultado vai ser lido como valor nacional, a média não ponderada
-    das razões de cada unidade NÃO é a razão nacional (ex.: a média das taxas de 10 províncias não
-    é a taxa do país). Prefere um passo adicional que agregue as somas brutas ao nível nacional
-    antes de dividir, ou rotula explicitamente o resultado como "média não ponderada entre
-    unidades" na descricao_humana, nunca como "nacional".
+    por_1000, densidade_km2, razao_coluna) e o resultado vai ser lido como valor nacional, a média
+    não ponderada das razões de cada unidade NÃO é a razão nacional (ex.: a média das taxas de 10
+    províncias não é a taxa do país). Prefere um passo adicional com nivel_geo="admin1" e o
+    denominador correcto (normalizacao razao_coluna, per_capita, etc.) para obter a razão nacional
+    já correctamente ponderada pelas somas brutas, em vez de calcular a média das razões
+    provinciais — ou rotula explicitamente o resultado como "média não ponderada entre unidades"
+    na descricao_humana quando não houver forma de o fazer, nunca como "nacional".
 12. O dashboard fica pobre com só 1-2 gráficos. Sempre que o dataset o permita, inclui pelo menos
     4 passos que produzam gráfico, de tipos diferentes entre si: perfil_coluna numa coluna
     categórica (pizza ou barra, conforme o número de categorias), comparar_grupos ou
@@ -290,6 +416,14 @@ Obrigatório:
     (media_movel, indexar_base_100) ou curva_lorenz consoante o que o dataset tiver. Não repitas o
     mesmo método sobre a mesma coluna só para encher: cada gráfico tem de responder a uma
     sub-pergunta diferente.
+12b. Quando a PRÓPRIA PERGUNTA usa linguagem comparativa — "comparando", "e como isso se
+    relaciona com", "relação entre", "versus", "diferença entre", "cruzando X com Y" — a
+    comparação NÃO é opcional nem um extra: é a resposta directa que foi pedida. Inclui sempre um
+    passo explícito de correlacao_pearson/correlacao_spearman (se ambas as variáveis forem
+    numéricas ao mesmo nível geográfico) ou comparar_grupos (se uma for categórica), mesmo que a
+    junção principal entre datasets falhe — nesse caso, compara as duas séries já agregadas ao
+    nível comum, cada uma isoladamente, em vez de responder só com uma das duas metades da
+    pergunta e deixar a relação por explicar.
 13. MÁXIMO 7 PASSOS no total, mesmo que R4/R9/regra 5 sugiram mais. Cada passo a mais custa tempo
     real de análise ao utilizador. Dentro deste tecto, PELO MENOS 3 têm de produzir gráfico
     (regra 12, tipos diferentes entre si) — nunca sacrifiques isto para caber outra coisa; o
@@ -322,7 +456,117 @@ centrais à pergunta. Abaixo de 0,85 marca precisa_enriquecimento=true. Sê exig
 enriquecer a mais do que entregar uma resposta parcial.
 
 Cada "lacuna", "accao" e "fonte_alvo" é UMA frase curta e concreta, não um parágrafo — é
-informação interna para o passo seguinte decidir, não texto que o utilizador lê.`
+informação interna para o passo seguinte decidir, não texto que o utilizador lê.
+
+## VEREDICTO
+
+Decides ainda se vale a pena publicar esta análise. Três hipóteses:
+
+- "suficiente": os dados respondem ao que foi perguntado.
+- "parcial": respondem ao NÚCLEO da pergunta, e o que falta é secundário. A análise sai à mesma,
+  com as limitações declaradas. É aqui que cai a maioria dos casos reais.
+- "insuficiente": os dados não respondem ao NÚCLEO da pergunta. Publicar seria entregar resposta a
+  outra pergunta.
+
+O que separa "parcial" de "insuficiente" não é quanta coisa falta: é se o que falta é o próprio
+núcleo do que foi perguntado. Identifica primeiro esse núcleo, que costuma estar no verbo e no
+recorte pedido, e só depois decide.
+
+- "Como evoluiu a população entre 1997 e 2017" sobre um único censo: o núcleo é a EVOLUÇÃO, e ela
+  não existe nestes dados. Mostrar a população de 2017 não é responder em parte, é responder a
+  outra pergunta. Isto é "insuficiente", não "parcial".
+- "Qual a população de cada distrito" sobre dados só provinciais: o núcleo é o recorte DISTRITAL.
+  Dar valores provinciais é trocar a pergunta. Também "insuficiente".
+- "Quantas escolas há por distrito e qual a taxa de aprovação" sobre dados só com a contagem: o
+  núcleo (quantas escolas por distrito) responde-se; a taxa de aprovação é um acréscimo que fica
+  por cobrir. Isto sim é "parcial".
+
+Marca "insuficiente" só quando se verifica uma destas cinco situações, e consegues nomear
+exactamente o que falta:
+
+- variavel_ausente: aquilo que a pergunta mede não existe em nenhuma coluna de nenhum dataset.
+- granularidade_insuficiente: a pergunta é sobre um nível geográfico (ex.: distrito) e os dados só
+  chegam a um nível mais grosso (ex.: província), sem forma de descer.
+- serie_temporal_insuficiente: a pergunta pede evolução, tendência ou comparação entre períodos, e
+  os dados têm um só período.
+- cobertura_dados_insuficiente: os períodos existem, mas estão vazios de mais para a trajectória
+  pedida. É o caso de "como evoluiu X em cada província entre 2015 e 2024" quando há dez anos no
+  ficheiro e quase metade das células por preencher: a linha de cada província seria feita de
+  buracos. Responder com totais acumulados em vez da evolução ano a ano NÃO é uma resposta parcial,
+  é trocar a pergunta, e é aqui que se marca. Em "disponivel" escreve a percentagem de células
+  preenchidas e quantos períodos por unidade existem de facto.
+- cobertura_geografica: a pergunta é sobre um território que os dados não cobrem de todo.
+- dominio_diferente: a pergunta é sobre um assunto que estes datasets não tratam.
+
+## EVIDÊNCIA
+
+Se marcares "insuficiente", preenches "evidencia" com prova concreta e verificável:
+
+- exigido: o nome exacto da variável, o nível administrativo ou os anos que a pergunta precisa.
+- disponivel: o que os datasets realmente têm nesse mesmo eixo. Se não têm nada, escreve o que têm
+  em vez disso. Nunca deixes vazio sem explicar.
+- explicacao: uma frase, dirigida ao utilizador, sobre porque é que isto impede a resposta.
+- termo_ausente: obrigatório para variavel_ausente, dominio_diferente e cobertura_geografica. Uma
+  ou duas palavras com aquilo que FALTA, sem incluir o que existe. Para "contagem de passageiros
+  por aeroporto" num dataset que tem aeroportos mas não tráfego, escreves "passageiros", nunca
+  "aeroporto" nem a frase inteira: o sistema procura este termo nos dados e, se o encontrar,
+  conclui que não falta nada e a análise segue.
+
+Um veredicto "insuficiente" sem evidência concreta e verificável é descartado pelo sistema e a
+análise segue como "parcial". Não bloqueies por desconfiança geral, por os dados serem antigos, por
+a amostra ser pequena ou por haver valores em falta: nada disso impede responder, só obriga a
+declarar a limitação. Bloquear é para quando a resposta pedida não existe nestes dados de todo.
+
+Na dúvida sobre se o que falta é secundário, escolhe "parcial": uma análise com ressalvas ainda
+serve alguém. Mas quando o núcleo da pergunta não tem resposta nestes dados, não hesites em marcar
+"insuficiente": aí publicar não é servir menos, é enganar.
+
+Não uses travessões em "explicacao": usa dois pontos ou ponto e vírgula.`
+
+export const PROMPT_PERGUNTAS_VIAVEIS = `Recebes o perfil estrutural real de um ou mais datasets do
+portal: colunas com tipo, completude, estatísticas e valores distintos, ligações geográficas
+verificadas por correspondência, amplitude temporal e número de linhas.
+
+A tua função é propor perguntas que estes dados respondem BEM. Não perguntas plausíveis: perguntas
+que tu consegues mostrar como se respondem, com as colunas que existem mesmo.
+
+Para cada pergunta declaras:
+- pergunta: como uma pessoa a faria, em português de Moçambique, concreta e específica. Nomeia o
+  território, o indicador ou o período de que se trata, em vez de falar em abstracto.
+- porque: numa frase, o que nestes dados a sustenta.
+- colunas_usadas: os nomes EXACTOS das colunas, tal como aparecem no perfil. Copia-os, não os
+  reescrevas nem os traduzas.
+- metodo: um nome do catálogo de métodos, tal como está escrito lá.
+- nivel_geo: só quando a pergunta é geográfica, e só um nível que apareça como ligação detectada.
+- dataset_ids: os ids dos datasets envolvidos.
+
+Regras:
+- Uma pergunta cuja coluna, método ou nível não exista é descartada pelo sistema e desperdiça um
+  lugar na lista. Verifica cada nome contra o perfil antes de o escrever.
+- Pergunta sobre o ASSUNTO, nunca sobre a contabilidade do ficheiro. Colunas de identificação e de
+  proveniência (osm_id, record_id, FID, OBJECTID, source, layer_no, códigos internos) existem para
+  a máquina, não descrevem o país: "que fonte contribuiu com mais registos" ou "há identificadores
+  atípicos" são perguntas que ninguém faz e que fazem o portal parecer que não entende os próprios
+  dados. Uma pergunta tem de ter pelo menos uma coluna que meça alguma coisa do mundo real.
+- Antes de escrever cada pergunta, verifica se responde a "isto interessa a alguém que trabalha
+  com dados públicos em Moçambique?". Se a resposta for não, não a escrevas.
+- O texto da pergunta é lido por uma pessoa: nunca lá metas nomes de coluna. Escreve "a população
+  entre os 65 e os 69 anos", não "a população entre os 65 e os 69 anos (T_65___69)". Os nomes
+  exactos vão em colunas_usadas, que é onde o sistema os lê.
+- Qualidade acima de quantidade: três perguntas que valem a pena são melhores do que seis em que
+  metade é enchimento. Se os dados forem pobres, propõe menos.
+- Varia o tipo de pergunta: distribuição, extremos, comparação entre grupos, relação entre duas
+  variáveis, evolução no tempo quando houver mais do que um período. Cinco perguntas iguais com
+  substantivos trocados não ajudam ninguém a escolher.
+- Se houver correlações fortes já detectadas no perfil, uma das perguntas deve explorá-las.
+- Quando existir uma secção CRUZAMENTO a dizer que os datasets se podem cruzar, segue-a: já foi
+  verificado por código que a ligação existe e a que nível, não é uma suposição tua. Perguntas que
+  relacionam dois ficheiros diferentes ("os distritos com mais X são também os que têm menos Y")
+  são a razão de alguém escolher dois datasets, e são as que mais valem.
+- Não proponhas perguntas sobre causas, previsões ou recomendações de política: os dados descrevem
+  o que é, não explicam porquê nem dizem o que fazer.
+
+Não uses travessões: usa dois pontos ou ponto e vírgula.`
 
 export const PROMPT_DESCOBERTA = `És o estágio de DESCOBERTA. Recebes os resultados calculados e procuras o que o utilizador NÃO perguntou mas devia saber.
 
@@ -350,6 +594,34 @@ inventes: declara a limitação em o_que_nao_diz.
 Escreve em português de Moçambique, claro e directo. Frases curtas. Zero linguagem de relatório
 vazia ("é importante notar que", "no geral podemos observar").
 
+## LINGUAGEM: escreves para uma pessoa, não para um estatístico
+
+Quem lê é jornalista, gestor público ou técnico de planificação. Notação estatística não lhe diz
+nada e faz o portal parecer fechado a quem não é da área. NUNCA escrevas no texto visível:
+
+- p-valores ("p = 0,49", "p < 0,05", "estatisticamente significativo")
+- coeficientes com letra ("r = -0,82", "R² = 0,68", "S = 2333", "z = 0,69", "n = 11")
+- nomes de teste (Pearson, Spearman, Mann-Kendall, Tukey, Gini, Moran, qui-quadrado)
+- jargão de método ("declive de Sen", "intervalo de confiança", "correlação não paramétrica")
+
+Diz o que o resultado SIGNIFICA, na língua de quem lê:
+
+- em vez de "a correlação é de -0,82 (p = 0,00)": "as províncias mais pobres são claramente as que
+  têm menos electricidade"
+- em vez de "não há tendência estatisticamente significativa (p = 0,49)": "a produção subiu e desceu
+  ao longo dos anos, sem um rumo claro"
+- em vez de "r = 0,52, associação moderada": "onde há mais de uma, tende a haver mais da outra, mas
+  a regra falha em várias províncias"
+- em vez de "esta análise não produziu um coeficiente de correlação": "estes dados não permitem
+  dizer se as duas coisas andam juntas"
+
+A força e a incerteza continuam a ser ditas, com palavras: "claramente", "de forma consistente",
+"há sinais, mas não é seguro", "não dá para afirmar". Não confundas escrever simples com esconder a
+dúvida: o que se corta é o símbolo, nunca a honestidade sobre o que os dados não provam.
+
+A única excepção são os números que respondem à pergunta (habitantes, toneladas, hectares,
+percentagens de cobertura): esses são o conteúdo e escrevem-se sempre.
+
 Estrutura:
 - titulo: a conclusão principal numa frase com sujeito e verbo, com o número mais importante se
   possível. Nunca uma descrição do dataset.
@@ -362,9 +634,12 @@ Estrutura:
   gráfico da mesma análise mostram: nunca cites um "vencedor" diferente do que aparece em maior
   destaque nesses cálculos.
 - numeros_chave: 5 a 7, cada um com o contexto que o torna interpretável, curto (uma frase). Cobre
-  não só a resposta directa mas também extremos (maior/menor), dispersão, distribuição e
-  cobertura dos dados, sempre que houver um cálculo real que sustente cada um. Não esgotes todos
-  os cálculos disponíveis só para encher: mais do que 7 fica denso em vez de claro.
+  não só a resposta directa mas também extremos (maior/menor), dispersão e distribuição, sempre
+  que houver um cálculo real que sustente cada um. Não esgotes todos os cálculos disponíveis só
+  para encher: mais do que 7 fica denso em vez de claro. NUNCA inclui completude/cobertura dos
+  dados (percentagem de valores preenchidos) aqui — isso já tem secção própria ("Qualidade dos
+  dados"), com contexto e cor por coluna; num cartão de destaque solto, sem esse contexto, uma
+  percentagem de completude lê-se como "os dados são fracos" em vez de informar.
 - o_que_mostram: os padrões, em 1-2 parágrafos curtos (3-4 frases cada), não mais. Quando um teste
   de tendência não é significativo, NUNCA fica nisso ("não há tendência") sozinho — descreve o que
   os valores REAIS observados mostram (intervalo entre o mínimo e o máximo do período, se subiram
@@ -533,7 +808,7 @@ export const SCHEMA_PLANO = {
           filtro_unidade: { type: 'string' },
           normalizacao: {
             type: 'string',
-            enum: ['nenhuma', 'densidade_km2', 'per_capita', 'por_1000', 'percentagem_do_total'],
+            enum: ['nenhuma', 'densidade_km2', 'per_capita', 'por_1000', 'percentagem_do_total', 'razao_coluna'],
           },
           produz: { type: 'array', items: { type: 'string' } },
         },
@@ -599,13 +874,64 @@ export const SCHEMA_SUFICIENCIA = {
         additionalProperties: false,
       },
     },
+    veredicto: {
+      type: 'string',
+      enum: ['suficiente', 'parcial', 'insuficiente'],
+    },
+    evidencia: {
+      type: 'object',
+      properties: {
+        tipo: {
+          type: 'string',
+          enum: [
+            'variavel_ausente',
+            'granularidade_insuficiente',
+            'serie_temporal_insuficiente',
+            'cobertura_geografica',
+            'dominio_diferente',
+            'cobertura_dados_insuficiente',
+          ],
+        },
+        exigido: { type: 'string' },
+        disponivel: { type: 'string' },
+        explicacao: { type: 'string' },
+        termo_ausente: { type: 'string' },
+      },
+      required: ['tipo', 'exigido', 'disponivel', 'explicacao'],
+      additionalProperties: false,
+    },
   },
   required: [
     'cobertura',
     'confianca_sem_enriquecimento',
     'precisa_enriquecimento',
     'alvos_enriquecimento',
+    'veredicto',
   ],
+  additionalProperties: false,
+}
+
+export const SCHEMA_PERGUNTAS_VIAVEIS = {
+  type: 'object',
+  properties: {
+    perguntas: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          pergunta: { type: 'string' },
+          porque: { type: 'string' },
+          colunas_usadas: { type: 'array', items: { type: 'string' } },
+          metodo: { type: 'string' },
+          nivel_geo: { type: 'string' },
+          dataset_ids: { type: 'array', items: { type: 'number' } },
+        },
+        required: ['pergunta', 'porque', 'colunas_usadas', 'metodo', 'dataset_ids'],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ['perguntas'],
   additionalProperties: false,
 }
 

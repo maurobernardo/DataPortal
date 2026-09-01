@@ -5,15 +5,21 @@ import { getCurrentUser } from '@/lib/auth'
 import { listarAnalisesDoUtilizador } from '@/lib/analysis/persistencia'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
 import '@/app/geo-catalog.css'
+import '@/app/ai-insights.css'
 
 export const dynamic = 'force-dynamic'
 
-const ROTULO_ESTADO: Record<string, { texto: string; cor: string }> = {
-  planeando: { texto: 'A planear', cor: 'text-amber-700 bg-amber-50' },
-  executando: { texto: 'A calcular', cor: 'text-amber-700 bg-amber-50' },
-  compondo: { texto: 'A rever', cor: 'text-amber-700 bg-amber-50' },
-  pronto: { texto: 'Pronta', cor: 'text-[#064E2C] bg-[#F1F8F4]' },
-  erro: { texto: 'Não publicada', cor: 'text-red-700 bg-red-50' },
+/**
+ * O estado de cada análise. Três degraus, e não cinco cores: a curso (dourado, ainda a acontecer),
+ * pronta (sálvia, pode abrir-se) e não publicada (terracota, o motor recusou). Os três estados de
+ * processamento partilham a mesma cor porque, para quem espera, são a mesma coisa.
+ */
+const ROTULO_ESTADO: Record<string, { texto: string; classe: string }> = {
+  planeando: { texto: 'A planear', classe: 'a-curso' },
+  executando: { texto: 'A calcular', classe: 'a-curso' },
+  compondo: { texto: 'A rever', classe: 'a-curso' },
+  pronto: { texto: 'Pronta', classe: 'pronta' },
+  erro: { texto: 'Não publicada', classe: 'recusada' },
 }
 
 export default async function PaginaListaAnalises() {
@@ -23,41 +29,60 @@ export default async function PaginaListaAnalises() {
   const analises = await listarAnalisesDoUtilizador(sessao.userId, 50)
 
   return (
-    <div className="geo-detail-page">
-      <div className="geo-detail-inner max-w-3xl">
+    <div className="pdx min-h-screen">
+      {/* Mesma largura das restantes telas de análise: a 768px a lista ficava numa coluna estreita
+          ao meio de um ecrã vazio, e uma pergunta de sessenta caracteres cortava sem necessidade. */}
+      <div className="w-full max-w-[1400px] mx-auto px-4 md:px-6 py-6">
         <Breadcrumbs items={[{ label: 'AI Insights', href: '/analise/nova' }, { label: 'Minhas análises' }]} />
 
-        <div className="flex items-center justify-between gap-4 mb-6">
-          <h1 className="text-2xl font-extrabold text-[var(--pd-ink-900)] tracking-tight">Minhas análises</h1>
-          <Link
-            href="/analise/nova"
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#064E2C] to-[#1FA365] text-white text-sm font-semibold px-4 py-2 shadow-sm hover:shadow-md transition-all"
-          >
-            <LineChart className="w-4 h-4" />
+        <div className="pdx-cabecalho-pagina flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="pdx-selo">
+              <LineChart className="size-3.5" aria-hidden />
+              Motor de análise profunda
+            </p>
+            <h1>Minhas análises</h1>
+            <p>
+              {analises.length === 0
+                ? 'As perguntas que fizer aos dados ficam guardadas aqui.'
+                : `${analises.length} ${analises.length === 1 ? 'pergunta guardada' : 'perguntas guardadas'}. Uma análise continua a correr mesmo que saia da página.`}
+            </p>
+          </div>
+          <Link href="/analise/nova" className="pdx-btn pdx-btn-primary shrink-0">
+            <LineChart className="size-4" aria-hidden />
             Nova análise
           </Link>
         </div>
 
         {analises.length === 0 ? (
-          <div className="geo-detail-card p-8 text-center">
-            <p className="text-sm text-[var(--pd-ink-500)] mb-4">Ainda não fez nenhuma análise.</p>
-            <Link href="/analise/nova" className="geo-detail-btn-primary inline-flex">
-              Fazer a primeira pergunta
-            </Link>
+          <div className="pdx-panel">
+            <div className="pdx-panel-body p-8 text-center">
+              <p className="text-[14px] mb-4" style={{ color: 'var(--ink-soft)' }}>
+                Ainda não fez nenhuma análise.
+              </p>
+              <Link href="/analise/nova" className="pdx-btn pdx-btn-primary">
+                Fazer a primeira pergunta
+              </Link>
+            </div>
           </div>
         ) : (
-          <ul className="space-y-2">
+          <ul className="pdx-lista-analises">
             {analises.map((a) => {
               const estado = ROTULO_ESTADO[a.estado] || ROTULO_ESTADO.erro
               return (
                 <li key={a.id}>
                   <Link
-                    href={`/analise/${a.id}`}
-                    className="flex items-center justify-between gap-4 rounded-[14px] border border-[#E2E8E5] bg-white px-5 py-4 hover:border-[#CFE3D6] hover:shadow-sm transition-all group"
+                    // `?de=lista` é o que faz o "Voltar" da análise regressar aqui em vez de
+                    // atirar sempre para "Nova análise". Sem isto, quem entrava por "Minhas
+                    // análises" perdia o sítio de onde veio.
+                    href={`/analise/${a.id}?de=lista`}
+                    className="pdx-analise-item"
                   >
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-[var(--pd-ink-900)] truncate">{a.pergunta}</p>
-                      <p className="text-[11px] text-gray-400 mt-1">
+                    <span className="texto">
+                      {/* A pergunta em serifa: é a voz de quem perguntou, e é o que distingue uma
+                          linha da outra numa lista de cinquenta. */}
+                      <span className="pergunta">{a.pergunta}</span>
+                      <span className="quando pdx-num">
                         {new Date(a.criado_em).toLocaleString('pt-PT', {
                           day: '2-digit',
                           month: 'short',
@@ -65,14 +90,12 @@ export default async function PaginaListaAnalises() {
                           hour: '2-digit',
                           minute: '2-digit',
                         })}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-3 shrink-0">
-                      <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${estado.cor}`}>
-                        {estado.texto}
                       </span>
-                      <ArrowRight className="size-4 text-gray-300 group-hover:text-[#064E2C] transition-colors" aria-hidden />
-                    </div>
+                    </span>
+                    <span className="flex items-center gap-3 shrink-0">
+                      <span className={`pdx-estado ${estado.classe}`}>{estado.texto}</span>
+                      <ArrowRight className="seta size-4" aria-hidden />
+                    </span>
                   </Link>
                 </li>
               )

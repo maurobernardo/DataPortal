@@ -9,11 +9,25 @@ function getAllowedOrigins(): string[] {
     .filter(Boolean)
 }
 
-function applySecurityHeaders(response: NextResponse): NextResponse {
-  response.headers.set('X-Frame-Options', 'DENY')
+function applySecurityHeaders(response: NextResponse, pathname?: string): NextResponse {
+  // /embed/* é a única família de páginas pensada para ser incorporada por sites de terceiros
+  // (ver next.config.js) — X-Frame-Options: DENY é um header antigo que alguns navegadores ainda
+  // respeitam por cima da CSP moderna, e "DENY" bloquearia sempre, tornando o "frame-ancestors *"
+  // do CSP inútil. Só aqui é omitido; todas as outras rotas continuam bloqueadas por omissão.
+  if (!pathname?.startsWith('/embed/')) {
+    response.headers.set('X-Frame-Options', 'DENY')
+  }
   response.headers.set('X-Content-Type-Options', 'nosniff')
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
-  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+  // Microfone só é permitido em /analise/nova ("Perguntar por voz") — em todas as outras páginas
+  // continua bloqueado. Sem "self" aqui, o Permissions-Policy nega o microfone ao próprio
+  // documento antes de sequer chegar à permissão do browser (é isto que dá "not-allowed" mesmo
+  // com a permissão do site e do sistema operativo correctas).
+  const microfonePermitido = pathname === '/analise/nova'
+  response.headers.set(
+    'Permissions-Policy',
+    `camera=(), microphone=(${microfonePermitido ? 'self' : ''}), geolocation=()`
+  )
   response.headers.set('X-DNS-Prefetch-Control', 'off')
   return response
 }
@@ -55,7 +69,7 @@ export function middleware(request: NextRequest) {
     }
     preflight.headers.set('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS')
     preflight.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-    return applySecurityHeaders(preflight)
+    return applySecurityHeaders(preflight, pathname)
   }
 
   const response = NextResponse.next()
@@ -65,7 +79,7 @@ export function middleware(request: NextRequest) {
     response.headers.set('Vary', 'Origin')
   }
 
-  return applySecurityHeaders(response)
+  return applySecurityHeaders(response, pathname)
 }
 
 export const config = {

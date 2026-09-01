@@ -181,53 +181,53 @@ export const VAR_META: Record<string, VarMeta> = {
 
 export const VAR_GROUPS: { label: string; options: { value: string; label: string }[] }[] = [
   {
-    label: '— Sistema de saúde —',
+    label: 'Sistema de saúde',
     options: [
-      { value: 'HSSI_adm3', label: 'HSSI — Índice de stress do sistema' },
-      { value: 'HSER_adm3', label: 'HSER — Rácio de eficiência' },
-      { value: 'RFHN_adm3', label: 'RFHN — Nexus resiliência-fragilidade' },
-      { value: 'DQCS_adm3', label: 'DQCS — Confiança na qualidade dos dados' },
+      { value: 'HSSI_adm3', label: 'HSSI: Índice de stress do sistema' },
+      { value: 'HSER_adm3', label: 'HSER: Rácio de eficiência' },
+      { value: 'RFHN_adm3', label: 'RFHN: Nexus resiliência-fragilidade' },
+      { value: 'DQCS_adm3', label: 'DQCS: Confiança na qualidade dos dados' },
     ],
   },
   {
-    label: '— Epidemiologia —',
+    label: 'Epidemiologia',
     options: [
-      { value: 'TECI_adm3', label: 'TECI — Convergência da tripla epidemia' },
-      { value: 'ETI_adm3', label: 'ETI — Transição epidemiológica' },
-      { value: 'HCCR_adm3', label: 'HCCR — Conclusão da cascata VIH' },
+      { value: 'TECI_adm3', label: 'TECI: Convergência da tripla epidemia' },
+      { value: 'ETI_adm3', label: 'ETI: Transição epidemiológica' },
+      { value: 'HCCR_adm3', label: 'HCCR: Conclusão da cascata VIH' },
     ],
   },
   {
-    label: '— Materno-infantil —',
+    label: 'Materno-infantil',
     options: [
-      { value: 'MMPG_adm3', label: 'MMPG — Lacuna de prevenibilidade MM' },
-      { value: 'CHCG_adm3', label: 'CHCG — Lacuna de convergência infantil' },
-      { value: 'SDCFR_adm3', label: 'SDCFR — Taxa de falha na cascata' },
-      { value: 'IMSS_adm3', label: 'IMSS — Sinergia imunização × desnutrição' },
+      { value: 'MMPG_adm3', label: 'MMPG: Lacuna de prevenibilidade MM' },
+      { value: 'CHCG_adm3', label: 'CHCG: Lacuna de convergência infantil' },
+      { value: 'SDCFR_adm3', label: 'SDCFR: Taxa de falha na cascata' },
+      { value: 'IMSS_adm3', label: 'IMSS: Sinergia imunização × desnutrição' },
     ],
   },
   {
-    label: '— Acesso e equidade —',
+    label: 'Acesso e equidade',
     options: [
-      { value: 'GHAD_adm3', label: 'GHAD — Défice de acesso geográfico' },
-      { value: 'HEG_adm3', label: 'HEG — Gradiente de equidade' },
-      { value: 'UAI_adm3', label: 'UAI — Índice de acesso urbano' },
+      { value: 'GHAD_adm3', label: 'GHAD: Défice de acesso geográfico' },
+      { value: 'HEG_adm3', label: 'HEG: Gradiente de equidade' },
+      { value: 'UAI_adm3', label: 'UAI: Índice de acesso urbano' },
     ],
   },
   {
-    label: '— Clima e ambiente —',
+    label: 'Clima e ambiente',
     options: [
-      { value: 'CHVI_adm3', label: 'CHVI — Vulnerabilidade climática-saúde' },
-      { value: 'NEDS_adm3', label: 'NEDS — Condicionante ecológico nutricional' },
-      { value: 'OHZRP_adm3', label: 'OHZRP — Risco zoonótico One Health' },
+      { value: 'CHVI_adm3', label: 'CHVI: Vulnerabilidade climática-saúde' },
+      { value: 'NEDS_adm3', label: 'NEDS: Condicionante ecológico nutricional' },
+      { value: 'OHZRP_adm3', label: 'OHZRP: Risco zoonótico One Health' },
     ],
   },
   {
-    label: '— Demografia —',
+    label: 'Demografia',
     options: [
-      { value: 'DDHRI_adm3', label: 'DDHRI — Prontidão do dividendo demográfico' },
-      { value: 'HWGEI_adm3', label: 'HWGEI — Equidade de género RH' },
-      { value: 'PDBRS_adm3', label: 'PDBRS — Rank de carga de doença' },
+      { value: 'DDHRI_adm3', label: 'DDHRI: Prontidão do dividendo demográfico' },
+      { value: 'HWGEI_adm3', label: 'HWGEI: Equidade de género RH' },
+      { value: 'PDBRS_adm3', label: 'PDBRS: Rank de carga de doença' },
     ],
   },
 ]
@@ -277,7 +277,7 @@ export function colourScale(val: number | null | undefined, meta: VarMeta) {
 }
 
 export function fmt(val: unknown, unit = '') {
-  if (val === null || val === undefined || Number.isNaN(Number(val))) return '—'
+  if (val === null || val === undefined || Number.isNaN(Number(val))) return 'N/D'
   const n = typeof val === 'number' ? val : parseFloat(String(val))
   return (Number.isInteger(n) ? n : n.toFixed(2)) + unit
 }

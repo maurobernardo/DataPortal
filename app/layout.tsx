@@ -1,18 +1,29 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Fraunces, Inter } from 'next/font/google'
 import './globals.css'
 import { ConditionalNavigation } from '@/components/ConditionalNavigation'
 import { ConditionalFooter } from '@/components/ConditionalFooter'
 import { TermsConsentModal } from '@/components/TermsConsentModal'
 import { ContactModalProvider } from '@/components/ContactModalProvider'
-import { ContactFloatingButton } from '@/components/ContactFloatingButton'
+import { ChatbotAjuda } from '@/components/ChatbotAjuda'
 import { GoogleTranslate } from '@/components/GoogleTranslate'
+import { CommandPalette } from '@/components/CommandPalette'
 import React from 'react'
 
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
   display: 'swap',
+})
+
+// Serifa editorial usada só nos títulos das análises (AI Insights). Vem por next/font, e não por
+// <link> ao Google Fonts, porque a CSP do portal não permite folhas de estilo externas e porque
+// assim a fonte é servida do próprio domínio, sem salto de rede antes do primeiro desenho.
+const fraunces = Fraunces({
+  subsets: ['latin'],
+  variable: '--font-fraunces',
+  display: 'swap',
+  weight: ['400', '500', '600', '700'],
 })
 
 export const metadata: Metadata = {
@@ -31,7 +42,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="pt-BR" className={inter.variable}>
+    <html lang="pt-BR" className={`${inter.variable} ${fraunces.variable}`}>
       <body
         className={`${inter.className} bg-gradient-to-br from-slate-50 via-green-50 to-yellow-50/30 min-h-screen antialiased`}
       >
@@ -43,7 +54,8 @@ export default function RootLayout({
             {children}
           </main>
           <ConditionalFooter />
-          <ContactFloatingButton />
+          <ChatbotAjuda />
+          <CommandPalette />
         </ContactModalProvider>
       </body>
     </html>

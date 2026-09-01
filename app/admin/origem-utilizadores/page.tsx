@@ -52,7 +52,7 @@ export default async function OrigemUtilizadoresPage() {
         <AdminSidebar user={user} />
       </div>
 
-      <div className="flex-1 md:ml-64">
+      <div className="flex-1 min-w-0 md:ml-64">
         <DashboardHeader user={user} />
 
         <div className="p-4 md:p-6">
@@ -63,7 +63,7 @@ export default async function OrigemUtilizadoresPage() {
                 Origem dos utilizadores
               </h1>
               <p className="text-sm text-gray-500 mt-1">
-                De onde vêm os acessos ao portal (últimos 90 dias) — vistas de dataset, downloads,
+                De onde vêm os acessos ao portal (últimos 90 dias): vistas de dataset, downloads,
                 mapas, pedidos de relatório, análises de IA e contactos. Localização aproximada
                 por país/região a partir do IP; o IP em si nunca é guardado.
               </p>
@@ -87,7 +87,7 @@ export default async function OrigemUtilizadoresPage() {
                   País com mais acessos
                 </p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {resumo.paisPrincipal ? nomePais(resumo.paisPrincipal.pais) : '—'}
+                  {resumo.paisPrincipal ? nomePais(resumo.paisPrincipal.pais) : 'N/D'}
                 </p>
                 {resumo.paisPrincipal && (
                   <p className="text-xs text-gray-400 mt-0.5">{resumo.paisPrincipal.total.toLocaleString('pt-PT')} eventos</p>
@@ -129,25 +129,36 @@ export default async function OrigemUtilizadoresPage() {
                   <h2 className="text-sm font-bold text-gray-900">Por província (Moçambique)</h2>
                 </div>
                 <div className="p-5 space-y-2.5">
-                  {resumo.porProvinciaMZ.length === 0 ? (
+                  {resumo.porProvinciaMZ.length === 0 && resumo.mzSemProvincia === 0 ? (
                     <p className="text-sm text-gray-400 text-center py-6">
-                      Ainda não há eventos de Moçambique com província identificada.
+                      Ainda não há eventos de Moçambique registados.
                     </p>
                   ) : (
-                    resumo.porProvinciaMZ.map((p) => (
-                      <div key={p.regiao} className="flex items-center gap-3">
-                        <span className="w-32 shrink-0 text-[13px] text-gray-700 truncate">{p.regiao}</span>
-                        <div className="flex-1 h-2 rounded-full bg-gray-100 overflow-hidden">
-                          <div
-                            className="h-full rounded-full bg-[#064E2C]"
-                            style={{ width: `${Math.max(2, (p.total / maxProvincia) * 100)}%` }}
-                          />
+                    <>
+                      {resumo.porProvinciaMZ.map((p) => (
+                        <div key={p.regiao} className="flex items-center gap-3">
+                          <span className="w-32 shrink-0 text-[13px] text-gray-700 truncate">{p.regiao}</span>
+                          <div className="flex-1 h-2 rounded-full bg-gray-100 overflow-hidden">
+                            <div
+                              className="h-full rounded-full bg-[#064E2C]"
+                              style={{ width: `${Math.max(2, (p.total / maxProvincia) * 100)}%` }}
+                            />
+                          </div>
+                          <span className="w-12 shrink-0 text-right text-[12px] font-bold text-gray-800 tabular-nums">
+                            {p.total}
+                          </span>
                         </div>
-                        <span className="w-12 shrink-0 text-right text-[12px] font-bold text-gray-800 tabular-nums">
-                          {p.total}
-                        </span>
-                      </div>
-                    ))
+                      ))}
+                      {resumo.mzSemProvincia > 0 && (
+                        <p className="text-xs text-gray-400 pt-2 mt-1 border-t border-gray-100">
+                          + {resumo.mzSemProvincia.toLocaleString('pt-PT')} acesso
+                          {resumo.mzSemProvincia !== 1 ? 's' : ''} de Moçambique sem província
+                          identificada pelo IP (comum em redes móveis: Vodacom, Movitel, Tmcel).
+                          Contam no total do país, mas a base de geolocalização não sabe dizer a
+                          província exacta.
+                        </p>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
@@ -159,7 +170,7 @@ export default async function OrigemUtilizadoresPage() {
                 <h2 className="text-sm font-bold text-gray-900">Por tipo de acesso</h2>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-sm pd-responsive-table">
                   <thead>
                     <tr className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide border-b border-gray-100">
                       <th className="px-5 py-2.5">Tipo</th>
@@ -176,8 +187,8 @@ export default async function OrigemUtilizadoresPage() {
                     ) : (
                       resumo.porTipoEvento.map((t) => (
                         <tr key={t.tipoEvento} className="border-b border-gray-50 last:border-0">
-                          <td className="px-5 py-3 text-gray-800">{t.rotulo}</td>
-                          <td className="px-5 py-3">
+                          <td data-label="Tipo" className="px-5 py-3 text-gray-800">{t.rotulo}</td>
+                          <td data-label="Eventos" className="px-5 py-3">
                             <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold bg-gray-100 text-gray-600">
                               {t.total}
                             </span>

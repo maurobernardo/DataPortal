@@ -8,56 +8,30 @@ import type { PreviewMapa } from '@/lib/maps-preview-data'
 
 type MapCatalogHeroVisualProps = {
   map: PublicMapDashboard
-  /** Pontos reais projectados (ver lib/maps-preview-data.ts) — só existe quando há uma função
-   *  dedicada para o tipo de mapa em destaque. Sem isto, nunca se desenha um mapa falso: usa-se um
-   *  fundo neutro em vez de fingir dados que não existem. */
   preview?: PreviewMapa | null
 }
 
-/** Pré-visualização compacta do hero — mapa + dashboard */
-export function MapCatalogHeroVisual({ map, preview }: MapCatalogHeroVisualProps) {
+/**
+ * Pré-visualização do hero: em vez de um esboço abstracto (pontos genéricos), mostra o próprio
+ * ecrã do mapa/dashboard real, reduzido, dentro de um iframe — o que o utilizador vê aqui é
+ * exactamente o que vai encontrar ao abrir. `pointer-events: none` no iframe porque é só uma
+ * pré-visualização: os filtros não precisam de funcionar aqui, só em "/maps/[slug]" a sério.
+ */
+export function MapCatalogHeroVisual({ map }: MapCatalogHeroVisualProps) {
   const exp = MAP_EXPERIENCE_LABELS[map.experienceType]
   const highlights = (map.highlights ?? []).slice(0, 3)
-  const pontos = preview?.pontos ?? []
-  const temPreviewReal = pontos.length > 0
 
   return (
     <div className="mp-hero-visual">
       <div className="mp-hero-visual-canvas">
-        {temPreviewReal ? (
-          <>
-            <svg
-              className="mp-hero-visual-svg"
-              viewBox="0 0 100 80"
-              preserveAspectRatio="xMidYMid slice"
-              role="img"
-              aria-label={`Distribuição real de ${pontos.length} unidades usadas no mapa, coloridas por ${preview!.rotuloCamada}`}
-            >
-              <rect width="100" height="80" fill="#04361f" />
-              {pontos.map((p, i) => (
-                <circle
-                  key={i}
-                  cx={p.x}
-                  cy={p.y}
-                  r={pontos.length > 50 ? 0.9 : 2.1}
-                  fill={preview!.legenda[p.corIndice]?.cor ?? '#4FAE75'}
-                  opacity={0.92}
-                />
-              ))}
-            </svg>
-            <div className="mp-hero-visual-layer-label">{preview!.rotuloCamada}</div>
-            <div className="mp-hero-visual-legend" aria-hidden>
-              {preview!.legenda.map((l) => (
-                <span key={l.rotulo} className="mp-hero-visual-legend-item">
-                  <span className="mp-hero-visual-legend-dot" style={{ background: l.cor }} />
-                  <small>{l.rotulo}</small>
-                </span>
-              ))}
-            </div>
-          </>
-        ) : (
-          <div className="mp-hero-visual-svg mp-hero-visual-fallback" aria-hidden />
-        )}
+        <div className="mp-hero-visual-iframe-wrap" aria-hidden>
+          <iframe
+            src={`/maps/${map.slug}`}
+            title=""
+            tabIndex={-1}
+            loading="lazy"
+          />
+        </div>
 
         <div className="mp-hero-visual-panel">
           <div className="mp-hero-visual-tags">

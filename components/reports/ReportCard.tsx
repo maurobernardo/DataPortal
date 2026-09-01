@@ -1,14 +1,30 @@
 import Link from 'next/link'
-import { ArrowRight, Calendar, FileText, Globe, Users } from 'lucide-react'
+import { ArrowRight, Calendar, FileText, Globe, ScanSearch, Users } from 'lucide-react'
 import { ReportRequestButton } from '@/components/ReportRequestButton'
 import { FavoriteButton } from '@/components/FavoriteButton'
+import { CategoryThumb } from '@/components/geo/CategoryThumb'
 import type { PublicReport } from '@/components/reports/types'
 
-export function ReportCard({ report, isFavorited }: { report: PublicReport; isFavorited?: boolean }) {
+export function ReportCard({
+  report,
+  index,
+  isFavorited,
+}: {
+  report: PublicReport
+  index: number
+  isFavorited?: boolean
+}) {
   return (
-    <article className="rpt-card">
-      <div className="rpt-card-thumb" aria-hidden>
-        <FileText className="rpt-card-thumb-icon" />
+    <article className="rpt-card pd-card-lift">
+      <div className="rpt-card-thumb">
+        <CategoryThumb
+          title={report.title}
+          keywords={[report.author, report.partners].filter(Boolean).join(' ')}
+          category={report.coverage}
+          index={index}
+          kind="alf"
+          showKind={false}
+        />
         <span className="rpt-card-year">{report.year}</span>
       </div>
       <FavoriteButton
@@ -55,6 +71,14 @@ export function ReportCard({ report, isFavorited }: { report: PublicReport; isFa
             Ver detalhes
             <ArrowRight className="size-4" aria-hidden />
           </Link>
+          {/* Só aparece quando há um ficheiro para analisar: sem PDF não há nada que a análise
+              possa ler, e o botão levaria a uma secção vazia. */}
+          {report.filePath ? (
+            <Link href={`/relatorios/${report.id}#analise`} className="rpt-btn rpt-btn-outline rpt-btn-analise">
+              <ScanSearch className="size-4" aria-hidden />
+              Analisar
+            </Link>
+          ) : null}
           <ReportRequestButton
             report={{
               id: report.id,

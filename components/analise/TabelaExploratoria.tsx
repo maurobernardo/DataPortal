@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { ArrowUpDown, Download, Loader2, Map as MapIcon, Search } from 'lucide-react'
+import { ArrowUpDown, Download, Loader2, Map as MapIcon, Search, Table as TableIcon } from 'lucide-react'
 import { rotularColuna } from '@/lib/analysis/rotulos-cliente'
 
 type Dataset = { id: number; titulo: string }
@@ -21,6 +21,18 @@ function filtrarColunasVazias(colunas: string[], linhas: string[][]): { colunas:
     colunas: colunas.filter((_, i) => temValor[i]),
     linhas: linhas.map((l) => l.filter((_, i) => temValor[i])),
   }
+}
+
+/** Colunas onde a maioria dos valores preenchidos é numérica ficam alinhadas à direita, com
+ *  algarismos tabulares — a diferença entre uma tabela que se lê como números e uma que só
+ *  parece texto em colunas, mesmo sem mudar nenhum valor. */
+function detectarColunasNumericas(colunas: string[], linhas: string[][]): boolean[] {
+  return colunas.map((_, i) => {
+    const valores = linhas.map((l) => l[i]).filter((v) => (v || '').trim() !== '')
+    if (valores.length === 0) return false
+    const numericos = valores.filter((v) => Number.isFinite(Number.parseFloat(v)) && /^-?[\d.,\s]+%?$/.test(v.trim()))
+    return numericos.length / valores.length >= 0.8
+  })
 }
 
 /**
@@ -93,6 +105,7 @@ function TabelaDataset({
 
   const iColunaFiltro = colunaFiltro ? colunas.indexOf(colunaFiltro) : -1
   const iColunaOrdenacao = ordenacao ? colunas.indexOf(ordenacao.coluna) : -1
+  const colunasNumericas = useMemo(() => detectarColunasNumericas(colunas, linhas), [colunas, linhas])
 
   const linhasFiltradas = useMemo(() => {
     let r = linhas
@@ -156,7 +169,7 @@ function TabelaDataset({
 
   if (estado === 'a_carregar') {
     return (
-      <div className="flex items-center gap-2 text-[13px] text-gray-500 py-8 justify-center">
+      <div className="flex items-center gap-2 text-[13px] py-8 justify-center" style={{ color: 'var(--ink-faint)' }}>
         <Loader2 className="size-4 animate-spin" aria-hidden />
         A carregar {dataset.titulo}…
       </div>
@@ -164,9 +177,9 @@ function TabelaDataset({
   }
   if (estado === 'vazio' || estado === 'erro') {
     return (
-      <div className="text-[13px] text-gray-500 py-8 text-center">
+      <div className="text-[13px] py-8 text-center" style={{ color: 'var(--ink-faint)' }}>
         Sem pré-visualização tabular disponível para este dataset.{' '}
-        <Link href={`/dataset/${dataset.id}`} className="text-[#064E2C] font-semibold hover:underline">
+        <Link href={`/dataset/${dataset.id}`} className="font-semibold hover:underline" style={{ color: 'var(--forest-700)' }}>
           Ver na página do dataset
         </Link>
       </div>
@@ -177,13 +190,17 @@ function TabelaDataset({
     <div>
       <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
         <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-gray-400" aria-hidden />
+          <Search
+            className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5"
+            style={{ color: 'var(--ink-faint)' }}
+            aria-hidden
+          />
           <input
             type="text"
             value={pesquisa}
             onChange={(e) => setPesquisa(e.target.value)}
             placeholder="Pesquisar…"
-            className="pl-8 pr-3 py-1.5 text-[12.5px] rounded-lg border border-[#E2E8E5] w-48 focus:outline-none focus:ring-2 focus:ring-[#064E2C]"
+            className="pdx-campo pdx-campo-com-icone w-48"
           />
         </div>
         <div className="flex items-center gap-1.5">
@@ -193,7 +210,7 @@ function TabelaDataset({
               setColunaFiltro(e.target.value || null)
               setValorFiltro('')
             }}
-            className="text-[12px] rounded-lg border border-[#E2E8E5] px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#064E2C]"
+            className="pdx-campo"
           >
             <option value="">Filtrar coluna…</option>
             {colunas.map((c) => (
@@ -208,14 +225,14 @@ function TabelaDataset({
               value={valorFiltro}
               onChange={(e) => setValorFiltro(e.target.value)}
               placeholder={`valor em "${rotularColuna(colunaFiltro)}"`}
-              className="text-[12px] rounded-lg border border-[#E2E8E5] px-2 py-1.5 w-32 focus:outline-none focus:ring-2 focus:ring-[#064E2C]"
+              className="pdx-campo w-32"
             />
           )}
           {temNoMapa && (
             <button
               type="button"
               onClick={verNoMapa}
-              className="inline-flex items-center gap-1 rounded-lg border border-[#E2E8E5] px-2.5 py-1.5 text-[12px] font-semibold text-[var(--pd-ink-700)] hover:border-[#CFE3D6]"
+              className="pdx-btn"
             >
               <MapIcon className="size-3.5" aria-hidden />
               Ver no mapa
@@ -224,7 +241,7 @@ function TabelaDataset({
           <button
             type="button"
             onClick={exportarCsv}
-            className="inline-flex items-center gap-1 rounded-lg border border-[#E2E8E5] px-2.5 py-1.5 text-[12px] font-semibold text-[var(--pd-ink-700)] hover:border-[#CFE3D6]"
+            className="pdx-btn"
           >
             <Download className="size-3.5" aria-hidden />
             {seleccionadas.size > 0 ? `Exportar (${seleccionadas.size})` : 'Exportar CSV'}
@@ -232,11 +249,11 @@ function TabelaDataset({
         </div>
       </div>
 
-      <div className="overflow-auto rounded-xl border border-[#E2E8E5] max-h-[420px]">
-        <table className="w-full text-[12.5px] border-collapse">
-          <thead className="sticky top-0 bg-[#F7F9F8] z-10">
+      <div className="pdx-tabela-scroll">
+        <table className={`pdx-tabela${aoClicarLinha ? ' pdx-tabela-clicavel' : ''}`}>
+          <thead>
             <tr>
-              <th className="px-2 py-2 w-8">
+              <th className="w-8">
                 <input
                   type="checkbox"
                   checked={seleccionadas.size > 0 && seleccionadas.size === linhasFiltradas.length}
@@ -246,12 +263,17 @@ function TabelaDataset({
                   aria-label="Seleccionar todas as linhas"
                 />
               </th>
-              {colunas.map((c) => (
-                <th key={c} className="text-left px-3 py-2 font-bold text-[var(--pd-ink-700)] whitespace-nowrap">
+              {colunas.map((c, i) => (
+                <th
+                  key={c}
+                  className={`${
+                    colunasNumericas[i] ? 'text-right' : 'text-left'
+                  }`}
+                >
                   <button
                     type="button"
                     onClick={() => alternarOrdenacao(c)}
-                    className="inline-flex items-center gap-1 hover:text-[#064E2C]"
+                    className={`inline-flex items-center gap-1 ${colunasNumericas[i] ? 'flex-row-reverse' : ''}`}
                   >
                     {rotularColuna(c)}
                     <ArrowUpDown className="size-3" aria-hidden />
@@ -267,11 +289,9 @@ function TabelaDataset({
                 <tr
                   key={i}
                   onClick={() => aoClicarLinha?.(linha)}
-                  className={`border-t border-[#E2E8E5] ${aoClicarLinha ? 'cursor-pointer hover:bg-[#F7F9F8]' : ''} ${
-                    destacada ? 'bg-[#F0F7F2]' : seleccionadas.has(i) ? 'bg-[#F7F9F8]' : ''
-                  }`}
+                  className={destacada ? 'destacada' : seleccionadas.has(i) ? 'seleccionada' : undefined}
                 >
-                  <td className="px-2 py-1.5" onClick={(e) => e.stopPropagation()}>
+                  <td onClick={(e) => e.stopPropagation()}>
                     <input
                       type="checkbox"
                       checked={seleccionadas.has(i)}
@@ -282,9 +302,10 @@ function TabelaDataset({
                   {linha.map((v, j) => (
                     <td
                       key={j}
-                      className={`px-3 py-1.5 whitespace-nowrap max-w-[240px] truncate ${
-                        destacada && v === valorDestacado ? 'font-bold text-[#064E2C]' : 'text-[var(--pd-ink-800)]'
-                      }`}
+                      title={String(v ?? '')}
+                      className={`${colunasNumericas[j] ? 'num' : ''} ${
+                        destacada && v === valorDestacado ? 'marcada' : ''
+                      }`.trim()}
                     >
                       {v}
                     </td>
@@ -295,7 +316,7 @@ function TabelaDataset({
           </tbody>
         </table>
       </div>
-      <p className="text-[11px] text-gray-400 mt-2 px-1">
+      <p className="pdx-tabela-conta">
         {linhasFiltradas.length} de {linhas.length} registos mostrados
         {linhas.length >= limiteAmostra ? ` (amostra dos primeiros ${limiteAmostra} do dataset)` : ''}.
       </p>
@@ -320,22 +341,21 @@ export function TabelaExploratoria({
   if (datasets.length === 0) return null
 
   return (
-    <section className="rounded-2xl border border-[#E2E8E5] bg-white p-5 mb-5">
-      <div className="flex items-center justify-between gap-2 mb-3">
-        <div>
-          <h2 className="text-base font-bold text-[var(--pd-ink-900)]">Tabela Exploratória</h2>
-          {aoClicarLinha && <p className="text-[11px] text-gray-400 mt-0.5">Clique numa linha para destacar nos gráficos</p>}
-        </div>
+    <section className="pdx-panel mb-5">
+      <div className="pdx-panel-head">
+        <span className="pdx-panel-icone" aria-hidden>
+          <TableIcon className="size-3.5" />
+        </span>
+        <h2>Tabela exploratória</h2>
         {datasets.length > 1 && (
-          <div className="inline-flex rounded-lg border border-[#E2E8E5] p-0.5">
+          <div className="pdx-abas ml-auto" role="tablist" aria-label="Dataset a explorar">
             {datasets.map((d, i) => (
               <button
                 key={d.id}
                 type="button"
+                role="tab"
+                aria-selected={activo === i}
                 onClick={() => setActivo(i)}
-                className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors ${
-                  activo === i ? 'bg-[#064E2C] text-white' : 'text-[var(--pd-ink-700)] hover:bg-gray-50'
-                }`}
               >
                 {d.titulo}
               </button>
@@ -343,12 +363,19 @@ export function TabelaExploratoria({
           </div>
         )}
       </div>
+      <div className="pdx-panel-body">
+      {aoClicarLinha && (
+        <p className="text-[11px] mb-2" style={{ color: 'var(--ink-faint)' }}>
+          Clique numa linha para destacar nos gráficos
+        </p>
+      )}
       <TabelaDataset
         dataset={datasets[activo]}
         temNoMapa={datasetIdsComMapa.includes(datasets[activo].id)}
         aoClicarLinha={aoClicarLinha}
         valorDestacado={valorDestacado}
       />
+      </div>
     </section>
   )
 }

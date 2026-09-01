@@ -16,6 +16,8 @@ type LayerState = {
   visible: boolean
   loading: boolean
   error: string | null
+  year: number | string | null
+  coverage: string | null
 }
 
 export function GeoCompareMap({
@@ -38,9 +40,34 @@ export function GeoCompareMap({
       visible: true,
       loading: true,
       error: null,
+      year: null,
+      coverage: null,
     }))
   )
   const [ready, setReady] = useState(false)
+
+  // Cobertura temporal/geográfica (PLANO-INTELIGENCIA-PORTAL.md): a sobreposição no mapa já mostra
+  // a cobertura espacial visualmente, mas não diz o ano nem o texto de cobertura de cada camada —
+  // isso vem à parte, da mesma rota que já serve a comparação tabular do lado alfanumérico.
+  useEffect(() => {
+    let vivo = true
+    fetch(`/api/datasets/compare?ids=${datasets.map((d) => d.id).join(',')}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (!vivo || !Array.isArray(data?.datasets)) return
+        const porId = new Map(data.datasets.map((d: any) => [d.id, d]))
+        setLayers((prev) =>
+          prev.map((l) => {
+            const meta = porId.get(l.id) as any
+            return meta ? { ...l, year: meta.year, coverage: meta.coverage } : l
+          })
+        )
+      })
+      .catch(() => {})
+    return () => {
+      vivo = false
+    }
+  }, [datasets])
 
   useEffect(() => {
     let cancelled = false
@@ -155,6 +182,13 @@ export function GeoCompareMap({
                 <span className="geo-compare-legend-title" title={layer.title}>
                   {layer.title}
                 </span>
+                {(layer.year || layer.coverage) && (
+                  <span className="geo-compare-legend-meta">
+                    {layer.year ? `${layer.year}` : ''}
+                    {layer.year && layer.coverage ? ' · ' : ''}
+                    {layer.coverage || ''}
+                  </span>
+                )}
                 {layer.loading && <span className="geo-compare-legend-status">a carregar…</span>}
                 {layer.error && <span className="geo-compare-legend-status geo-compare-legend-status--error">{layer.error}</span>}
               </label>

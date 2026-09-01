@@ -197,6 +197,18 @@ export async function ensureUsersTable(): Promise<void> {
   }
 
   try {
+    await db.execute(`ALTER TABLE users ADD COLUMN active TINYINT(1) NOT NULL DEFAULT 1`)
+  } catch {
+    /* coluna já existe */
+  }
+
+  try {
+    await db.execute(`ALTER TABLE users ADD COLUMN pedido_eliminacao_em DATETIME(3) NULL`)
+  } catch {
+    /* coluna já existe */
+  }
+
+  try {
     const [legacyRows] = (await db.execute('SELECT COUNT(*) as total FROM users')) as [
       { total: number }[],
       unknown,
@@ -282,7 +294,7 @@ export async function updateUserRole(userId: number, role: 'user' | 'admin') {
 export async function findAllRegisteredUsers() {
   await ensureUsersTable()
   const [rows] = (await db.execute(
-    `SELECT id, name, email, email_verified, role, created_at
+    `SELECT id, name, email, email_verified, role, created_at, active
      FROM users
      ORDER BY created_at DESC`
   )) as [any[], unknown]
@@ -293,7 +305,22 @@ export async function findAllRegisteredUsers() {
     emailVerified: Boolean(row.email_verified),
     role: normalizeRole(row.role),
     createdAt: row.created_at,
+    active: row.active === null || row.active === undefined ? true : Boolean(row.active),
   }))
+}
+
+/** Activa/desactiva a conta sem apagar dados: uma conta desactivada não consegue iniciar sessão,
+ *  mas mantém histórico, favoritos e análises intactos (ver checkAccountActive em lib/auth.ts). */
+export async function setUserActive(userId: number, active: boolean) {
+  await ensureUsersTable()
+  await db.execute('UPDATE users SET active = ? WHERE id = ?', [active ? 1 : 0, userId])
+}
+
+export async function isUserActive(userId: number): Promise<boolean> {
+  await ensureUsersTable()
+  const [rows] = (await db.execute('SELECT active FROM users WHERE id = ?', [userId])) as [any[], unknown]
+  if (!rows[0]) return false
+  return rows[0].active === null || rows[0].active === undefined ? true : Boolean(rows[0].active)
 }
 
 export async function countRegisteredUsers() {
@@ -375,6 +402,40 @@ export async function clearUserOtp(userId: number) {
 export async function deleteAuthUser(userId: number) {
   await ensureUsersTable()
   await db.execute('DELETE FROM users WHERE id = ?', [userId])
+}
+
+const DIAS_GRACA_ELIMINACAO_CONTA = 30
+
+/**
+ * Pedido de eliminação de conta (PLANO-SEGURANCA.md): em vez de apagar de imediato, marca a conta
+ * com um prazo de graça de 30 dias. A pessoa continua a poder iniciar sessão e cancelar o pedido
+ * nesse período — só depois de expirado é que os dados são mesmo removidos (ver
+ * `purgarContasComPedidoDeEliminacaoExpirado`). Protege sobretudo contra um pedido feito por engano
+ * ou sob coação (sessão comprometida a pedir a própria eliminação).
+ */
+export async function agendarEliminacaoConta(userId: number): Promise<void> {
+  await ensureUsersTable()
+  await db.execute('UPDATE users SET pedido_eliminacao_em = NOW() WHERE id = ?', [userId])
+}
+
+export async function cancelarEliminacaoConta(userId: number): Promise<void> {
+  await ensureUsersTable()
+  await db.execute('UPDATE users SET pedido_eliminacao_em = NULL WHERE id = ?', [userId])
+}
+
+/** Sem infra de agendamento (cron) neste portal: chamado sob pedido (login, carregamento do painel
+ *  de utilizadores) em vez de a um horário fixo — cada chamada é uma consulta indexada barata que,
+ *  na generalidade das vezes, não encontra nenhuma conta expirada. */
+export async function purgarContasComPedidoDeEliminacaoExpirado(): Promise<number> {
+  await ensureUsersTable()
+  const [linhas] = (await db.execute(
+    `SELECT id FROM users WHERE pedido_eliminacao_em IS NOT NULL
+     AND pedido_eliminacao_em < DATE_SUB(NOW(), INTERVAL ${DIAS_GRACA_ELIMINACAO_CONTA} DAY)`
+  )) as [{ id: number }[], unknown]
+  for (const linha of linhas) {
+    await deleteUserAccountData(linha.id)
+  }
+  return linhas.length
 }
 
 /** Elimina os dados pessoais do utilizador (análises de IA guardadas, conta) e anonimiza estatísticas de uso. */
@@ -600,8 +661,29 @@ export async function updateCategory(id: number, data: { name?: string; descript
   return findCategoryById(id)
 }
 
-export async function deleteCategory(id: number) {
+/**
+ * Nunca apaga uma categoria ainda usada por datasets: sem esta verificação, um dataset ficava com
+ * categoryId a apontar para uma categoria inexistente ("órfão"), e a ligação (LEFT JOIN) que traz
+ * a categoria em findDatasets() passava a devolver tudo null — em qualquer sítio que mostre a
+ * categoria (ex.: a lista de escolha de datasets em "Nova análise"), isso aparecia como "Sem
+ * categoria" sem explicação nenhuma. A chave estrangeira na base de dados já bloqueia isto, mas dá
+ * um erro SQL cru; esta verificação dá um erro claro antes mesmo de chegar lá.
+ */
+export async function deleteCategory(id: number): Promise<{ ok: true } | { ok: false; erro: string; totalDatasets: number }> {
+  const [rows] = (await db.execute('SELECT COUNT(*) as total FROM Dataset WHERE categoryId = ?', [id])) as [
+    { total: number }[],
+    unknown,
+  ]
+  const totalDatasets = Number(rows[0]?.total ?? 0)
+  if (totalDatasets > 0) {
+    return {
+      ok: false,
+      erro: `Esta categoria tem ${totalDatasets} dataset(s) associado(s); mude-os de categoria antes de a eliminar.`,
+      totalDatasets,
+    }
+  }
   await db.execute('DELETE FROM Category WHERE id = ?', [id])
+  return { ok: true }
 }
 
 // ==================== DATASET PREVIEW METADATA (badge, miniatura, mapa geral) ====================
@@ -616,6 +698,9 @@ export async function ensureDatasetPreviewColumns(): Promise<void> {
     ['bboxMinY', 'DOUBLE NULL'],
     ['bboxMaxX', 'DOUBLE NULL'],
     ['bboxMaxY', 'DOUBLE NULL'],
+    ['certificacao', "VARCHAR(30) NOT NULL DEFAULT 'nao_verificado'"],
+    ['resumoIA', 'TEXT NULL'],
+    ['resumoIAGeradoEm', 'DATETIME(3) NULL'],
   ]
   for (const [name, def] of columns) {
     try {
@@ -785,7 +870,23 @@ export async function createDataset(data: any) {
   return findDatasetById(result.insertId)
 }
 
-export async function updateDataset(id: number, data: any) {
+export async function updateDataset(id: number, data: any, editadoPor?: string) {
+  // Regista a versão anterior antes de sobrescrever (PLANO-SEGURANCA.md): sem isto, uma edição por
+  // engano ou maliciosa some sem deixar rasto de "como era antes". Nunca bloqueia a actualização —
+  // é best-effort, tal como a lixeira de eliminação.
+  try {
+    await ensureDatasetVersaoTable()
+    const [antesRows] = (await db.execute('SELECT * FROM Dataset WHERE id = ?', [id])) as [any[], unknown]
+    if (antesRows[0]) {
+      await db.execute(
+        'INSERT INTO DatasetVersao (datasetId, dados, editadoPor) VALUES (?, ?, ?)',
+        [id, JSON.stringify(antesRows[0]), editadoPor || 'sistema']
+      )
+    }
+  } catch (erro) {
+    logger.error('erro_registar_versao_dataset', { error: erro, id })
+  }
+
   await db.execute(
     `UPDATE Dataset SET title=?, description=?, categoryId=?, source=?, year=?, format=?, fileSize=?, filePath=?,
      geometry=?, coverage=?, minimumUnit=?, keywords=?, dataType=?, updatedAt=NOW() WHERE id=?`,
@@ -797,9 +898,192 @@ export async function updateDataset(id: number, data: any) {
   return findDatasetById(id)
 }
 
-export async function deleteDataset(id: number) {
+// ---------------------------------------------------------------------------
+// Versionamento de datasets: histórico de edições, cada uma recuperável.
+// ---------------------------------------------------------------------------
+
+let datasetVersaoTableEnsured = false
+async function ensureDatasetVersaoTable() {
+  if (datasetVersaoTableEnsured) return
+  await db.execute(
+    `CREATE TABLE IF NOT EXISTS DatasetVersao (
+      id INT NOT NULL AUTO_INCREMENT,
+      datasetId INT NOT NULL,
+      dados JSON NOT NULL,
+      editadoPor VARCHAR(254) NOT NULL,
+      criadoEm DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+      PRIMARY KEY (id),
+      INDEX datasetversao_datasetid_idx (datasetId)
+    ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
+  )
+  datasetVersaoTableEnsured = true
+}
+
+export async function listarVersoesDataset(datasetId: number) {
+  await ensureDatasetVersaoTable()
+  const [rows] = (await db.execute(
+    `SELECT id, dados, editadoPor, criadoEm FROM DatasetVersao WHERE datasetId = ? ORDER BY criadoEm DESC LIMIT 50`,
+    [datasetId]
+  )) as [any[], unknown]
+  return rows.map((r) => {
+    const dados = typeof r.dados === 'string' ? JSON.parse(r.dados) : r.dados
+    return {
+      versaoId: r.id,
+      editadoPor: r.editadoPor,
+      criadoEm: r.criadoEm,
+      titulo: dados.title,
+      descricao: dados.description,
+      ano: dados.year,
+      filePath: dados.filePath,
+    }
+  })
+}
+
+/** Versão pública do histórico, para a ficha de proveniência no detalhe do dataset (visível a
+ *  qualquer visitante, não só ao admin): mostra o que mudou e quando, mas nunca quem editou —
+ *  `editadoPor` guarda o email de um administrador e não deve ficar exposto fora do painel admin. */
+export async function listarVersoesPublicas(datasetId: number, limite = 10) {
+  const versoes = await listarVersoesDataset(datasetId)
+  return versoes.slice(0, limite).map((v) => ({
+    versaoId: v.versaoId,
+    criadoEm: v.criadoEm,
+    titulo: v.titulo,
+    ano: v.ano,
+  }))
+}
+
+/** Repõe os campos de uma versão anterior no dataset actual (o próprio restauro fica também
+ *  registado como uma nova versão, pela chamada normal a updateDataset). */
+export async function restaurarVersaoDataset(versaoId: number, restauradoPor: string) {
+  await ensureDatasetVersaoTable()
+  const [rows] = (await db.execute('SELECT * FROM DatasetVersao WHERE id = ?', [versaoId])) as [any[], unknown]
+  const linha = rows[0]
+  if (!linha) return { ok: false as const, erro: 'Versão não encontrada.' }
+
+  const dados = typeof linha.dados === 'string' ? JSON.parse(linha.dados) : linha.dados
+  await updateDataset(linha.datasetId, dados, `${restauradoPor} (restauro da versão #${versaoId})`)
+  return { ok: true as const, id: linha.datasetId }
+}
+
+// ---------------------------------------------------------------------------
+// Certificação de proveniência: distingue fonte oficial confirmada de não verificada ainda.
+// ---------------------------------------------------------------------------
+
+export type CertificacaoDataset = 'nao_verificado' | 'fonte_oficial_confirmada'
+
+export async function definirCertificacaoDataset(id: number, certificacao: CertificacaoDataset) {
+  await ensureDatasetPreviewColumns()
+  await db.execute('UPDATE Dataset SET certificacao = ? WHERE id = ?', [certificacao, id])
+  clearDatasetsCache()
+}
+
+let lixeiraDatasetTableEnsured = false
+async function ensureLixeiraDatasetTable() {
+  if (lixeiraDatasetTableEnsured) return
+  await db.execute(
+    `CREATE TABLE IF NOT EXISTS LixeiraDataset (
+      id INT NOT NULL AUTO_INCREMENT,
+      datasetId INT NOT NULL,
+      dados JSON NOT NULL,
+      eliminadoPor VARCHAR(254) NOT NULL,
+      eliminadoEm DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+      restauradoEm DATETIME(3) NULL,
+      PRIMARY KEY (id),
+      INDEX lixeiradataset_datasetid_idx (datasetId)
+    ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
+  )
+  lixeiraDatasetTableEnsured = true
+}
+
+/**
+ * Eliminação de dataset passou a ser em duas fases (PLANO-SEGURANCA.md): isto nunca apaga a linha
+ * directamente — copia-a primeiro para uma lixeira (`LixeiraDataset`, com o registo completo em
+ * JSON) e só depois remove da tabela principal. Um admin comprometido que apague um dataset por
+ * engano ou de forma maliciosa deixa sempre uma cópia recuperável, em vez de o dado desaparecer
+ * de imediato e sem hipótese de recurso dentro da própria aplicação.
+ */
+export async function deleteDataset(id: number, eliminadoPor: string) {
+  await ensureLixeiraDatasetTable()
+  const [rows] = (await db.execute('SELECT * FROM Dataset WHERE id = ?', [id])) as [any[], unknown]
+  const registo = rows[0]
+  if (!registo) return
+
+  await db.execute(
+    'INSERT INTO LixeiraDataset (datasetId, dados, eliminadoPor) VALUES (?, ?, ?)',
+    [id, JSON.stringify(registo), eliminadoPor]
+  )
   await db.execute('DELETE FROM Dataset WHERE id = ?', [id])
   clearDatasetsCache()
+}
+
+export async function listarLixeiraDatasets() {
+  await ensureLixeiraDatasetTable()
+  const [rows] = (await db.execute(
+    `SELECT id, datasetId, dados, eliminadoPor, eliminadoEm
+     FROM LixeiraDataset WHERE restauradoEm IS NULL ORDER BY eliminadoEm DESC LIMIT 200`
+  )) as [any[], unknown]
+  return rows
+    .map((r) => {
+      // Sem try/catch, uma única linha com "dados" corrompido rebentava a página /admin/lixeira
+      // inteira — mesmo padrão de bug já encontrado e corrigido em getAiInsightTendencias.
+      let dados: any
+      try {
+        dados = typeof r.dados === 'string' ? JSON.parse(r.dados) : r.dados
+      } catch {
+        return null
+      }
+      return {
+        lixeiraId: r.id,
+        datasetId: r.datasetId,
+        titulo: dados?.title,
+        categoriaId: dados?.categoryId,
+        dataType: dados?.dataType,
+        eliminadoPor: r.eliminadoPor,
+        eliminadoEm: r.eliminadoEm,
+      }
+    })
+    .filter((d): d is NonNullable<typeof d> => d !== null)
+}
+
+/** Repõe um dataset eliminado com o mesmo id e todos os campos originais. Falha (e explica porquê)
+ *  se, entretanto, já tiver sido criado outro dataset com esse mesmo id. */
+export async function restaurarDatasetDaLixeira(lixeiraId: number): Promise<{ ok: true; id: number } | { ok: false; erro: string }> {
+  await ensureLixeiraDatasetTable()
+  const [rows] = (await db.execute(
+    'SELECT * FROM LixeiraDataset WHERE id = ? AND restauradoEm IS NULL',
+    [lixeiraId]
+  )) as [any[], unknown]
+  const linha = rows[0]
+  if (!linha) return { ok: false, erro: 'Registo da lixeira não encontrado (pode já ter sido restaurado).' }
+
+  const dados = typeof linha.dados === 'string' ? JSON.parse(linha.dados) : linha.dados
+
+  const [existente] = (await db.execute('SELECT id FROM Dataset WHERE id = ?', [dados.id])) as [any[], unknown]
+  if (existente[0]) {
+    return { ok: false, erro: 'Já existe um dataset com este id; não é possível restaurar automaticamente.' }
+  }
+
+  await db.execute(
+    `INSERT INTO Dataset
+     (id, title, description, categoryId, source, year, format, fileSize, filePath, geometry, coverage,
+      minimumUnit, keywords, dataType, views, downloads, createdAt, updatedAt)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+    [
+      dados.id, dados.title, dados.description, dados.categoryId, dados.source, dados.year, dados.format,
+      dados.fileSize, dados.filePath, dados.geometry, dados.coverage, dados.minimumUnit, dados.keywords,
+      dados.dataType, dados.views ?? 0, dados.downloads ?? 0, dados.createdAt,
+    ]
+  )
+  await db.execute('UPDATE LixeiraDataset SET restauradoEm = NOW() WHERE id = ?', [lixeiraId])
+  clearDatasetsCache()
+  return { ok: true, id: dados.id }
+}
+
+/** Remoção definitiva e irreversível de um registo já na lixeira — a única acção deste módulo que
+ *  não deixa nenhuma cópia recuperável, por isso exige que o admin já tenha passado pela lixeira. */
+export async function eliminarDatasetDefinitivamente(lixeiraId: number): Promise<void> {
+  await ensureLixeiraDatasetTable()
+  await db.execute('DELETE FROM LixeiraDataset WHERE id = ?', [lixeiraId])
 }
 
 export async function incrementDatasetViews(id: number) {
@@ -1067,28 +1351,46 @@ export async function getAuthenticatedActivity(limit = 50) {
 }
 
 // ==================== REPORT ====================
+let reportSectorColumnEnsured = false
+
+/** Sector (Saúde, Agricultura, Educação…) para filtrar relatórios por tema — coluna nova,
+ *  adicionada de forma idempotente como o resto das colunas opcionais deste ficheiro. */
+async function ensureReportSectorColumn(): Promise<void> {
+  if (reportSectorColumnEnsured) return
+  reportSectorColumnEnsured = true
+  try {
+    await db.execute(`ALTER TABLE Report ADD COLUMN sector VARCHAR(80) NULL`)
+  } catch {
+    /* coluna já existe */
+  }
+}
+
 export async function findAllReports() {
+  await ensureReportSectorColumn()
   const [rows] = await db.execute('SELECT * FROM Report ORDER BY createdAt DESC') as any
   return rows
 }
 
 export async function findReportById(id: number) {
+  await ensureReportSectorColumn()
   const [rows] = await db.execute('SELECT * FROM Report WHERE id = ? LIMIT 1', [id]) as any
   return rows[0] || null
 }
 
 export async function createReport(data: any) {
+  await ensureReportSectorColumn()
   const [result] = await db.execute(
-    'INSERT INTO Report (title, year, coverage, author, partners, filePath, fileSize, detailsText, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())',
-    [data.title, data.year, data.coverage, data.author || null, data.partners || null, data.filePath || null, data.fileSize || null, data.detailsText || null]
+    'INSERT INTO Report (title, year, coverage, author, partners, filePath, fileSize, detailsText, sector, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())',
+    [data.title, data.year, data.coverage, data.author || null, data.partners || null, data.filePath || null, data.fileSize || null, data.detailsText || null, data.sector || null]
   ) as any
   return findReportById(result.insertId)
 }
 
 export async function updateReport(id: number, data: any) {
+  await ensureReportSectorColumn()
   await db.execute(
-    'UPDATE Report SET title=?, year=?, coverage=?, author=?, partners=?, filePath=?, fileSize=?, detailsText=?, updatedAt=NOW() WHERE id=?',
-    [data.title, data.year, data.coverage, data.author || null, data.partners || null, data.filePath || null, data.fileSize || null, data.detailsText || null, id]
+    'UPDATE Report SET title=?, year=?, coverage=?, author=?, partners=?, filePath=?, fileSize=?, detailsText=?, sector=?, updatedAt=NOW() WHERE id=?',
+    [data.title, data.year, data.coverage, data.author || null, data.partners || null, data.filePath || null, data.fileSize || null, data.detailsText || null, data.sector || null, id]
   )
   return findReportById(id)
 }
@@ -1790,7 +2092,15 @@ export async function getAiInsightTendencias() {
 
   for (const r of analisesRows) {
     if (r.arquetipo) porArquetipo.set(r.arquetipo, (porArquetipo.get(r.arquetipo) || 0) + 1)
-    const ids: number[] = typeof r.datasets_ids === 'string' ? JSON.parse(r.datasets_ids) : r.datasets_ids || []
+    // Sem try/catch, uma única linha antiga com datasets_ids malformado (encontrado ao vivo em
+    // produção) rebentava a página inteira de /dashboard/ia-utilizacao com "Application error" —
+    // o mesmo padrão de defesa já usado no loop de legadoRows logo abaixo.
+    let ids: number[] = []
+    try {
+      ids = typeof r.datasets_ids === 'string' ? JSON.parse(r.datasets_ids) : r.datasets_ids || []
+    } catch {
+      continue
+    }
     for (const id of ids) porDataset.set(id, (porDataset.get(id) || 0) + 1)
   }
   for (const r of legadoRows) {
@@ -1884,4 +2194,38 @@ export async function findDatasetUpdateSubscriberEmails(datasetId: number): Prom
     [datasetId]
   )) as [{ email: string }[], unknown]
   return rows.map((r) => r.email)
+}
+
+/**
+ * Alertas proactivos (PLANO-INTELIGENCIA-PORTAL.md): quem já fez uma análise de IA usando este
+ * dataset, mesmo sem ter subscrito nada explicitamente. Uma pessoa por conta (a análise mais
+ * recente sobre o dataset), para não mandar vários emails ao mesmo utilizador na mesma
+ * actualização. `datasetIds` é guardado como JSON (`[3,7]`), por isso o filtro é feito em JS
+ * depois de carregar as linhas, não com LIKE sobre o texto bruto.
+ */
+export async function findUsuariosComAnaliseSobreDataset(
+  datasetId: number
+): Promise<{ email: string; pergunta: string; datasetIdsRaw: string }[]> {
+  await ensureAiInsightTilesTable()
+  const [rows] = (await db.execute(
+    `SELECT t.userId, t.question, t.datasetIds, u.email
+     FROM AIInsightTile t JOIN users u ON u.id = t.userId
+     ORDER BY t.createdAt DESC`
+  )) as [any[], unknown]
+
+  const vistos = new Set<number>()
+  const resultado: { email: string; pergunta: string; datasetIdsRaw: string }[] = []
+  for (const r of rows) {
+    if (vistos.has(r.userId)) continue
+    let ids: number[] = []
+    try {
+      ids = JSON.parse(r.datasetIds)
+    } catch {
+      continue
+    }
+    if (!ids.includes(datasetId)) continue
+    vistos.add(r.userId)
+    resultado.push({ email: r.email, pergunta: r.question, datasetIdsRaw: r.datasetIds })
+  }
+  return resultado
 }

@@ -82,16 +82,16 @@ export function RequestsPanel() {
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-2 border-b border-gray-200">
+      <div className="flex gap-1 border-b border-gray-200 overflow-x-auto">
         {TABS.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
             onClick={() => setTab(id)}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold border-b-2 transition ${
+            className={`flex items-center gap-1.5 px-3 py-2.5 text-xs sm:text-sm font-semibold border-b-2 transition whitespace-nowrap shrink-0 ${
               tab === id ? 'border-green-600 text-green-700' : 'border-transparent text-gray-500 hover:text-gray-800'
             }`}
           >
-            <Icon className="w-4 h-4" />
+            <Icon className="w-4 h-4 shrink-0" />
             {label}
           </button>
         ))}
@@ -108,7 +108,7 @@ export function RequestsPanel() {
         <p className="text-sm text-gray-500 py-16 text-center">Ainda não há solicitações deste tipo.</p>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-gray-100">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm pd-responsive-table">
             <thead>
               <tr className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide border-b border-gray-100 bg-gray-50">
                 <th className="px-4 py-2.5">Contacto</th>
@@ -121,56 +121,56 @@ export function RequestsPanel() {
               {tab === 'report' &&
                 (rows as ReportRequestRow[]).map((r) => (
                   <tr key={r.id} className="border-b border-gray-50 last:border-0 align-top">
-                    <td className="px-4 py-3">
-                      <div className="font-semibold text-gray-800">{r.name || '—'}</div>
+                    <td data-label="Contacto" className="px-4 py-3">
+                      <div className="font-semibold text-gray-800">{r.name || 'N/D'}</div>
                       {r.email && (
                         <a href={`mailto:${r.email}`} className="text-xs text-green-700 hover:underline">
                           {r.email}
                         </a>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-gray-700">
+                    <td data-label="Relatório" className="px-4 py-3 text-gray-700">
                       {r.reportTitle || `#${r.reportId}`}
                       {r.reportYear ? ` (${r.reportYear})` : ''}
                     </td>
-                    <td className="px-4 py-3 text-gray-600 max-w-xs truncate" title={r.message || ''}>
-                      {r.message || '—'}
+                    <td data-label="Mensagem" className="px-4 py-3 text-gray-600 max-w-xs truncate" title={r.message || ''}>
+                      {r.message || 'N/D'}
                     </td>
-                    <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">{formatDate(r.createdAt)}</td>
+                    <td data-label="Data" className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">{formatDate(r.createdAt)}</td>
                   </tr>
                 ))}
               {tab === 'map' &&
                 (rows as MapRequestRow[]).map((r) => (
                   <tr key={r.id} className="border-b border-gray-50 last:border-0 align-top">
-                    <td className="px-4 py-3">
-                      <div className="font-semibold text-gray-800">{r.name || '—'}</div>
+                    <td data-label="Contacto" className="px-4 py-3">
+                      <div className="font-semibold text-gray-800">{r.name || 'N/D'}</div>
                       {r.email && (
                         <a href={`mailto:${r.email}`} className="text-xs text-green-700 hover:underline">
                           {r.email}
                         </a>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-gray-700">{r.slug}</td>
-                    <td className="px-4 py-3 text-gray-600 max-w-xs truncate" title={r.message || ''}>
-                      {r.message || '—'}
+                    <td data-label="Mapa" className="px-4 py-3 text-gray-700">{r.slug}</td>
+                    <td data-label="Mensagem" className="px-4 py-3 text-gray-600 max-w-xs truncate" title={r.message || ''}>
+                      {r.message || 'N/D'}
                     </td>
-                    <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">{formatDate(r.createdAt)}</td>
+                    <td data-label="Data" className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">{formatDate(r.createdAt)}</td>
                   </tr>
                 ))}
               {tab === 'contact' &&
                 (rows as ContactMessageRow[]).map((r) => (
                   <tr key={r.id} className="border-b border-gray-50 last:border-0 align-top">
-                    <td className="px-4 py-3">
+                    <td data-label="Contacto" className="px-4 py-3">
                       <div className="font-semibold text-gray-800">{r.name}</div>
                       <a href={`mailto:${r.email}`} className="text-xs text-green-700 hover:underline">
                         {r.email}
                       </a>
                     </td>
-                    <td className="px-4 py-3 text-gray-700">{r.subject}</td>
-                    <td className="px-4 py-3 text-gray-600 max-w-xs truncate" title={r.message}>
+                    <td data-label="Assunto" className="px-4 py-3 text-gray-700">{r.subject}</td>
+                    <td data-label="Mensagem" className="px-4 py-3 text-gray-600 max-w-xs truncate" title={r.message}>
                       {r.message}
                     </td>
-                    <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">{formatDate(r.createdAt)}</td>
+                    <td data-label="Data" className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">{formatDate(r.createdAt)}</td>
                   </tr>
                 ))}
             </tbody>

@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import { comparePassword, getCurrentUser, getSessionCookieOptions, SESSION_COOKIE_NAME } from '@/lib/auth'
-import { deleteUserAccountData, findUserById } from '@/lib/db'
+import { comparePassword, getCurrentUser } from '@/lib/auth'
+import { agendarEliminacaoConta, findUserById } from '@/lib/db'
 import { normalizeText, rateLimit } from '@/lib/security'
 import { logger } from '@/lib/logger'
 
@@ -38,12 +37,13 @@ export async function POST(request: Request) {
       }
     }
 
-    await deleteUserAccountData(user.id)
+    // Nunca elimina de imediato (PLANO-SEGURANCA.md): agenda com 30 dias de graça, período em que
+    // a própria pessoa pode cancelar o pedido a partir do Perfil. Protege contra um pedido feito
+    // por engano ou com a sessão comprometida, sem depender de um administrador para reverter.
+    const pedidoEliminacaoEm = new Date()
+    await agendarEliminacaoConta(user.id)
 
-    const cookieStore = await cookies()
-    cookieStore.set(SESSION_COOKIE_NAME, '', { ...getSessionCookieOptions(), maxAge: 0 })
-
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, pedidoEliminacaoEm: pedidoEliminacaoEm.toISOString() })
   } catch (error) {
     logger.error('delete_account_error', { error: error })
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })

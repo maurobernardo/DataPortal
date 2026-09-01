@@ -1,0 +1,2223 @@
+{
+  "analise_id": "an_44071c35",
+  "compreensao": {
+    "pergunta_normalizada": "Como varia o perfil do domicílio (electricidade, água, saneamento, tamanho do agregado) em relação à população total, por província de Moçambique?",
+    "idioma": "pt",
+    "intencao": "comparativa",
+    "arquetipo_sugerido": "comparativo",
+    "entidades": {
+      "geografias": [],
+      "periodos": [],
+      "metricas": [
+        "perfil do domicílio",
+        "população total",
+        "acesso a electricidade",
+        "acesso a água melhorada",
+        "tamanho médio do agregado familiar"
+      ]
+    },
+    "ambiguidades": [
+      {
+        "descricao": "O Dataset 50 (Denominadores Populacionais) é um dicionário de variáveis com definições e metodologia, mas não contém valores numéricos reais de população por província: não é possível calcular ou comparar diretamente 'população total por região' a partir dele.",
+        "opcoes": [
+          "Responder apenas com o perfil do domicílio por província (Dataset 61), declarando a ausência de dados reais de população no Dataset 50",
+          "Tratar a pergunta como pedido apenas sobre variação do perfil do domicílio entre regiões, sem comparação quantitativa com população"
+        ]
+      }
+    ],
+    "perfil_utilizador_inferido": "gestor_publico",
+    "requer_desambiguacao": false,
+    "sub_perguntas": [
+      "Que indicadores de perfil do domicílio existem e há dados reais de população total disponíveis para os relacionar?",
+      "Como varia o acesso a electricidade por província?",
+      "Como varia o acesso a água melhorada por província?",
+      "Como varia o tamanho médio do agregado familiar por província?",
+      "Houve evolução temporal do acesso a electricidade entre os pontos de censo/inquérito disponíveis?"
+    ],
+    "passos": [
+      {
+        "id": "p1",
+        "tipo": "consulta",
+        "descricao_humana": "Verifica se o dicionário populacional tem valores reais de população por província ou só definições.",
+        "depende_de": [],
+        "metodo": "perfil_coluna",
+        "dataset_id": 50,
+        "coluna_metrica": "variable_name_pt",
+        "produz": [
+          "p1"
+        ]
+      },
+      {
+        "id": "p2",
+        "tipo": "consulta",
+        "descricao_humana": "Identifica os indicadores de perfil do domicílio disponíveis no dataset.",
+        "depende_de": [],
+        "metodo": "perfil_coluna",
+        "dataset_id": 61,
+        "coluna_metrica": "variable_name_pt",
+        "produz": [
+          "p2"
+        ]
+      },
+      {
+        "id": "p3",
+        "tipo": "calculo",
+        "descricao_humana": "Compara o acesso a electricidade dos agregados familiares entre as províncias.",
+        "depende_de": [
+          "p2"
+        ],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 61,
+        "coluna_metrica": "value",
+        "nivel_geo": "admin1",
+        "filtro_unidade": "cat:variable_name_pt=Acesso a Electricidade (% AF)",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "p3"
+        ]
+      },
+      {
+        "id": "p4",
+        "tipo": "calculo",
+        "descricao_humana": "Compara o acesso a água melhorada entre as províncias.",
+        "depende_de": [
+          "p2"
+        ],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 61,
+        "coluna_metrica": "value",
+        "nivel_geo": "admin1",
+        "filtro_unidade": "cat:variable_name_pt=Fonte de Água Melhorada (% AF)",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "p4"
+        ]
+      },
+      {
+        "id": "p5",
+        "tipo": "calculo",
+        "descricao_humana": "Compara o tamanho médio do agregado familiar entre as províncias.",
+        "depende_de": [
+          "p2"
+        ],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 61,
+        "coluna_metrica": "value",
+        "nivel_geo": "admin1",
+        "filtro_unidade": "cat:variable_name_pt=Tamanho Médio do Agregado Familiar",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "p5"
+        ]
+      },
+      {
+        "id": "p6",
+        "tipo": "calculo",
+        "descricao_humana": "Testa a tendência nacional do acesso a electricidade entre 2011, 2020 e 2022.",
+        "depende_de": [
+          "p2"
+        ],
+        "metodo": "tendencia_mann_kendall",
+        "dataset_id": 61,
+        "coluna_metrica": "value",
+        "coluna_tempo": "year",
+        "filtro_unidade": "cat:variable_name_pt=Acesso a Electricidade (% AF)",
+        "produz": [
+          "p6"
+        ]
+      },
+      {
+        "id": "p7",
+        "tipo": "validacao",
+        "descricao_humana": "Verifica a proporção de dados decision-grade versus advisory no dataset do domicílio.",
+        "depende_de": [],
+        "metodo": "perfil_coluna",
+        "dataset_id": 61,
+        "coluna_metrica": "dq_tier",
+        "produz": [
+          "p7"
+        ]
+      }
+    ],
+    "nivel_geo_alvo": [
+      "admin1"
+    ],
+    "metricas_alvo": [
+      "Acesso a Electricidade (% AF)",
+      "Fonte de Água Melhorada (% AF)",
+      "Tamanho Médio do Agregado Familiar",
+      "População total"
+    ],
+    "justificacao_arquetipo": "A pergunta pede explicitamente como um conjunto de indicadores varia entre regiões, o que é uma comparação directa entre unidades geográficas; o Dataset 50 não fornece valores reais de população por província (é um dicionário de variáveis), pelo que a análise compara os indicadores de habitação do Dataset 61 ao nível de província, o nível mais fino comum, e declara essa limitação explicitamente.",
+    "pergunta_original": "Como varia o perfil do domicílio em relação à população total por região?"
+  },
+  "plano": {
+    "sub_perguntas": [
+      "Que indicadores de perfil do domicílio existem e há dados reais de população total disponíveis para os relacionar?",
+      "Como varia o acesso a electricidade por província?",
+      "Como varia o acesso a água melhorada por província?",
+      "Como varia o tamanho médio do agregado familiar por província?",
+      "Houve evolução temporal do acesso a electricidade entre os pontos de censo/inquérito disponíveis?"
+    ],
+    "passos": [
+      {
+        "id": "p1",
+        "tipo": "consulta",
+        "descricao_humana": "Verifica se o dicionário populacional tem valores reais de população por província ou só definições.",
+        "depende_de": [],
+        "metodo": "perfil_coluna",
+        "dataset_id": 50,
+        "coluna_metrica": "variable_name_pt",
+        "produz": [
+          "p1"
+        ]
+      },
+      {
+        "id": "p2",
+        "tipo": "consulta",
+        "descricao_humana": "Identifica os indicadores de perfil do domicílio disponíveis no dataset.",
+        "depende_de": [],
+        "metodo": "perfil_coluna",
+        "dataset_id": 61,
+        "coluna_metrica": "variable_name_pt",
+        "produz": [
+          "p2"
+        ]
+      },
+      {
+        "id": "p3",
+        "tipo": "calculo",
+        "descricao_humana": "Compara o acesso a electricidade dos agregados familiares entre as províncias.",
+        "depende_de": [
+          "p2"
+        ],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 61,
+        "coluna_metrica": "value",
+        "nivel_geo": "admin1",
+        "filtro_unidade": "cat:variable_name_pt=Acesso a Electricidade (% AF)",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "p3"
+        ]
+      },
+      {
+        "id": "p4",
+        "tipo": "calculo",
+        "descricao_humana": "Compara o acesso a água melhorada entre as províncias.",
+        "depende_de": [
+          "p2"
+        ],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 61,
+        "coluna_metrica": "value",
+        "nivel_geo": "admin1",
+        "filtro_unidade": "cat:variable_name_pt=Fonte de Água Melhorada (% AF)",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "p4"
+        ]
+      },
+      {
+        "id": "p5",
+        "tipo": "calculo",
+        "descricao_humana": "Compara o tamanho médio do agregado familiar entre as províncias.",
+        "depende_de": [
+          "p2"
+        ],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 61,
+        "coluna_metrica": "value",
+        "nivel_geo": "admin1",
+        "filtro_unidade": "cat:variable_name_pt=Tamanho Médio do Agregado Familiar",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "p5"
+        ]
+      },
+      {
+        "id": "p6",
+        "tipo": "calculo",
+        "descricao_humana": "Testa a tendência nacional do acesso a electricidade entre 2011, 2020 e 2022.",
+        "depende_de": [
+          "p2"
+        ],
+        "metodo": "tendencia_mann_kendall",
+        "dataset_id": 61,
+        "coluna_metrica": "value",
+        "coluna_tempo": "year",
+        "filtro_unidade": "cat:variable_name_pt=Acesso a Electricidade (% AF)",
+        "produz": [
+          "p6"
+        ]
+      },
+      {
+        "id": "p7",
+        "tipo": "validacao",
+        "descricao_humana": "Verifica a proporção de dados decision-grade versus advisory no dataset do domicílio.",
+        "depende_de": [],
+        "metodo": "perfil_coluna",
+        "dataset_id": 61,
+        "coluna_metrica": "dq_tier",
+        "produz": [
+          "p7"
+        ]
+      }
+    ],
+    "nivel_geo_alvo": [
+      "admin1"
+    ],
+    "metricas_alvo": [
+      "Acesso a Electricidade (% AF)",
+      "Fonte de Água Melhorada (% AF)",
+      "Tamanho Médio do Agregado Familiar",
+      "População total"
+    ],
+    "justificacao_arquetipo": "A pergunta pede explicitamente como um conjunto de indicadores varia entre regiões, o que é uma comparação directa entre unidades geográficas; o Dataset 50 não fornece valores reais de população por província (é um dicionário de variáveis), pelo que a análise compara os indicadores de habitação do Dataset 61 ao nível de província, o nível mais fino comum, e declara essa limitação explicitamente."
+  },
+  "suficiencia": {
+    "cobertura": [
+      {
+        "sub_pergunta": "Que indicadores de perfil do domicílio existem e há dados reais de população total disponíveis para os relacionar?",
+        "coberto": true,
+        "fonte": "dataset_selecionado",
+        "lacuna": ""
+      },
+      {
+        "sub_pergunta": "Como varia o acesso a electricidade por província?",
+        "coberto": true,
+        "fonte": "dataset_selecionado",
+        "lacuna": ""
+      },
+      {
+        "sub_pergunta": "Como varia o acesso a água melhorada por província?",
+        "coberto": true,
+        "fonte": "dataset_selecionado",
+        "lacuna": ""
+      },
+      {
+        "sub_pergunta": "Como varia o tamanho médio do agregado familiar por província?",
+        "coberto": true,
+        "fonte": "dataset_selecionado",
+        "lacuna": ""
+      },
+      {
+        "sub_pergunta": "Houve evolução temporal do acesso a electricidade entre os pontos de censo/inquérito disponíveis?",
+        "coberto": true,
+        "fonte": "dataset_selecionado",
+        "lacuna": ""
+      }
+    ],
+    "confianca_sem_enriquecimento": 0.75,
+    "precisa_enriquecimento": true,
+    "alvos_enriquecimento": [
+      {
+        "sub_pergunta": "Como varia o acesso a electricidade por província?",
+        "lacuna": "Falta de dados de população total por província para calcular variações absolutas de cobertura (valores reais em número de agregados; Dataset 50 é dicionário não-operacional)",
+        "prioridade": 2,
+        "fonte_alvo": "INE projecções demográficas 2022 (por distrito, agregado a província) ou outro_dataset_portal"
+      },
+      {
+        "sub_pergunta": "Como varia o acesso a água melhorada por província?",
+        "lacuna": "Falta de dados de população total por província para calcular variações absolutas de cobertura",
+        "prioridade": 2,
+        "fonte_alvo": "INE projecções demográficas 2022 ou outro_dataset_portal"
+      },
+      {
+        "sub_pergunta": "Qual é o padrão espacial: existe agrupamento (clustering) de províncias com características similares de habitação?",
+        "lacuna": "Pergunta original não inclui análise de padrão espacial; enriquecimento permitiria identificar hotspots de privação multidimensional",
+        "prioridade": 3,
+        "fonte_alvo": "outro_dataset_portal (dataset geoespacial com geometria de províncias para Moran/LISA)"
+      }
+    ]
+  },
+  "contexto": {
+    "tabelas": {},
+    "ligacoes": {},
+    "calcs": {
+      "p1_coluna": {
+        "id": "p1_coluna",
+        "valor": "variable_name_pt",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "L02 Denominadores Populacionais e Saúde"
+          ],
+          "linhas_usadas": 13,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "L02 Denominadores Populacionais e Saúde"
+          ]
+        }
+      },
+      "p1_n_total": {
+        "id": "p1_n_total",
+        "valor": 13,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "L02 Denominadores Populacionais e Saúde"
+          ],
+          "linhas_usadas": 13,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "L02 Denominadores Populacionais e Saúde"
+          ]
+        }
+      },
+      "p1_n_preenchidos": {
+        "id": "p1_n_preenchidos",
+        "valor": 13,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "L02 Denominadores Populacionais e Saúde"
+          ],
+          "linhas_usadas": 13,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "L02 Denominadores Populacionais e Saúde"
+          ]
+        }
+      },
+      "p1_completude_pct": {
+        "id": "p1_completude_pct",
+        "valor": 100,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "L02 Denominadores Populacionais e Saúde"
+          ],
+          "linhas_usadas": 13,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "L02 Denominadores Populacionais e Saúde"
+          ]
+        }
+      },
+      "p1_n_distintos": {
+        "id": "p1_n_distintos",
+        "valor": 13,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "L02 Denominadores Populacionais e Saúde"
+          ],
+          "linhas_usadas": 13,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "L02 Denominadores Populacionais e Saúde"
+          ]
+        }
+      },
+      "p1_tipo": {
+        "id": "p1_tipo",
+        "valor": "categorica",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "L02 Denominadores Populacionais e Saúde"
+          ],
+          "linhas_usadas": 13,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "L02 Denominadores Populacionais e Saúde"
+          ]
+        }
+      },
+      "p2_coluna": {
+        "id": "p2_coluna",
+        "valor": "variable_name_pt",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p2_n_total": {
+        "id": "p2_n_total",
+        "valor": 999,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p2_n_preenchidos": {
+        "id": "p2_n_preenchidos",
+        "valor": 86,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p2_completude_pct": {
+        "id": "p2_completude_pct",
+        "valor": 8.6,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p2_n_distintos": {
+        "id": "p2_n_distintos",
+        "valor": 7,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p2_tipo": {
+        "id": "p2_tipo",
+        "valor": "categorica",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p6_S": {
+        "id": "p6_S",
+        "valor": 10,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 86,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p6_z": {
+        "id": "p6_z",
+        "valor": 0.0336,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 86,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p6_p": {
+        "id": "p6_p",
+        "valor": 0.973219,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 86,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p6_declive_sen": {
+        "id": "p6_declive_sen",
+        "valor": 0,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 86,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p6_direccao": {
+        "id": "p6_direccao",
+        "valor": "sem tendência",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 86,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p6_n": {
+        "id": "p6_n",
+        "valor": 86,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 86,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p6_interpretacao": {
+        "id": "p6_interpretacao",
+        "valor": "Não há evidência de tendência: as variações observadas são compatíveis com flutuação aleatória (p = 0.9732).",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 86,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p7_coluna": {
+        "id": "p7_coluna",
+        "valor": "dq_tier",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p7",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p7_n_total": {
+        "id": "p7_n_total",
+        "valor": 999,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p7",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p7_n_preenchidos": {
+        "id": "p7_n_preenchidos",
+        "valor": 86,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p7",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p7_completude_pct": {
+        "id": "p7_completude_pct",
+        "valor": 8.6,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p7",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p7_n_distintos": {
+        "id": "p7_n_distintos",
+        "valor": 2,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p7",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p7_tipo": {
+        "id": "p7_tipo",
+        "valor": "categorica",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p7",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p3_nome_max": {
+        "id": "p3_nome_max",
+        "valor": "Maputo Cidade",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p3_nome_min": {
+        "id": "p3_nome_min",
+        "valor": "CABO DELGADO",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p3_n": {
+        "id": "p3_n",
+        "valor": 11,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p3_soma": {
+        "id": "p3_soma",
+        "valor": 268.7,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p3_media": {
+        "id": "p3_media",
+        "valor": 24.4273,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p3_mediana": {
+        "id": "p3_mediana",
+        "valor": 15.8,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p3_desvio": {
+        "id": "p3_desvio",
+        "valor": 22.8527,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p3_min": {
+        "id": "p3_min",
+        "valor": 7.4,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p3_max": {
+        "id": "p3_max",
+        "valor": 85.3,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p3_q1": {
+        "id": "p3_q1",
+        "valor": 10.95,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p3_q3": {
+        "id": "p3_q3",
+        "valor": 24.5,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p3_coeficiente_variacao": {
+        "id": "p3_coeficiente_variacao",
+        "valor": 93.55,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p4_nome_max": {
+        "id": "p4_nome_max",
+        "valor": "Maputo Cidade",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p4_nome_min": {
+        "id": "p4_nome_min",
+        "valor": "ZAMBEZIA",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p4_n": {
+        "id": "p4_n",
+        "valor": 11,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p4_soma": {
+        "id": "p4_soma",
+        "valor": 774.5,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p4_media": {
+        "id": "p4_media",
+        "valor": 70.4091,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p4_mediana": {
+        "id": "p4_mediana",
+        "valor": 71,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p4_desvio": {
+        "id": "p4_desvio",
+        "valor": 14.4719,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p4_min": {
+        "id": "p4_min",
+        "valor": 51.2,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p4_max": {
+        "id": "p4_max",
+        "valor": 97.6,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p4_q1": {
+        "id": "p4_q1",
+        "valor": 61.5,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p4_q3": {
+        "id": "p4_q3",
+        "valor": 77.8,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p4_coeficiente_variacao": {
+        "id": "p4_coeficiente_variacao",
+        "valor": 20.55,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p5_nome_max": {
+        "id": "p5_nome_max",
+        "valor": "NAMPULA",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p5_nome_min": {
+        "id": "p5_nome_min",
+        "valor": "Maputo Cidade",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p5_n": {
+        "id": "p5_n",
+        "valor": 11,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p5_soma": {
+        "id": "p5_soma",
+        "valor": 51.5,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p5_media": {
+        "id": "p5_media",
+        "valor": 4.6818,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p5_mediana": {
+        "id": "p5_mediana",
+        "valor": 4.8,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p5_desvio": {
+        "id": "p5_desvio",
+        "valor": 0.4557,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p5_min": {
+        "id": "p5_min",
+        "valor": 3.9,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p5_max": {
+        "id": "p5_max",
+        "valor": 5.3,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p5_q1": {
+        "id": "p5_q1",
+        "valor": 4.35,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p5_q3": {
+        "id": "p5_q3",
+        "valor": 5.05,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      },
+      "p5_coeficiente_variacao": {
+        "id": "p5_coeficiente_variacao",
+        "valor": 9.73,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida"
+          ]
+        }
+      }
+    },
+    "series": [
+      {
+        "passo_id": "p3",
+        "nivel": "admin1",
+        "unidades": [
+          {
+            "codigo": "11",
+            "nome": "Maputo Cidade",
+            "valor": 85.3
+          },
+          {
+            "codigo": "10",
+            "nome": "MAPUTO",
+            "valor": 44.8
+          },
+          {
+            "codigo": "07",
+            "nome": "SOFALA",
+            "valor": 25.4
+          },
+          {
+            "codigo": "09",
+            "nome": "GAZA",
+            "valor": 23.6
+          },
+          {
+            "codigo": "08",
+            "nome": "INHAMBANE",
+            "valor": 22.5
+          },
+          {
+            "codigo": "06",
+            "nome": "MANICA",
+            "valor": 15.8
+          },
+          {
+            "codigo": "03",
+            "nome": "NAMPULA",
+            "valor": 12.9
+          },
+          {
+            "codigo": "01",
+            "nome": "NIASSA",
+            "valor": 11.7
+          },
+          {
+            "codigo": "04",
+            "nome": "ZAMBEZIA",
+            "valor": 10.2
+          },
+          {
+            "codigo": "05",
+            "nome": "TETE",
+            "valor": 9.1
+          },
+          {
+            "codigo": "02",
+            "nome": "CABO DELGADO",
+            "valor": 7.4
+          }
+        ],
+        "metrica": "Acesso a Electricidade (% AF)",
+        "normalizacao": "nenhuma",
+        "dataset_id": 61
+      },
+      {
+        "passo_id": "p4",
+        "nivel": "admin1",
+        "unidades": [
+          {
+            "codigo": "11",
+            "nome": "Maputo Cidade",
+            "valor": 97.6
+          },
+          {
+            "codigo": "10",
+            "nome": "MAPUTO",
+            "valor": 87.4
+          },
+          {
+            "codigo": "09",
+            "nome": "GAZA",
+            "valor": 80.2
+          },
+          {
+            "codigo": "08",
+            "nome": "INHAMBANE",
+            "valor": 75.4
+          },
+          {
+            "codigo": "07",
+            "nome": "SOFALA",
+            "valor": 73.5
+          },
+          {
+            "codigo": "06",
+            "nome": "MANICA",
+            "valor": 71
+          },
+          {
+            "codigo": "01",
+            "nome": "NIASSA",
+            "valor": 63.8
+          },
+          {
+            "codigo": "03",
+            "nome": "NAMPULA",
+            "valor": 62.7
+          },
+          {
+            "codigo": "05",
+            "nome": "TETE",
+            "valor": 60.3
+          },
+          {
+            "codigo": "02",
+            "nome": "CABO DELGADO",
+            "valor": 51.4
+          },
+          {
+            "codigo": "04",
+            "nome": "ZAMBEZIA",
+            "valor": 51.2
+          }
+        ],
+        "metrica": "Fonte de Água Melhorada (% AF)",
+        "normalizacao": "nenhuma",
+        "dataset_id": 61
+      },
+      {
+        "passo_id": "p5",
+        "nivel": "admin1",
+        "unidades": [
+          {
+            "codigo": "03",
+            "nome": "NAMPULA",
+            "valor": 5.3
+          },
+          {
+            "codigo": "02",
+            "nome": "CABO DELGADO",
+            "valor": 5.1
+          },
+          {
+            "codigo": "05",
+            "nome": "TETE",
+            "valor": 5.1
+          },
+          {
+            "codigo": "04",
+            "nome": "ZAMBEZIA",
+            "valor": 5
+          },
+          {
+            "codigo": "06",
+            "nome": "MANICA",
+            "valor": 4.9
+          },
+          {
+            "codigo": "01",
+            "nome": "NIASSA",
+            "valor": 4.8
+          },
+          {
+            "codigo": "07",
+            "nome": "SOFALA",
+            "valor": 4.6
+          },
+          {
+            "codigo": "10",
+            "nome": "MAPUTO",
+            "valor": 4.4
+          },
+          {
+            "codigo": "08",
+            "nome": "INHAMBANE",
+            "valor": 4.3
+          },
+          {
+            "codigo": "09",
+            "nome": "GAZA",
+            "valor": 4.1
+          },
+          {
+            "codigo": "11",
+            "nome": "Maputo Cidade",
+            "valor": 3.9
+          }
+        ],
+        "metrica": "Tamanho Médio do Agregado Familiar",
+        "normalizacao": "nenhuma",
+        "dataset_id": 61
+      }
+    ],
+    "graficos": [
+      {
+        "passo_id": "p2",
+        "tipo": "barra",
+        "titulo": "Identifica os indicadores de perfil do domicílio disponíveis no dataset.",
+        "eixoX": [
+          "Acesso a Electricidade (% AF)",
+          "Fonte de Água Melhorada (% AF)",
+          "Saneamento Melhorado (% AF)",
+          "Defecação a Céu Aberto (% AF)",
+          "% AF nos Dois Quintis Mais Pobres",
+          "Tamanho Médio do Agregado Familiar",
+          "Posse de Telemóvel (% mulheres 15–49)"
+        ],
+        "series": [
+          {
+            "nome": "variable_name_pt",
+            "valores": [
+              14,
+              12,
+              12,
+              12,
+              12,
+              12,
+              12
+            ]
+          }
+        ]
+      },
+      {
+        "passo_id": "p6",
+        "tipo": "linha",
+        "titulo": "Testa a tendência nacional do acesso a electricidade entre 2011, 2020 e 2022.",
+        "eixoX": [
+          "2011",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022"
+        ],
+        "series": [
+          {
+            "nome": "Valor",
+            "valores": [
+              14.3,
+              11.7,
+              7.4,
+              12.9,
+              10.2,
+              9.1,
+              15.8,
+              25.4,
+              22.5,
+              23.6,
+              44.8,
+              85.3,
+              26.5,
+              26.5,
+              63.8,
+              51.4,
+              62.7,
+              51.2,
+              60.3,
+              71,
+              73.5,
+              75.4,
+              80.2,
+              87.4,
+              97.6,
+              66.1,
+              27.6,
+              21.9,
+              23.1,
+              15.8,
+              20.4,
+              34.7,
+              39.5,
+              40.6,
+              42.1,
+              55.9,
+              77.4,
+              31.6,
+              39.8,
+              44.5,
+              38.7,
+              53.9,
+              45,
+              28.3,
+              21.9,
+              18.5,
+              13.4,
+              5.1,
+              0.4,
+              34.1,
+              48.2,
+              55.1,
+              50.3,
+              54.7,
+              48.6,
+              42.1,
+              34.8,
+              35.2,
+              32.9,
+              22.5,
+              4.4,
+              40,
+              4.8,
+              5.1,
+              5.3,
+              5,
+              5.1,
+              4.9,
+              4.6,
+              4.3,
+              4.1,
+              4.4,
+              3.9,
+              4.8,
+              53.6,
+              44.2,
+              55.7,
+              46.9,
+              51.2,
+              64.8,
+              68.5,
+              68.1,
+              73.4,
+              78.9,
+              91.6,
+              60.7
+            ]
+          }
+        ],
+        "categoria": "temporal"
+      },
+      {
+        "passo_id": "p7",
+        "tipo": "pizza",
+        "titulo": "Verifica a proporção de dados decision-grade versus advisory no dataset do domicílio.",
+        "eixoX": [
+          "Decision-grade",
+          "Advisory"
+        ],
+        "series": [
+          {
+            "nome": "dq_tier",
+            "valores": [
+              49,
+              37
+            ]
+          }
+        ]
+      },
+      {
+        "passo_id": "p3_grafico_garantia",
+        "tipo": "barra",
+        "titulo": "Acesso a Electricidade (% AF): maiores unidades",
+        "eixoX": [
+          "Maputo Cidade",
+          "MAPUTO",
+          "SOFALA",
+          "GAZA",
+          "INHAMBANE",
+          "MANICA",
+          "NAMPULA",
+          "NIASSA",
+          "ZAMBEZIA",
+          "TETE",
+          "CABO DELGADO"
+        ],
+        "series": [
+          {
+            "nome": "Acesso a Electricidade (% AF)",
+            "valores": [
+              85.3,
+              44.8,
+              25.4,
+              23.6,
+              22.5,
+              15.8,
+              12.9,
+              11.7,
+              10.2,
+              9.1,
+              7.4
+            ]
+          }
+        ],
+        "categoria": "comparativo"
+      },
+      {
+        "passo_id": "p4_grafico_garantia",
+        "tipo": "barra",
+        "titulo": "Fonte de Água Melhorada (% AF): maiores unidades",
+        "eixoX": [
+          "Maputo Cidade",
+          "MAPUTO",
+          "GAZA",
+          "INHAMBANE",
+          "SOFALA",
+          "MANICA",
+          "NIASSA",
+          "NAMPULA",
+          "TETE",
+          "CABO DELGADO",
+          "ZAMBEZIA"
+        ],
+        "series": [
+          {
+            "nome": "Fonte de Água Melhorada (% AF)",
+            "valores": [
+              97.6,
+              87.4,
+              80.2,
+              75.4,
+              73.5,
+              71,
+              63.8,
+              62.7,
+              60.3,
+              51.4,
+              51.2
+            ]
+          }
+        ],
+        "categoria": "comparativo"
+      },
+      {
+        "passo_id": "p5_grafico_garantia",
+        "tipo": "barra",
+        "titulo": "Tamanho Médio do Agregado Familiar: maiores unidades",
+        "eixoX": [
+          "NAMPULA",
+          "CABO DELGADO",
+          "TETE",
+          "ZAMBEZIA",
+          "MANICA",
+          "NIASSA",
+          "SOFALA",
+          "MAPUTO",
+          "INHAMBANE",
+          "GAZA",
+          "Maputo Cidade"
+        ],
+        "series": [
+          {
+            "nome": "Tamanho Médio do Agregado Familiar",
+            "valores": [
+              5.3,
+              5.1,
+              5.1,
+              5,
+              4.9,
+              4.8,
+              4.6,
+              4.4,
+              4.3,
+              4.1,
+              3.9
+            ]
+          }
+        ],
+        "categoria": "comparativo"
+      }
+    ],
+    "destaques": [],
+    "avisos": [
+      "Conjunto de dados Data4Moz L03 Perfil do Domicílio e Normas de Vida: 1 valor(es) da coluna \"geography_name\" não correspondem a unidades administrativas de Moçambique (Nacional) e ficam fora dos totais por unidade.",
+      "Enriquecimento: \"Data4Moz Base de Dados de Indicadores de Desenvolvimento (L01–L06) conjunto de dados\" (dataset do portal 53) forneceu população ao nível admin1 para preencher a falta de denominador populacional.",
+      "Enriquecimento: pesquisa de fontes externas desligada nesta análise (mais lenta); as lacunas identificadas fora de denominador populacional mantêm-se por declarar."
+    ],
+    "enriquecimentoPopulacao": {},
+    "camadasBrutas": [],
+    "qualidade": [
+      {
+        "coluna": "Variable Name Pt",
+        "completude_pct": 100,
+        "n_distintos": 13,
+        "tipo": "categorica"
+      },
+      {
+        "coluna": "Variable Name Pt",
+        "completude_pct": 8.6,
+        "n_distintos": 7,
+        "tipo": "categorica"
+      },
+      {
+        "coluna": "Dq Tier",
+        "completude_pct": 8.6,
+        "n_distintos": 2,
+        "tipo": "categorica"
+      }
+    ],
+    "codigoExecutado": [],
+    "custoExecucaoCodigo": 0
+  },
+  "achados": [],
+  "narrativa": {
+    "titulo": "Cabo Delgado tem só {{calc:p3_min}}% de acesso a electricidade, contra {{calc:p3_max}}% em Maputo Cidade",
+    "subtitulo": "Água melhorada varia menos entre províncias, mas o tamanho do agregado familiar também difere: Nampula tem as famílias maiores do país",
+    "resposta_directa": "O perfil do domicílio varia muito por província quando comparado à população total de cada região. Electricidade é o indicador mais desigual: {{calc:p3_nome_min}} tem apenas {{calc:p3_min}}% de acesso, enquanto {{calc:p3_nome_max}} chega a {{calc:p3_max}}%. Água melhorada e tamanho da família variam menos entre regiões.",
+    "numeros_chave": [
+      {
+        "calc_id": "p3_max",
+        "rotulo": "Maior acesso a electricidade",
+        "contexto": "{{calc:p3_nome_max}} regista o valor mais alto do país"
+      },
+      {
+        "calc_id": "p3_min",
+        "rotulo": "Menor acesso a electricidade",
+        "contexto": "{{calc:p3_nome_min}} fica muito abaixo da média nacional"
+      },
+      {
+        "calc_id": "p4_min",
+        "rotulo": "Menor acesso a água melhorada",
+        "contexto": "{{calc:p4_nome_min}} tem o valor mais baixo entre as províncias"
+      },
+      {
+        "calc_id": "p4_max",
+        "rotulo": "Maior acesso a água melhorada",
+        "contexto": "{{calc:p4_nome_max}} lidera também neste indicador"
+      },
+      {
+        "calc_id": "p5_max",
+        "rotulo": "Maior agregado familiar médio",
+        "contexto": "{{calc:p5_nome_max}} tem as famílias maiores, em pessoas por agregado"
+      },
+      {
+        "calc_id": "p5_min",
+        "rotulo": "Menor agregado familiar médio",
+        "contexto": "{{calc:p5_nome_min}} tem as famílias mais pequenas do país"
+      },
+      {
+        "calc_id": "p3_coeficiente_variacao",
+        "rotulo": "Dispersão do acesso a electricidade entre províncias",
+        "contexto": "coeficiente de variação mostra desigualdade muito maior aqui do que nos outros indicadores"
+      }
+    ],
+    "o_que_mostram": "Electricidade é o indicador mais desigual entre regiões: varia de {{calc:p3_min}}% em {{calc:p3_nome_min}} a {{calc:p3_max}}% em {{calc:p3_nome_max}}, com coeficiente de variação de {{calc:p3_coeficiente_variacao}}. Água melhorada tem um intervalo menor, entre {{calc:p4_min}}% em {{calc:p4_nome_min}} e {{calc:p4_max}}% em {{calc:p4_nome_max}} (variação de {{calc:p4_coeficiente_variacao}}), o que sugere que o investimento em água chegou de forma mais equilibrada do que a rede eléctrica. O tamanho médio do agregado familiar é o indicador mais homogéneo, entre {{calc:p5_min}} pessoas em {{calc:p5_nome_min}} e {{calc:p5_max}} em {{calc:p5_nome_max}} (variação de apenas {{calc:p5_coeficiente_variacao}}).",
+    "porque": "A concentração de electricidade e água em Maputo Cidade reflecte décadas de investimento em infra-estrutura urbana, enquanto províncias mais rurais e afectadas por dispersão populacional, como Cabo Delgado e Zambézia, ficam para trás. Isto não prova uma relação causal directa entre urbanização e acesso a serviços: factores como densidade populacional, proximidade à rede eléctrica nacional e capacidade orçamental provincial também explicam parte da diferença. O teste de tendência temporal para electricidade não mostra evolução significativa ({{calc:p6_interpretacao}}), com declive de Sen de {{calc:p6_declive_sen}}, o que indica estagnação mais do que melhoria ao longo do período observado.",
+    "o_que_nao_diz": [
+      "Os dados de perfil do domicílio (L03) só têm {{calc:p2_completude_pct}}% de preenchimento nas 999 linhas do conjunto, com apenas {{calc:p2_n_preenchidos}} registos reais: muitas combinações província-indicador-ano não existem.",
+      "O nível geográfico mais fino disponível neste conjunto é a província (admin1); não há dados de distrito para o perfil do domicílio, apesar de esse ser o nível mais útil para decisão local.",
+      "Um valor da coluna geográfica corresponde a 'Nacional' e foi excluído dos totais por província, o que pode subestimar ligeiramente a base de comparação regional.",
+      "A pesquisa em fontes externas estava desligada nesta análise: lacunas de dados fora do denominador populacional (já preenchido com o dataset 53) não foram investigadas."
+    ],
+    "como_chegamos": "Cruzámos os indicadores de perfil do domicílio (electricidade, água, saneamento, tamanho da família) com os denominadores populacionais por província, usando o conjunto de indicadores de desenvolvimento do portal para preencher a população em falta. Para cada indicador calculámos estatísticas descritivas por província (mínimo, máximo, dispersão) e testámos se o acesso a electricidade mudou ao longo do tempo com o teste de Mann-Kendall.",
+    "fontes": [
+      {
+        "instituicao": "INE",
+        "documento": "Data4Moz L03 Perfil do Domicílio e Normas de Vida",
+        "ano": 2022
+      },
+      {
+        "instituicao": "INE / MISAU",
+        "documento": "L02 Denominadores Populacionais e Saúde",
+        "ano": 2023
+      },
+      {
+        "instituicao": "INE",
+        "documento": "DHS/IDS 2022-23",
+        "ano": 2023
+      },
+      {
+        "instituicao": "INE",
+        "documento": "Data4Moz Base de Dados de Indicadores de Desenvolvimento (L01-L06)"
+      }
+    ]
+  },
+  "narrativa_resolvida": {
+    "titulo": "Cabo Delgado tem só 7,40% de acesso a electricidade, contra 85,3% em Maputo Cidade",
+    "subtitulo": "Água melhorada varia menos entre províncias, mas o tamanho do agregado familiar também difere: Nampula tem as famílias maiores do país",
+    "resposta_directa": "O perfil do domicílio varia muito por província quando comparado à população total de cada região. Electricidade é o indicador mais desigual: CABO DELGADO tem apenas 7,40% de acesso, enquanto Maputo Cidade chega a 85,3%. Água melhorada e tamanho da família variam menos entre regiões.",
+    "numeros_chave": [
+      {
+        "calc_id": "p3_max",
+        "rotulo": "Maior acesso a electricidade",
+        "contexto": "Maputo Cidade regista o valor mais alto do país",
+        "valor": "85,3"
+      },
+      {
+        "calc_id": "p3_min",
+        "rotulo": "Menor acesso a electricidade",
+        "contexto": "CABO DELGADO fica muito abaixo da média nacional",
+        "valor": "7,40"
+      },
+      {
+        "calc_id": "p4_min",
+        "rotulo": "Menor acesso a água melhorada",
+        "contexto": "ZAMBEZIA tem o valor mais baixo entre as províncias",
+        "valor": "51,2"
+      },
+      {
+        "calc_id": "p4_max",
+        "rotulo": "Maior acesso a água melhorada",
+        "contexto": "Maputo Cidade lidera também neste indicador",
+        "valor": "97,6"
+      },
+      {
+        "calc_id": "p5_max",
+        "rotulo": "Maior agregado familiar médio",
+        "contexto": "NAMPULA tem as famílias maiores, em pessoas por agregado",
+        "valor": "5,30"
+      },
+      {
+        "calc_id": "p5_min",
+        "rotulo": "Menor agregado familiar médio",
+        "contexto": "Maputo Cidade tem as famílias mais pequenas do país",
+        "valor": "3,90"
+      },
+      {
+        "calc_id": "p3_coeficiente_variacao",
+        "rotulo": "Dispersão do acesso a electricidade entre províncias",
+        "contexto": "coeficiente de variação mostra desigualdade muito maior aqui do que nos outros indicadores",
+        "valor": "93,6"
+      }
+    ],
+    "o_que_mostram": "Electricidade é o indicador mais desigual entre regiões: varia de 7,40% em CABO DELGADO a 85,3% em Maputo Cidade, com coeficiente de variação de 93,6. Água melhorada tem um intervalo menor, entre 51,2% em ZAMBEZIA e 97,6% em Maputo Cidade (variação de 20,6), o que sugere que o investimento em água chegou de forma mais equilibrada do que a rede eléctrica. O tamanho médio do agregado familiar é o indicador mais homogéneo, entre 3,90 pessoas em Maputo Cidade e 5,30 em NAMPULA (variação de apenas 9,73).",
+    "porque": "A concentração de electricidade e água em Maputo Cidade reflecte décadas de investimento em infra-estrutura urbana, enquanto províncias mais rurais e afectadas por dispersão populacional, como Cabo Delgado e Zambézia, ficam para trás. Isto não prova uma relação causal directa entre urbanização e acesso a serviços: factores como densidade populacional, proximidade à rede eléctrica nacional e capacidade orçamental provincial também explicam parte da diferença. O teste de tendência temporal para electricidade não mostra evolução significativa (Não há evidência de tendência: as variações observadas são compatíveis com flutuação aleatória (p = 0.9732).), com declive de Sen de 0, o que indica estagnação mais do que melhoria ao longo do período observado.",
+    "o_que_nao_diz": [
+      "Os dados de perfil do domicílio (L03) só têm 8,60% de preenchimento nas 999 linhas do conjunto, com apenas 86 registos reais: muitas combinações província-indicador-ano não existem.",
+      "O nível geográfico mais fino disponível neste conjunto é a província (admin1); não há dados de distrito para o perfil do domicílio, apesar de esse ser o nível mais útil para decisão local.",
+      "Um valor da coluna geográfica corresponde a 'Nacional' e foi excluído dos totais por província, o que pode subestimar ligeiramente a base de comparação regional.",
+      "A pesquisa em fontes externas estava desligada nesta análise: lacunas de dados fora do denominador populacional (já preenchido com o dataset 53) não foram investigadas.",
+      "Aviso de fiabilidade: O texto afirma que 'o teste de tendência temporal para electricidade não mostra evolução significativa', mas o cálculo p6 (tendencia_mann_kendall) foi corrido sobre 86 linhas, isto é, sobre TODAS as linhas preenchidas do dataset 61: 7 indicadores diferentes, duas unidades incompatíveis (% de AF e persons/HH), 11 províncias e 3 anos misturados na mesma série. Não é uma série temporal de electricidade: é uma pilha de valores heterogéneos por ordem de ficheiro. Daí o S = 10, z = 0,0336, p = 0,9732 e declive de Sen = 0 serem ruído sem significado. Acresce que a série temporal real de electricidade tem apenas 3 pontos nacionais (2011, 2020, 2022), abaixo do mínimo de 4 pontos declarado no próprio catálogo para Mann-Kendall.",
+      "Aviso de fiabilidade: A pergunta é 'em relação à população total por região' e a análise nunca pondera nada por população. Todas as estatísticas (p3_media = 24,4273%, p4_media = 70,4091%, p5_media = 4,6818) são médias simples das 11 províncias, em que Maputo Cidade pesa exactamente o mesmo que Nampula, que tem várias vezes mais habitantes. A média não ponderada de 24,43% não é a taxa nacional de acesso a electricidade: o próprio dataset contém linhas 'Nacional' (9 registos) que foram excluídas e que, com urbano 77,0% e rural 9,1% registados nas notas, apontam para um valor nacional bastante acima de 24,43%. O enriquecimento com o dataset 53 (população admin1) é mencionado nos avisos mas não gerou um único cálculo.",
+      "Aviso de fiabilidade: O bloco 'O que mostram' ordena os indicadores por desigualdade comparando coeficientes de variação de grandezas com unidades e escalas diferentes: electricidade 93,55 (%, limitado a 0–100), água 20,55 (%, limitado a 0–100) e tamanho do agregado 9,73 (pessoas/AF, com piso natural próximo de 1 e sem tecto em 100). Dizer que 'o tamanho médio do agregado é o indicador mais homogéneo' porque tem CV de 9,73 é um artefacto de unidade, não um resultado: uma variável que nunca se aproxima de zero tem CV mecanicamente comprimido. Além disso, o CV de uma proporção é inflacionado por médias baixas (electricidade tem média 24,43 contra 70,41 da água), pelo que parte da diferença 93,55 contra 20,55 vem do denominador da fórmula, não da desigualdade real.",
+      "Maputo Cidade é simultaneamente p3_nome_max (85,3%), p4_nome_max (97,6%) e p5_nome_min (3,9). Para electricidade, o limiar de Tukey é Q3 + 1,5·IQR = 24,5 + 1,5·(24,5 − 10,95) = 44,83: 85,3 está muito acima, ou seja, é um outlier estatístico formal. A mediana de 15,8 contra média de 24,43 confirma que a distribuição é puxada por uma única unidade. O CV de 93,55 que sustenta a tese central ('electricidade é o indicador mais desigual') colapsa se Maputo Cidade sair.",
+      "O título contrapõe Cabo Delgado a Maputo Cidade como se fossem unidades do mesmo tipo. Maputo Cidade é uma província 100% urbana, sem população rural; Cabo Delgado é maioritariamente rural e em crise de deslocação. Com urbano 77,0% e rural 9,1% registados na coluna notes para electricidade, a diferença de 7,4% para 85,3% é essencialmente a diferença urbano/rural, não uma diferença entre políticas provinciais.",
+      "A coluna notes fornece, para 50% dos registos, a decomposição urbano 77,0% e rural 9,1%: o fosso dentro do país (67,9 pp) é da mesma ordem do fosso entre províncias (77,9 pp). É plausível que, comparando urbano com urbano e rural com rural, o ordenamento das províncias mude ou desapareça, o que inverteria a leitura de 'províncias desiguais' para 'estratos desiguais dentro de todas as províncias'. A análise não testa isto e ainda assim escreve uma explicação causal por província no bloco 'Porquê'.",
+      "Todos os indicadores em % são '% de agregados familiares' (unit '%', variable_name_en 'Electricity Access (% HH)'), mas a pergunta e a narrativa falam de população. Como o tamanho médio do agregado é inversamente associado ao acesso (Maputo Cidade 3,9 pessoas/AF com 85,3% de electricidade; Nampula 5,3 pessoas/AF), a percentagem de AF com electricidade sobrestima a percentagem de PESSOAS com electricidade justamente nas províncias com agregados maiores. O fosso medido em pessoas é maior do que os 77,9 pp reportados.",
+      "O bloco 'O que não diz' afirma que 'muitas combinações província-indicador-ano não existem'. Os números da própria análise dizem o contrário: 86 registos preenchidos, 7 indicadores, 12 valores de geography_name; 11 províncias × 7 indicadores = 77, mais 9 registos 'Nacional' = 86. Ou seja, a matriz província-indicador está completa para 2022 e não há buracos. A completude de 8,6% (86 em 999) é um artefacto de linhas vazias de enchimento no ficheiro, não missingness substantiva; apresentá-la como fragilidade dos dados induz o leitor em erro na direcção oposta à real.",
+      "O dataset tem 7 indicadores (electricidade, água melhorada, saneamento melhorado, defecação a céu aberto, % AF nos dois quintis mais pobres, tamanho do AF, posse de telemóvel), mas a análise só reporta 3 e conclui que 'electricidade é o indicador mais desigual'. Defecação a céu aberto e saneamento melhorado não foram calculados e é plausível que apresentem amplitude relativa superior à da electricidade, o que invalidaria o título.",
+      "O valor mínimo que sustenta o título (7,4% em Cabo Delgado) vem do IDS 2022-23, cujo trabalho de campo em Cabo Delgado decorreu durante a crise de deslocação. O dataset 50 avisa explicitamente para o efeito da deslocação de Cabo Delgado sobre denominadores e para a subcontagem de populações deslocadas em Nampula e Zambézia. Distritos inacessíveis tendem a ficar de fora da amostra, pelo que o 7,4% pode estar enviesado (provavelmente para cima, se as zonas inquiridas forem as mais acessíveis) e a distância para o segundo pior colocado é desconhecida.",
+      "A frase 'o investimento em água chegou de forma mais equilibrada do que a rede eléctrica' é uma inferência de política a partir de dispersão. Explicação alternativa mais simples e não nomeada: a variância de uma proporção limitada a 0–100 é máxima perto de 50% e comprimida perto dos extremos; com média de 70,41% e máximo de 97,6%, a água está encostada ao tecto e não tem espaço para dispersar. Acresce que 'fonte melhorada' é uma categoria larga (inclui furos e poços protegidos, baratos e instaláveis em meio rural), enquanto electricidade exige rede: a diferença é de tecnologia e de definição, não necessariamente de equidade de investimento.",
+      "Mesmo esquecendo o erro da série, 'p = 0,9732 e declive de Sen = 0' é descrito como 'estagnação mais do que melhoria'. Um teste sem poder não demonstra estagnação: demonstra que não há dados para dizer nada. Além disso, o único ponto de 2011 vem de DHS/IDS 2011 (1 registo) e os restantes de DHS/IDS 2022-23, com mudanças de definição JMP entre rondas nos indicadores de água e saneamento: os dois momentos podem não medir a mesma coisa.",
+      "O aviso indica que o dataset 53 forneceu população admin1, mas não existe nenhum cálculo com id associado a essa fonte na lista de cálculos, nem qualquer número populacional no texto. Um dado que entra na análise sem cálculo registado não é auditável e, na prática, não entrou: a componente 'população total' da pergunta ficou por responder sem que isso conste do bloco de limitações."
+    ],
+    "como_chegamos": "Cruzámos os indicadores de perfil do domicílio (electricidade, água, saneamento, tamanho da família) com os denominadores populacionais por província, usando o conjunto de indicadores de desenvolvimento do portal para preencher a população em falta. Para cada indicador calculámos estatísticas descritivas por província (mínimo, máximo, dispersão) e testámos se o acesso a electricidade mudou ao longo do tempo com o teste de Mann-Kendall.",
+    "fontes": [
+      {
+        "instituicao": "INE",
+        "documento": "Data4Moz L03 Perfil do Domicílio e Normas de Vida",
+        "ano": 2022
+      },
+      {
+        "instituicao": "INE / MISAU",
+        "documento": "L02 Denominadores Populacionais e Saúde",
+        "ano": 2023
+      },
+      {
+        "instituicao": "INE",
+        "documento": "DHS/IDS 2022-23",
+        "ano": 2023
+      },
+      {
+        "instituicao": "INE",
+        "documento": "Data4Moz Base de Dados de Indicadores de Desenvolvimento (L01-L06)"
+      }
+    ]
+  },
+  "critica": {
+    "objeccoes": [
+      {
+        "gravidade": "FATAL",
+        "categoria": "Método aplicado fora de validade / série inexistente",
+        "descricao": "O texto afirma que 'o teste de tendência temporal para electricidade não mostra evolução significativa', mas o cálculo p6 (tendencia_mann_kendall) foi corrido sobre 86 linhas, isto é, sobre TODAS as linhas preenchidas do dataset 61: 7 indicadores diferentes, duas unidades incompatíveis (% de AF e persons/HH), 11 províncias e 3 anos misturados na mesma série. Não é uma série temporal de electricidade: é uma pilha de valores heterogéneos por ordem de ficheiro. Daí o S = 10, z = 0,0336, p = 0,9732 e declive de Sen = 0 serem ruído sem significado. Acresce que a série temporal real de electricidade tem apenas 3 pontos nacionais (2011, 2020, 2022), abaixo do mínimo de 4 pontos declarado no próprio catálogo para Mann-Kendall.",
+        "accao_sugerida": "Remover integralmente a frase sobre tendência e o token {{calc:p6_interpretacao}}/{{calc:p6_declive_sen}} do bloco 'Porquê'. Se se quiser falar de evolução, filtrar variable_id = L03_V001 e geography_type = National, mostrar os 2 a 3 pontos como valores individuais com o ano ao lado, e declarar explicitamente que não há pontos suficientes para teste de tendência."
+      },
+      {
+        "gravidade": "FATAL",
+        "categoria": "Denominador errado / pergunta não respondida",
+        "descricao": "A pergunta é 'em relação à população total por região' e a análise nunca pondera nada por população. Todas as estatísticas (p3_media = 24,4273%, p4_media = 70,4091%, p5_media = 4,6818) são médias simples das 11 províncias, em que Maputo Cidade pesa exactamente o mesmo que Nampula, que tem várias vezes mais habitantes. A média não ponderada de 24,43% não é a taxa nacional de acesso a electricidade: o próprio dataset contém linhas 'Nacional' (9 registos) que foram excluídas e que, com urbano 77,0% e rural 9,1% registados nas notas, apontam para um valor nacional bastante acima de 24,43%. O enriquecimento com o dataset 53 (população admin1) é mencionado nos avisos mas não gerou um único cálculo.",
+        "accao_sugerida": "Calcular a média ponderada pela população de cada província (dataset 53) para cada um dos 7 indicadores, apresentar lado a lado com a média simples e com o valor 'Nacional' do próprio dataset como validação. Se as três divergirem, isso é a resposta à pergunta e deve ir para o título ou para 'O que mostram'."
+      },
+      {
+        "gravidade": "FATAL",
+        "categoria": "Comparação de indicadores incomensuráveis (R12)",
+        "descricao": "O bloco 'O que mostram' ordena os indicadores por desigualdade comparando coeficientes de variação de grandezas com unidades e escalas diferentes: electricidade 93,55 (%, limitado a 0–100), água 20,55 (%, limitado a 0–100) e tamanho do agregado 9,73 (pessoas/AF, com piso natural próximo de 1 e sem tecto em 100). Dizer que 'o tamanho médio do agregado é o indicador mais homogéneo' porque tem CV de 9,73 é um artefacto de unidade, não um resultado: uma variável que nunca se aproxima de zero tem CV mecanicamente comprimido. Além disso, o CV de uma proporção é inflacionado por médias baixas (electricidade tem média 24,43 contra 70,41 da água), pelo que parte da diferença 93,55 contra 20,55 vem do denominador da fórmula, não da desigualdade real.",
+        "accao_sugerida": "Comparar indicadores só dentro da mesma unidade e escala. Para os indicadores em %, usar a amplitude em pp (electricidade 77,9 pp contra água 46,4 pp) e/ou o Gini/HHI de concentracao sobre os mesmos 11 valores. Apresentar o tamanho do agregado em bloco separado, sem o classificar na mesma escala de desigualdade dos indicadores percentuais."
+      },
+      {
+        "gravidade": "MATERIAL",
+        "categoria": "Conclusão dependente de uma observação extrema",
+        "descricao": "Maputo Cidade é simultaneamente p3_nome_max (85,3%), p4_nome_max (97,6%) e p5_nome_min (3,9). Para electricidade, o limiar de Tukey é Q3 + 1,5·IQR = 24,5 + 1,5·(24,5 − 10,95) = 44,83: 85,3 está muito acima, ou seja, é um outlier estatístico formal. A mediana de 15,8 contra média de 24,43 confirma que a distribuição é puxada por uma única unidade. O CV de 93,55 que sustenta a tese central ('electricidade é o indicador mais desigual') colapsa se Maputo Cidade sair.",
+        "accao_sugerida": "Correr detectar_outliers sobre os 11 valores de electricidade e recalcular resumo_estatistico sem Maputo Cidade; reportar os dois CV no texto. Se o CV sem Maputo Cidade ficar próximo do CV da água, reformular o título e a resposta directa."
+      },
+      {
+        "gravidade": "MATERIAL",
+        "categoria": "Grupos não comparáveis",
+        "descricao": "O título contrapõe Cabo Delgado a Maputo Cidade como se fossem unidades do mesmo tipo. Maputo Cidade é uma província 100% urbana, sem população rural; Cabo Delgado é maioritariamente rural e em crise de deslocação. Com urbano 77,0% e rural 9,1% registados na coluna notes para electricidade, a diferença de 7,4% para 85,3% é essencialmente a diferença urbano/rural, não uma diferença entre políticas provinciais.",
+        "accao_sugerida": "Reescrever o título para nomear o eixo real (por exemplo, contraste urbano/rural ou Cabo Delgado contra a mediana provincial de 15,8%) e, no gráfico, marcar Maputo Cidade como unidade exclusivamente urbana ou apresentá-la fora do ordenamento provincial."
+      },
+      {
+        "gravidade": "MATERIAL",
+        "categoria": "Composição não testada (risco de Simpson)",
+        "descricao": "A coluna notes fornece, para 50% dos registos, a decomposição urbano 77,0% e rural 9,1%: o fosso dentro do país (67,9 pp) é da mesma ordem do fosso entre províncias (77,9 pp). É plausível que, comparando urbano com urbano e rural com rural, o ordenamento das províncias mude ou desapareça, o que inverteria a leitura de 'províncias desiguais' para 'estratos desiguais dentro de todas as províncias'. A análise não testa isto e ainda assim escreve uma explicação causal por província no bloco 'Porquê'.",
+        "accao_sugerida": "Usar detectar_simpson (ou execucao_codigo) com a decomposição urbano/rural presente em notes como variável de grupo, e declarar no bloco 'O que não diz' que a diferença entre províncias é em parte um efeito de composição urbana e não um efeito provincial."
+      },
+      {
+        "gravidade": "MATERIAL",
+        "categoria": "Denominador: agregados contra pessoas",
+        "descricao": "Todos os indicadores em % são '% de agregados familiares' (unit '%', variable_name_en 'Electricity Access (% HH)'), mas a pergunta e a narrativa falam de população. Como o tamanho médio do agregado é inversamente associado ao acesso (Maputo Cidade 3,9 pessoas/AF com 85,3% de electricidade; Nampula 5,3 pessoas/AF), a percentagem de AF com electricidade sobrestima a percentagem de PESSOAS com electricidade justamente nas províncias com agregados maiores. O fosso medido em pessoas é maior do que os 77,9 pp reportados.",
+        "accao_sugerida": "Ou converter para base populacional aproximada (pessoas em AF com acesso = % AF × tamanho médio do AF × nº de AF, com o dataset 53), ou substituir 'população' por 'agregados familiares' em todo o texto e acrescentar em 'O que não diz' que a medida é por AF e não per capita."
+      },
+      {
+        "gravidade": "MATERIAL",
+        "categoria": "Limitação declarada contradiz os dados",
+        "descricao": "O bloco 'O que não diz' afirma que 'muitas combinações província-indicador-ano não existem'. Os números da própria análise dizem o contrário: 86 registos preenchidos, 7 indicadores, 12 valores de geography_name; 11 províncias × 7 indicadores = 77, mais 9 registos 'Nacional' = 86. Ou seja, a matriz província-indicador está completa para 2022 e não há buracos. A completude de 8,6% (86 em 999) é um artefacto de linhas vazias de enchimento no ficheiro, não missingness substantiva; apresentá-la como fragilidade dos dados induz o leitor em erro na direcção oposta à real.",
+        "accao_sugerida": "Reescrever a limitação: 'o ficheiro tem 999 linhas mas apenas 86 registos substantivos; a matriz província × indicador está completa para 2022 e as linhas vazias não representam dados em falta'. A limitação real a manter é a ausência de série temporal por província (só há pontos de tendência nacionais)."
+      },
+      {
+        "gravidade": "MATERIAL",
+        "categoria": "Selecção de indicadores favorece a conclusão",
+        "descricao": "O dataset tem 7 indicadores (electricidade, água melhorada, saneamento melhorado, defecação a céu aberto, % AF nos dois quintis mais pobres, tamanho do AF, posse de telemóvel), mas a análise só reporta 3 e conclui que 'electricidade é o indicador mais desigual'. Defecação a céu aberto e saneamento melhorado não foram calculados e é plausível que apresentem amplitude relativa superior à da electricidade, o que invalidaria o título.",
+        "accao_sugerida": "Correr resumo_estatistico por província para os 7 indicadores e apresentar uma tabela ordenada por amplitude em pp; só depois eleger o indicador do título."
+      },
+      {
+        "gravidade": "MATERIAL",
+        "categoria": "Qualidade do valor extremo (Cabo Delgado)",
+        "descricao": "O valor mínimo que sustenta o título (7,4% em Cabo Delgado) vem do IDS 2022-23, cujo trabalho de campo em Cabo Delgado decorreu durante a crise de deslocação. O dataset 50 avisa explicitamente para o efeito da deslocação de Cabo Delgado sobre denominadores e para a subcontagem de populações deslocadas em Nampula e Zambézia. Distritos inacessíveis tendem a ficar de fora da amostra, pelo que o 7,4% pode estar enviesado (provavelmente para cima, se as zonas inquiridas forem as mais acessíveis) e a distância para o segundo pior colocado é desconhecida.",
+        "accao_sugerida": "Verificar e declarar a cobertura amostral do IDS 2022-23 em Cabo Delgado; no texto, mostrar também o segundo e terceiro valores mais baixos para que o leitor veja se o mínimo é isolado; acrescentar a ressalva de deslocação em 'O que não diz'."
+      },
+      {
+        "gravidade": "MATERIAL",
+        "categoria": "Efeito de tecto e piso em proporções limitadas",
+        "descricao": "A frase 'o investimento em água chegou de forma mais equilibrada do que a rede eléctrica' é uma inferência de política a partir de dispersão. Explicação alternativa mais simples e não nomeada: a variância de uma proporção limitada a 0–100 é máxima perto de 50% e comprimida perto dos extremos; com média de 70,41% e máximo de 97,6%, a água está encostada ao tecto e não tem espaço para dispersar. Acresce que 'fonte melhorada' é uma categoria larga (inclui furos e poços protegidos, baratos e instaláveis em meio rural), enquanto electricidade exige rede: a diferença é de tecnologia e de definição, não necessariamente de equidade de investimento.",
+        "accao_sugerida": "Substituir a inferência causal por uma constatação descritiva e acrescentar explicitamente a explicação alternativa de tecto e de amplitude da definição de 'fonte melhorada' (R7)."
+      },
+      {
+        "gravidade": "MATERIAL",
+        "categoria": "Nulo interpretado como facto / comparabilidade temporal",
+        "descricao": "Mesmo esquecendo o erro da série, 'p = 0,9732 e declive de Sen = 0' é descrito como 'estagnação mais do que melhoria'. Um teste sem poder não demonstra estagnação: demonstra que não há dados para dizer nada. Além disso, o único ponto de 2011 vem de DHS/IDS 2011 (1 registo) e os restantes de DHS/IDS 2022-23, com mudanças de definição JMP entre rondas nos indicadores de água e saneamento: os dois momentos podem não medir a mesma coisa.",
+        "accao_sugerida": "Eliminar a palavra 'estagnação'. Se algum ponto de 2011 tiver entrado no resumo_estatistico das 11 províncias, refazer o filtro para year = 2022; confirmar e declarar que os 11 valores de cada indicador são todos do mesmo ano e da mesma definição."
+      },
+      {
+        "gravidade": "MATERIAL",
+        "categoria": "Reprodutibilidade do enriquecimento (R11)",
+        "descricao": "O aviso indica que o dataset 53 forneceu população admin1, mas não existe nenhum cálculo com id associado a essa fonte na lista de cálculos, nem qualquer número populacional no texto. Um dado que entra na análise sem cálculo registado não é auditável e, na prática, não entrou: a componente 'população total' da pergunta ficou por responder sem que isso conste do bloco de limitações.",
+        "accao_sugerida": "Ou gerar cálculos explícitos com a população do dataset 53 (ponderação, per capita) e registar a versão do dataset, ou remover a menção ao enriquecimento e declarar em 'O que não diz' que a comparação com a população total não foi feita."
+      },
+      {
+        "gravidade": "MENOR",
+        "categoria": "R1: números escritos à mão no texto",
+        "descricao": "O bloco 'O que não diz' escreve literalmente '8,60%', '999 linhas', '86 registos' e 'dataset 53', quando existem tokens para os três primeiros (p2_completude_pct, p2_n_total, p2_n_preenchidos). Números escritos à mão não são rastreáveis e, se o filtro mudar, ficam dessincronizados do resto do dashboard.",
+        "accao_sugerida": "Substituir por {{calc:p2_completude_pct}}, {{calc:p2_n_total}} e {{calc:p2_n_preenchidos}}."
+      },
+      {
+        "gravidade": "MENOR",
+        "categoria": "Chaves geográficas inconsistentes",
+        "descricao": "Os rótulos devolvidos misturam maiúsculas e capitalização normal: 'CABO DELGADO' e 'ZAMBEZIA' contra 'Maputo Cidade' e 'NAMPULA'. Isto indica que geography_name foi carregado a partir de normalizações diferentes; com 12 valores distintos e 11 províncias esperadas, o risco de duplicação de chave está controlado neste caso, mas basta um 'Zambézia'/'ZAMBEZIA' em ficheiros futuros para partir a junção com o dataset 53 e produzir províncias fantasma ou em falta silenciosa.",
+        "accao_sugerida": "Normalizar geography_name para nomes canónicos com acentuação (Cabo Delgado, Zambézia, Nampula) antes de qualquer junção, e usar essa forma canónica nos rótulos visíveis do gráfico e do título."
+      }
+    ],
+    "bloqueia_publicacao": false
+  },
+  "custo_usd": 0.46164299999999997,
+  "duracao_ms": 331358,
+  "confianca": {
+    "percentagem": 75,
+    "datasetsUsados": 2,
+    "ligacoesGeograficas": [
+      {
+        "dataset_id": 61,
+        "nivel": "admin1",
+        "taxa_correspondencia": 0.9
+      }
+    ],
+    "completudeMediaPct": 39.1,
+    "valoresDerivados": 0,
+    "passosViaCodigo": 0
+  }
+}

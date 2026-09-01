@@ -1,3 +1,5 @@
+import { Database } from 'lucide-react'
+
 type DatasetInfo = {
   id: number
   titulo: string
@@ -41,9 +43,17 @@ export function MetadadosDataset({ datasets }: { datasets: DatasetInfo[] }) {
   if (datasets.length === 0) return null
 
   return (
-    <section className="rounded-2xl border border-[#E2E8E5] bg-white p-5 mb-5">
-      <h2 className="text-base font-bold text-[var(--pd-ink-900)] mb-3">Metadados do Dataset</h2>
-      <div className={`grid grid-cols-1 gap-4 ${datasets.length > 1 ? 'md:grid-cols-2' : ''}`}>
+    <section className="pdx-panel mb-5">
+      <div className="pdx-panel-head">
+        <span className="pdx-panel-icone" aria-hidden>
+          <Database className="size-3.5" />
+        </span>
+        <h2>{datasets.length === 1 ? 'Metadados do dataset' : 'Metadados dos datasets'}</h2>
+        <span className="pdx-panel-sub pdx-num">
+          {datasets.length} {datasets.length === 1 ? 'fonte' : 'fontes'}
+        </span>
+      </div>
+      <div className={`pdx-panel-body grid grid-cols-1 gap-4 ${datasets.length > 1 ? 'md:grid-cols-2' : ''}`}>
         {datasets.map((d) => {
           const criado = formatarData(d.criadoEm)
           const actualizado = formatarData(d.actualizadoEm)
@@ -60,23 +70,19 @@ export function MetadadosDataset({ datasets }: { datasets: DatasetInfo[] }) {
             ...(actualizado ? [{ rotulo: 'Actualizado em', valor: actualizado }] : []),
           ]
           return (
-            <div key={d.id} className="rounded-xl border border-[#E2E8E5] p-4">
+            <div key={d.id} className="pdx-meta-cartao">
               <div className="flex items-start justify-between gap-2 mb-1">
-                <p className="text-[14px] font-bold text-[var(--pd-ink-900)]">{d.titulo}</p>
-                {dadoDesactualizado(d.ano) && (
-                  <span className="shrink-0 rounded-full bg-amber-50 border border-amber-200 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-800">
-                    Dados de {d.ano}
-                  </span>
-                )}
+                <p className="pdx-meta-titulo">{d.titulo}</p>
+                {dadoDesactualizado(d.ano) && <span className="pdx-selo-antigo">Dados de {d.ano}</span>}
               </div>
-              {d.descricao && (
-                <p className="text-[12.5px] text-gray-600 leading-relaxed mb-3 line-clamp-3">{d.descricao}</p>
-              )}
+              {d.descricao && <p className="pdx-meta-desc line-clamp-3">{d.descricao}</p>}
               <dl className={`grid grid-cols-2 gap-x-3 gap-y-1.5 ${datasets.length === 1 ? 'sm:grid-cols-3 lg:grid-cols-4' : ''}`}>
                 {campos.map((c) => (
                   <div key={c.rotulo} className="min-w-0">
-                    <dt className="text-[10px] font-bold uppercase tracking-wide text-gray-400">{c.rotulo}</dt>
-                    <dd className="text-[12.5px] text-[var(--pd-ink-800)] truncate">{c.valor}</dd>
+                    <dt>{c.rotulo}</dt>
+                    <dd className="truncate" title={c.valor}>
+                      {c.valor}
+                    </dd>
                   </div>
                 ))}
               </dl>

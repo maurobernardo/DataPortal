@@ -2,12 +2,16 @@ import { randomBytes } from 'crypto'
 import { findDatasetsByIds } from '@/lib/db'
 import { catalogoParaPrompt } from './library'
 import { chamarEstagio, custoUsd, modeloPara } from './router'
-import { criarContexto, executarPasso, type ContextoExecucao } from './executor'
+import { criarContexto, executarPasso, gerarGraficosDeGarantia, desambiguarRotulosSeries, type ContextoExecucao } from './executor'
 import { eLacunaPopulacional, tentarEnriquecerPopulacao } from './enriquecimento'
 import { tentarEnriquecerExterno } from './enriquecimento-externa'
 import { formatarCelula, resolverNarrativa, TokenPorResolverError } from './render'
 import { formatarExemploFewShot, guardarPlanoResolvido, procurarPlanoSemelhante } from './memoria'
+import { obterPerfilDataset, formatarPerfilParaPrompt } from './perfil'
+import { calcularConfianca, type ConfiancaAnalise } from './confianca'
+import { AnaliseInviavelError, limparTextoVisivel, modoPortao, verificarEvidencia } from './viabilidade'
 import { manifestoProvisorio } from '@/lib/semantic/schema'
+import { logger } from '@/lib/logger'
 import {
   PROMPT_PLANEAMENTO_COMPLETO,
   PROMPT_SUFICIENCIA,
@@ -48,6 +52,7 @@ export type ResultadoPipeline = {
   critica: Critica
   custo_usd: number
   duracao_ms: number
+  confianca: ConfiancaAnalise
 }
 
 /**
@@ -59,10 +64,21 @@ export type ResultadoPipeline = {
  */
 async function contextoDatasets(datasetIds: number[], ctx: ContextoExecucao): Promise<string> {
   const datasets = await findDatasetsByIds(datasetIds)
+  // PLANO-ARQUITETURA-DUAS-FASES.md: perfil calculado uma vez por dataset (cache em
+  // dataset_perfis), não recalculado a cada análise — o Planeamento passa a "saber" as colunas,
+  // tipos e correlações fortes de antemão em vez de as adivinhar a partir de 3 linhas de amostra.
+  // Best-effort: nunca lança (obterPerfilDataset já engole os próprios erros), por isso um dataset
+  // sem perfil ainda calculado não bloqueia nada, só fica com menos contexto, como sempre foi.
+  const perfis = await Promise.all(datasets.map((d: any) => obterPerfilDataset(d.id)))
+  const perfilPorId = new Map<number, Awaited<ReturnType<typeof obterPerfilDataset>>>(
+    datasets.map((d: any, i: number) => [d.id, perfis[i]])
+  )
+
   const blocos = datasets.map((d: any) => {
     const m = manifestoProvisorio(d)
     const tabela = ctx.tabelas.get(d.id)
     const ligacao = ctx.ligacoes.get(d.id)
+    const perfil = perfilPorId.get(d.id)
 
     const linhas = [
       `## Dataset ${d.id}: ${m.titulo}`,
@@ -74,8 +90,13 @@ async function contextoDatasets(datasetIds: number[], ctx: ContextoExecucao): Pr
     if (tabela) {
       linhas.push(`Linhas: ${tabela.n_linhas}${tabela.truncado ? ' (truncado)' : ''}`)
       linhas.push(`Colunas: ${tabela.colunas.join(', ')}`)
-      // Amostra pequena: o planeador precisa de ver a forma dos valores para escolher colunas,
-      // mas não deve receber os dados todos.
+    }
+
+    if (perfil) {
+      linhas.push(formatarPerfilParaPrompt(perfil))
+    } else if (tabela) {
+      // Sem perfil ainda calculado (dataset novo ou primeira vez): a amostra pequena continua a
+      // servir de rede de segurança para o planeador ver a forma dos valores.
       const amostra = tabela.linhas.slice(0, 3).map((l) => l.slice(0, 10).join(' | '))
       if (amostra.length) linhas.push(`Amostra:\n${amostra.join('\n')}`)
     }
@@ -105,10 +126,32 @@ export async function executarPipeline(
   // uma só chamada pode ir até 150s, e cada análise pode disparar até 3 (população + 2 outros
   // alvos). Por omissão fica desligada para caber no orçamento de 30-60s; quem quiser fontes
   // fora do portal pede-o explicitamente (opcoes.fontesExternas), sabendo que vai demorar mais.
-  opcoes: { fontesExternas?: boolean } = {}
+  // modoDegradado (PLANO-MOTOR-FINAL.md, secção 3): rede de segurança para a retentativa em
+  // route.ts. Repetir o mesmo plano depois de uma falha costuma falhar pela mesma razão (ex.:
+  // plano grande a mais); em modo degradado o pedido ao Planeamento pede explicitamente um plano
+  // mínimo (2-3 sub-perguntas) e a Crítica não corre, para maximizar a chance de a segunda
+  // tentativa produzir alguma coisa em vez de repetir o erro.
+  opcoes: { fontesExternas?: boolean; modoDegradado?: boolean } = {}
 ): Promise<ResultadoPipeline> {
   const inicio = Date.now()
   let custo = 0
+  // Modo degradado força fontesExternas=false independentemente do que foi pedido: pesquisa
+  // externa pode levar até 150s e é mais um ponto de falha — a retentativa quer é terminar.
+  if (opcoes.modoDegradado) opcoes = { ...opcoes, fontesExternas: false }
+
+  // PLANO-ROTULOS-E-VELOCIDADE.md, Frente B Fase 1: antes de cortar tempo de análise, medir onde
+  // ele vai de facto — sem isto, qualquer optimização é palpite. Marca-se o instante de cada
+  // "estagio_inicio" já emitido para a UI (não é um evento novo, só um registo local do mesmo
+  // sinal) e, no fim, calcula-se a duração de cada estágio pela diferença entre marcos
+  // consecutivos. Só regista em log (logger.info), nunca é persistido na análise nem afecta o
+  // que o utilizador vê — puramente instrumentação para decidir a Fase 2/3 do plano com números
+  // reais em vez de adivinhar.
+  const marcosEstagios: { estagio: string; t: number }[] = []
+  const emitirOriginal = emitir
+  emitir = (evento) => {
+    if (evento.tipo === 'estagio_inicio') marcosEstagios.push({ estagio: evento.estagio, t: Date.now() })
+    emitirOriginal(evento)
+  }
 
   // ---------- Carregamento de dados (antes dos estágios: o planeador precisa de ver os dados) ----------
   emitir({ tipo: 'estagio_inicio', estagio: 'compreensao', descricao_humana: 'A ler os dados seleccionados' })
@@ -131,12 +174,20 @@ export async function executarPipeline(
   // substitui o raciocínio do modelo, só lhe dá um ponto de partida já testado. Best-effort: uma
   // falha aqui (ex.: tabela ainda não migrada) não pode impedir a análise de correr.
   let exemploFewShot = ''
+  const tAntesMemoria = Date.now()
   try {
     const planoSemelhante = await procurarPlanoSemelhante(pergunta, datasetIds)
     if (planoSemelhante) exemploFewShot = formatarExemploFewShot(planoSemelhante)
   } catch {
     // silencioso: memória é uma optimização, não uma dependência da análise
   }
+  // Instrumentação temporária (PLANO-ROTULOS-E-VELOCIDADE.md): o bucket "planeamento" no log
+  // duracao_estagios_analise apareceu 3-10x maior do que a duração da própria chamada ao modelo
+  // (logada em [analise:tempo]), sem nenhum código visível entre as duas marcas que explicasse a
+  // diferença — isto isola se é a procura de memória (pouco provável, tabela pequena e indexada)
+  // ou algo antes da própria chamada ao SDK.
+  console.log(`[analise:tempo:detalhe] procurarPlanoSemelhante em ${Date.now() - tAntesMemoria}ms`)
+  const tAntesChamada = Date.now()
 
   const rCompleto = await chamarEstagio<Omit<Compreensao, 'pergunta_original'> & Plano>({
     estagio: 'planeamento',
@@ -145,13 +196,22 @@ export async function executarPipeline(
     utilizador:
       `Pergunta do utilizador:\n${pergunta}\n\n` +
       `Interpreta a pergunta e planeia a análise. Usa exclusivamente métodos do catálogo e colunas que existem nos datasets.` +
+      (opcoes.modoDegradado
+        ? '\n\nModo de segurança: a tentativa anterior falhou. Faz um plano MÍNIMO desta vez — no ' +
+          'máximo 2 sub-perguntas e 4 passos, só com os métodos mais simples e directos ' +
+          '(resumo_estatistico, comparar_grupos, perfil_coluna), sem geoestatística avançada nem ' +
+          'execucao_codigo. É preferível responder a menos com segurança do que arriscar falhar outra vez.'
+        : '') +
       exemploFewShot,
     schema: SCHEMA_PLANEAMENTO_COMPLETO,
-    // Mesmo tecto que o Planeamento tinha sozinho: a resposta combinada é maior (dois conjuntos
-    // de campos), mas a Compreensão pesava pouco (fields curtos), por isso 12000 continua com
-    // margem sem voltar ao tecto de 24000 usado com raciocínio prolongado.
-    maxTokens: 12000,
+    // 12000 chegava para a maioria das perguntas, mas uma pergunta com vários critérios
+    // simultâneos (ex.: cruzar 3+ condições geográficas/temporais) gera um plano com muitas
+    // sub_perguntas e passos, e truncava aqui em vez de produzir um plano mais pequeno — a
+    // etapa falhava por completo em vez de responder com um plano genuinamente maior. Em modo
+    // degradado o plano pedido é pequeno de propósito, por isso um tecto menor já chega.
+    maxTokens: opcoes.modoDegradado ? 6000 : 20000,
   })
+  console.log(`[analise:tempo:detalhe] chamarEstagio(planeamento) visto de fora em ${Date.now() - tAntesChamada}ms`)
   custo += custoUsd(modeloPara('planeamento'), rCompleto.tokens_entrada, rCompleto.tokens_saida)
   const compreensao: Compreensao = { ...rCompleto.dados, pergunta_original: pergunta }
   const plano: Plano = {
@@ -178,6 +238,73 @@ export async function executarPipeline(
   })
   custo += custoUsd(modeloPara('suficiencia'), rSuficiencia.tokens_entrada, rSuficiencia.tokens_saida)
   const suficiencia = rSuficiencia.dados
+
+  // ---------- 3b. Portão de viabilidade ----------
+  // Fica aqui, e não mais à frente, porque é o último ponto barato: a seguir vêm enriquecimento,
+  // execução e narrativa, que são o grosso do tempo e do custo. Uma pergunta que os dados não
+  // respondem passa assim a custar duas chamadas curtas em vez de uma análise inteira.
+  //
+  // O veredicto do modelo sozinho não basta para recusar trabalho a um utilizador: é o mesmo
+  // modelo que acabou de planear a análise a dizer se ela é possível. Só bloqueia quando o código
+  // confirma a prova contra os dados já carregados (ver `verificarEvidencia`), e qualquer dúvida
+  // resolve-se a publicar.
+  {
+    // Verifica sempre que houver evidência, mesmo num veredicto "parcial".
+    //
+    // A gravidade que o modelo atribui oscila entre corridas: a mesma pergunta sobre os mesmos
+    // dados saiu "insuficiente" com confiança 0 numa corrida e "parcial" com 0,72 na seguinte,
+    // com a mesma evidência correcta nas duas. O que não oscila é o facto: ou o código confirma a
+    // lacuna contra os dados carregados, ou não confirma. É esse facto que decide, e não o rótulo
+    // de severidade, pela mesma razão que levou a exigir evidência desde o início.
+    const verificacao = suficiencia.evidencia
+      ? verificarEvidencia(suficiencia.evidencia, ctx, pergunta)
+      : null
+    const modo = modoPortao()
+    // Regista TODOS os veredictos, não só os que bloqueiam. Sem as linhas de "suficiente" e
+    // "parcial" não haveria como ver, ao rever o modo sombra, as perguntas que deviam ter sido
+    // travadas e não foram: só se veria o que o portão apanhou, nunca o que lhe escapou.
+    logger.info('portao_viabilidade', {
+      analiseId,
+      pergunta,
+      datasetIds,
+      modo,
+      veredicto: suficiencia.veredicto,
+      confianca: suficiencia.confianca_sem_enriquecimento,
+      tipo_lacuna: suficiencia.evidencia?.tipo ?? null,
+      termo_ausente: suficiencia.evidencia?.termo_ausente ?? null,
+      exigido: suficiencia.evidencia?.exigido ?? null,
+      disponivel: suficiencia.evidencia?.disponivel ?? null,
+      evidencia_aceite: verificacao ? verificacao.aceite : null,
+      razao_recusa: verificacao && !verificacao.aceite ? verificacao.razao : null,
+      bloqueou: !!verificacao?.aceite && modo === 'activo',
+      // Distingue os bloqueios que vieram de um veredicto "parcial" dos que vieram de
+      // "insuficiente". É o número a vigiar no modo sombra: se muitos bloqueios nascerem de
+      // "parcial", o portão está a recusar análises que ainda serviam alguém.
+      bloqueio_veio_de_parcial: !!verificacao?.aceite && suficiencia.veredicto !== 'insuficiente',
+    })
+
+    if (verificacao?.aceite && modo === 'activo') {
+      const evidencia = suficiencia.evidencia!
+      throw new AnaliseInviavelError(
+        {
+          ...evidencia,
+          explicacao: limparTextoVisivel(evidencia.explicacao),
+          exigido: limparTextoVisivel(evidencia.exigido),
+          disponivel: limparTextoVisivel(evidencia.disponivel),
+        },
+        {
+          portao: 'antes_da_execucao',
+          plano,
+          avisos: [...ctx.avisos],
+          passos_falhados: [],
+          calcs: {},
+        }
+      )
+    }
+    // Em modo sombra nada mais acontece de propósito: nem um aviso extra, nem uma nota na
+    // narrativa. O objectivo é medir o portão contra perguntas reais sem alterar em nada o que o
+    // utilizador recebe, para que os números recolhidos descrevam o motor de hoje.
+  }
 
   // ---------- 4. Enriquecimento ----------
   // R2: antes de aceitar a lacuna, procura-se noutros datasets do portal. Só está implementado
@@ -287,7 +414,7 @@ export async function executarPipeline(
       custo += custoExterno
 
       if (resultado?.tipo === 'escalar') {
-        const fonteTexto = `${resultado.titulo}${resultado.ano ? ` (${resultado.ano})` : ''} — ${resultado.url}`
+        const fonteTexto = `${resultado.titulo}${resultado.ano ? ` (${resultado.ano})` : ''}: ${resultado.url}`
         const idsCriados: string[] = []
         for (const v of resultado.valores) {
           const id = `enriq_ext_${++seq}`
@@ -311,7 +438,7 @@ export async function executarPipeline(
         // Repartição administrativa fora do âmbito de denominador populacional (ex.: área por
         // província): fica registada como aviso com os valores, mas não entra em
         // ctx.enriquecimentoPopulacao (isso é exclusivo de denominadores de habitantes).
-        const fonteTexto = `${resultado.titulo}${resultado.ano ? ` (${resultado.ano})` : ''} — ${resultado.url}`
+        const fonteTexto = `${resultado.titulo}${resultado.ano ? ` (${resultado.ano})` : ''}: ${resultado.url}`
         ctx.avisos.push(
           `Enriquecimento externo: "${fonteTexto}" encontrou uma repartição por província para ` +
             `"${alvo.lacuna}", fora do portal. Não foi incorporada nos cálculos automaticamente; ` +
@@ -335,7 +462,19 @@ export async function executarPipeline(
   // por dataset_id — esses têm de correr primeiro e em série, senão o passo que lê o resultado da
   // junção arranca antes dela existir.
   emitir({ tipo: 'estagio_inicio', estagio: 'execucao', descricao_humana: 'A calcular' })
-  const passosExecutaveis = plano.passos.filter((p) => p.tipo !== 'enriquecimento')
+  // Métodos "estruturais" (cruzam dois datasets seleccionados directamente por dataset_id/
+  // dataset_id_2) têm de correr aqui sempre, mesmo que o Planeamento os classifique por engano
+  // com tipo "enriquecimento" — verificado ao vivo: "Cruza X com Y" soa semanticamente a
+  // enriquecimento, e quando isso acontece o passo era descartado em silêncio (nunca corria, nunca
+  // entrava em avisos como falhado) e a Narrativa inventava uma razão qualquer para a ausência do
+  // resultado, em vez de dizer a verdade. "Enriquecimento" aqui é só a cascata de denominador
+  // externo/de outro dataset resolvida no estágio de Suficiência, não estes métodos do catálogo.
+  const METODOS_ESTRUTURAIS = new Set([
+    'juntar_datasets', 'distancia_minima', 'contagem_buffer', 'distribuicao_categoria_geo', 'execucao_codigo',
+  ])
+  const passosExecutaveis = plano.passos.filter(
+    (p) => p.tipo !== 'enriquecimento' || METODOS_ESTRUTURAIS.has(p.metodo)
+  )
   const passosJuncao = passosExecutaveis.filter((p) => p.metodo === 'juntar_datasets')
   const passosNormais = passosExecutaveis.filter((p) => p.metodo !== 'juntar_datasets')
 
@@ -363,9 +502,11 @@ export async function executarPipeline(
     }
   }
 
-  for (const passo of passosJuncao) {
-    await correrPasso(passo as PassoPlano)
-  }
+  // PLANO-ROTULOS-E-VELOCIDADE.md, Frente B Fase 2: junções não dependem umas das outras (só os
+  // passos NORMAIS que leem o resultado de uma junção têm de esperar por ela) — corriam em série
+  // uma a seguir à outra sem razão, quando um plano com 2+ junções independentes podia correr as
+  // duas ao mesmo tempo.
+  await Promise.all(passosJuncao.map((passo) => correrPasso(passo as PassoPlano)))
   await Promise.all(passosNormais.map((passo) => correrPasso(passo as PassoPlano)))
 
   // execucao_codigo (Fase 2 do PLANO-INTELIGENCIA-PRO-MAX.md) chama o modelo directamente dentro
@@ -375,6 +516,14 @@ export async function executarPipeline(
   if (Object.keys(ctx.calcs).length === 0) {
     throw new Error('Nenhum passo do plano produziu resultados: a análise não pode ser publicada')
   }
+
+  // Rede de segurança de código (PLANO-DATAPROPROMAX.md): a instrução no prompt para garantir
+  // pelo menos 3 gráficos nem sempre é seguida. Se não saiu nenhum gráfico da execução, mas há
+  // pelo menos uma série geográfica real, gera-se um gráfico de barras a partir dela.
+  // Antes do gráfico de garantia: os títulos desses gráficos vêm de serie.metrica, por isso os
+  // rótulos têm de ficar distintos primeiro, senão o gráfico de garantia herda a ambiguidade.
+  desambiguarRotulosSeries(ctx, plano.passos.map((p) => ({ id: p.id, descricao_humana: p.descricao_humana })))
+  gerarGraficosDeGarantia(ctx)
 
   // Mostra como o valor será RENDERIZADO, não o valor bruto: sem isto o modelo escrevia
   // "{{calc:x}}%" sobre um cálculo já formatado como percentagem, produzindo "50,9%%".
@@ -410,7 +559,11 @@ export async function executarPipeline(
       // Sem isto cai no tecto por omissão de 8000: chega para perguntas simples, mas uma análise
       // nacional com muitas províncias/distritos e muitos cálculos disponíveis (listaCalcs grande)
       // pode genuinamente precisar de mais para cobrir numeros_chave + todos os campos de texto.
-      maxTokens: 12000,
+      // 12000 ainda truncava em cruzamentos distritais nacionais (ex.: electrificação x área
+      // cultivada por distrito, ~150 distritos) mesmo em modo degradado (plano mínimo). 64000 é o
+      // tecto máximo de output aceite pela API para claude-sonnet-5 (usado neste estágio); pedir
+      // mais do que isso (ex.: 100000) falha logo no pedido em vez de dar mais margem.
+      maxTokens: 64000,
     })
   ).dados
 
@@ -437,18 +590,78 @@ export async function executarPipeline(
     resolvida = resolverNarrativa(narrativa, ctx.calcs)
   }
 
+  // ---------- 7b. Revisão antes de publicar ----------
+  // O portão de viabilidade corre ANTES da execução e só sabe o que os dados têm, não o que os
+  // cálculos conseguiram. Quando o passo central falha já a meio, ninguém volta a avaliar, e o
+  // resultado é um dashboard sobre o seu próprio fracasso: visto ao vivo, com o título "o cálculo
+  // directo de produtividade por província falhou: os dados actuais não permitem apontar quem
+  // cultiva muito e produz pouco". Publicar isso é pior do que recusar: ocupa o ecrã inteiro para
+  // dizer que não há resposta, e não oferece nenhuma saída.
+  //
+  // O sinal é o próprio título. Um título que ABRE a admitir que não conseguiu é a análise a
+  // declarar-se inútil; ressalvas no corpo do texto são outra coisa e continuam bem-vindas, por
+  // isso só o título é examinado.
+  const tituloDesiste =
+    /^(n[ãa]o (foi|é|e) poss[ií]vel|n[ãa]o (h[áa]|se pode|d[áa]|permitem?)|sem dados|imposs[ií]vel|o c[áa]lculo .{0,40}falh|falh(ou|aram))/i.test(
+      resolvida.titulo.trim()
+    ) || /\bfalh(ou|aram)\b/i.test(resolvida.titulo.split(':')[0])
+
+  if (tituloDesiste) {
+    const passosFalhados = ctx.avisos.filter((a) => /não pôde ser executado/i.test(a))
+    logger.info('revisao_pos_execucao', {
+      analiseId,
+      pergunta,
+      titulo: resolvida.titulo,
+      passos_falhados: passosFalhados.length,
+      modo: modoPortao(),
+    })
+    if (modoPortao() === 'activo') {
+      // `execucao_falhou`, e não `variavel_ausente`. A distinção não é cosmética: o utilizador que
+      // lê "falta esta variável" vai procurar outro dataset, quando o ficheiro tinha o assunto e o
+      // que rebentou foi o cálculo. E quem lê os registos para corrigir o motor precisa de saber
+      // se procura um problema de dados ou um problema de código.
+      throw new AnaliseInviavelError(
+        {
+          tipo: 'execucao_falhou',
+          exigido: limparTextoVisivel(compreensao.pergunta_original),
+          disponivel:
+            passosFalhados.length > 0
+              ? `os cálculos necessários não puderam ser feitos (${passosFalhados.length} passo(s) falharam)`
+              : 'os cálculos produzidos não respondem ao que foi perguntado',
+          explicacao:
+            'Os dados falam do assunto, mas o cálculo que a pergunta exigia não chegou ao fim. ' +
+            'Em vez de publicar um painel a explicar o próprio falhanço, aqui ficam perguntas que ' +
+            'estes dados respondem bem.',
+          termo_ausente: 'resultado calculável para esta pergunta',
+        },
+        {
+          portao: 'depois_da_execucao',
+          plano,
+          avisos: [...ctx.avisos],
+          passos_falhados: passosFalhados,
+          calcs: ctx.calcs,
+        }
+      )
+    }
+  }
+
   // ---------- 8. Auto-crítica adversarial (PLANO-INTELIGENCIA-PRO-MAX.md, Fase 5): condicional,
   // não "sempre" nem "nunca". Corre só quando o risco de erro de raciocínio é maior (confiança
-  // baixa antes de enriquecer, ou pergunta comparativa/temporal — onde o paradoxo de Simpson e a
+  // baixa antes de enriquecer, ou intenção comparativa — onde o paradoxo de Simpson e a
   // inversão de tendência por MAUP são erros reais já vistos nesta base de código); nas perguntas
-  // simples de contagem/ranking com confiança alta, o custo extra (Opus + raciocínio prolongado)
-  // não compensa e fica-se com a publicação directa, como antes.
+  // simples de contagem/ranking com confiança alta, o custo extra (Opus + raciocínio prolongado,
+  // ~2min sozinho) não compensa e fica-se com a publicação directa, como antes.
+  // Limiar baixado de 0.85 para 0.6 e "temporal" removido do gatilho automático: 0.85 disparava a
+  // etapa mais lenta do pipeline em quase todas as perguntas (a maioria fica abaixo de 0.85 por
+  // omissão), tornando "condicional" praticamente equivalente a "sempre" na prática.
+  // Em modo degradado (retentativa depois de uma falha) a Crítica não corre mesmo que os critérios
+  // abaixo a pedissem: é a etapa mais lenta (Opus + raciocínio, ~2min) e a prioridade da segunda
+  // tentativa é entregar alguma resposta depressa, não aprofundar a revisão.
   const deveCriticar =
-    suficiencia.confianca_sem_enriquecimento < 0.85 ||
-    compreensao.intencao === 'comparativa' ||
-    compreensao.intencao === 'temporal' ||
-    compreensao.arquetipo_sugerido === 'comparativo' ||
-    compreensao.arquetipo_sugerido === 'temporal'
+    !opcoes.modoDegradado &&
+    (suficiencia.confianca_sem_enriquecimento < 0.6 ||
+      compreensao.intencao === 'comparativa' ||
+      compreensao.arquetipo_sugerido === 'comparativo')
 
   // Publicar sempre alguma coisa é uma decisão de produto deliberada (PLANO-30S.md): recusar a
   // análise inteira por causa de uma objecção da Crítica deixava o utilizador sem nada, mesmo
@@ -517,10 +730,18 @@ export async function executarPipeline(
     }
   }
 
-  // A página de detalhe é o destino depois de uma análise nova: tem a pergunta em destaque, a
-  // resposta, a metodologia e tudo o resto num só sítio — o dashboard (mapa/gráficos em ecrã
-  // cheio, exportação) é a experiência opt-in a que se chega a partir daí, não o ponto de partida.
-  emitir({ tipo: 'concluido', analise_id: analiseId, url: `/analise/${analiseId}` })
+  // O evento 'concluido' NÃO é emitido aqui: o chamador (route.ts) ainda vai gravar este
+  // resultado na base de dados via guardarResultado(), e o cliente navega para /analise/{id}
+  // assim que recebe 'concluido'. Emitir aqui faria o browser chegar à página antes do UPDATE
+  // na tabela `analises` ter terminado, mostrando "análise não foi publicada" apesar do
+  // pipeline ter corrido com sucesso.
+  const duracaoTotalMs = Date.now() - inicio
+  const duracaoPorEstagio: Record<string, number> = {}
+  marcosEstagios.forEach((marco, i) => {
+    const fim = i + 1 < marcosEstagios.length ? marcosEstagios[i + 1].t : inicio + duracaoTotalMs
+    duracaoPorEstagio[marco.estagio] = (duracaoPorEstagio[marco.estagio] || 0) + (fim - marco.t)
+  })
+  logger.info('duracao_estagios_analise', { analiseId, duracaoTotalMs, duracaoPorEstagio })
 
   return {
     analise_id: analiseId,
@@ -534,5 +755,6 @@ export async function executarPipeline(
     critica,
     custo_usd: custo,
     duracao_ms: Date.now() - inicio,
+    confianca: calcularConfianca(ctx, plano, suficiencia),
   }
 }

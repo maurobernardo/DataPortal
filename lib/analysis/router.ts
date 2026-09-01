@@ -23,7 +23,7 @@ import type { EstadoPipeline } from './types'
  * medição ao vivo, quase metade do total).
  */
 
-export type Estagio = EstadoPipeline | 'critica' | 'codigo' | 'titulos'
+export type Estagio = EstadoPipeline | 'critica' | 'codigo' | 'titulos' | 'perguntas_viaveis' | 'traducao'
 
 const MODELO_POR_ESTAGIO: Record<Estagio, string> = {
   compreensao: 'claude-haiku-4-5',
@@ -37,6 +37,12 @@ const MODELO_POR_ESTAGIO: Record<Estagio, string> = {
   critica: 'claude-opus-5',
   composicao: 'claude-sonnet-5',
   titulos: 'claude-sonnet-5',
+  // Tem de copiar nomes de coluna exactos a partir do perfil: uma proposta com um nome
+  // aproximado é descartada pela validação e desperdiça um lugar na lista.
+  perguntas_viaveis: 'claude-sonnet-5',
+  // Traduzir um relatório já escrito não exige raciocínio novo, exige fidelidade: o modelo mais
+  // capaz seria dinheiro gasto a reescrever bem o que só tinha de ser transposto.
+  traducao: 'claude-sonnet-5',
 }
 
 /** Estágios onde o raciocínio prolongado muda materialmente a qualidade da saída. Só a Crítica:
@@ -64,6 +70,10 @@ export type ChamadaEstagio = {
   utilizador: string
   schema: Record<string, unknown>
   maxTokens?: number
+  /** Sobrepõe o modelo por omissão do estágio (modeloPara) — usado pelo modo rápido para trocar
+   *  Sonnet por Haiku no Planeamento e na Narrativa, a maior alavanca de tempo disponível sem
+   *  reduzir o número de chamadas. */
+  modeloOverride?: string
 }
 
 export type RespostaEstagio<T> = {
@@ -120,7 +130,7 @@ async function chamarComRetentativa(pedido: any) {
  */
 export async function chamarEstagio<T>(opcoes: ChamadaEstagio): Promise<RespostaEstagio<T>> {
   const inicio = Date.now()
-  const modelo = modeloPara(opcoes.estagio)
+  const modelo = opcoes.modeloOverride || modeloPara(opcoes.estagio)
 
   const blocosSistema: any[] = [
     { type: 'text', text: CONSTITUICAO, cache_control: { type: 'ephemeral' } },

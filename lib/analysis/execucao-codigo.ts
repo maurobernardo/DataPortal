@@ -38,7 +38,12 @@ export type SaidaExecucaoCodigo = {
 }
 
 const LIMITE_LINHAS_PADRAO = 15000
+// 90s chegava para um ficheiro. Com dois, o sandbox tem de os carregar, alinhar pela coluna
+// geográfica e só depois calcular, e passou a estourar o prazo (visto ao vivo: "Request timed
+// out" num passo de cruzamento que antes nem sequer recebia o segundo ficheiro). O tempo extra só
+// é pedido quando há mesmo dois ficheiros; com um só, nada muda.
 const TIMEOUT_MS = 90_000
+const TIMEOUT_MS_DOIS_FICHEIROS = 150_000
 const MAX_VOLTAS = 3 // 1 pedido inicial + até 2 retomas de pause_turn
 const BETA_FILES_API = 'files-api-2025-04-14'
 
@@ -61,6 +66,7 @@ A tua tarefa, dada uma instrução específica sobre esta tabela:
 
 1. Carrega "dados.csv" com pandas.
 2. Calcula exactamente o que foi pedido, usando SÓ os dados fornecidos. Nunca inventes, estimes ou completes de memória um valor que os dados não permitam calcular — se não for possível com estes dados, di-lo explicitamente.
+2b. Quando a instrução pede um cálculo REPETIDO por grupo (por província, por categoria, por distrito, etc.), "impossivel" só é a resposta certa se NENHUM grupo tiver dados suficientes. Se alguns grupos têm dados completos e outros não, calcula os que têm e devolve "lista" só com esses — não declares o cálculo inteiro impossível só porque uma parte dos grupos falha. Um resultado parcial e honesto (com menos itens, mas todos reais) vale mais do que "impossivel" quando uma parte da resposta era mesmo calculável. Se preferires, ainda podes mencionar no texto livre antes do bloco final quais grupos ficaram de fora e porquê — mas o bloco JSON deve conter os que resultaram.
 3. Corre o código de verdade antes de responder: o resultado final tem de vir da execução, nunca de um cálculo mental teu.
 4. No FIM da resposta, depois de correres o código, escreve UM ÚNICO bloco \`\`\`json\`\`\` com o resultado, exactamente numa destas três formas e mais nada:
    - Escalar: {"tipo": "escalar", "valor": <número ou string>, "unidade": "<opcional>"}
@@ -69,13 +75,100 @@ A tua tarefa, dada uma instrução específica sobre esta tabela:
 
 Não escrevas nenhum outro bloco \`\`\`json\`\`\` na resposta além deste último. Não expliques o resultado fora do bloco — a explicação em texto é livre antes dele, mas o bloco final é o que será lido por outro sistema.`
 
-function extrairJson(texto: string): unknown {
-  const blocos = Array.from(texto.matchAll(/```json\s*([\s\S]*?)```/g))
-  const candidato = blocos.length > 0 ? blocos[blocos.length - 1][1] : texto
-  return JSON.parse(candidato.trim())
+/**
+ * Percorre o texto e devolve os objectos JSON completos que lá estejam, do último para o primeiro.
+ *
+ * Conta chavetas respeitando cadeias de texto e escapes, para não terminar num "}" que faça parte
+ * de um valor. O último objecto é o mais provável: o modelo costuma explicar primeiro e concluir
+ * com o resultado.
+ */
+function objectosJsonNoTexto(texto: string): string[] {
+  const encontrados: string[] = []
+  for (let inicio = 0; inicio < texto.length; inicio++) {
+    if (texto[inicio] !== '{') continue
+    let profundidade = 0
+    let dentroDeTexto = false
+    let escapado = false
+    for (let i = inicio; i < texto.length; i++) {
+      const c = texto[i]
+      if (escapado) {
+        escapado = false
+        continue
+      }
+      if (c === '\\') {
+        escapado = true
+        continue
+      }
+      if (c === '"') dentroDeTexto = !dentroDeTexto
+      if (dentroDeTexto) continue
+      if (c === '{') profundidade++
+      else if (c === '}') {
+        profundidade--
+        if (profundidade === 0) {
+          encontrados.push(texto.slice(inicio, i + 1))
+          inicio = i
+          break
+        }
+      }
+    }
+  }
+  return encontrados.reverse()
 }
 
-function validarResultado(obj: any): ResultadoExecucaoCodigo {
+/**
+ * Tira o resultado estruturado da resposta, seja qual for a forma que ela tome.
+ *
+ * Antes só aceitava uma cerca ```json. Verificado ao vivo: uma análise perdeu o passo inteiro
+ * porque o modelo escreveu a explicação antes do objecto e sem cerca, e o parse tentou ler a prosa
+ * ("Unexpected token 'C'"). O conteúdo estava lá e era válido; falhou só a maneira de o encontrar,
+ * o que é a pior razão possível para perder um passo de uma análise.
+ */
+export function extrairJson(texto: string): unknown {
+  const candidatos: string[] = []
+
+  for (const m of Array.from(texto.matchAll(/```json\s*([\s\S]*?)```/g))) candidatos.push(m[1])
+  for (const m of Array.from(texto.matchAll(/```\s*([\s\S]*?)```/g))) candidatos.push(m[1])
+  candidatos.reverse() // a última cerca costuma trazer a conclusão
+  candidatos.push(texto)
+  candidatos.push(...objectosJsonNoTexto(texto))
+
+  let ultimoErro: unknown = null
+  for (const candidato of candidatos) {
+    const limpo = candidato.trim()
+    if (!limpo) continue
+    try {
+      return JSON.parse(limpo)
+    } catch (erro) {
+      ultimoErro = erro
+    }
+  }
+  throw ultimoErro instanceof Error ? ultimoErro : new Error('sem JSON reconhecível na resposta')
+}
+
+/**
+ * Reduz a "unidade" devolvida pelo código ao que cabe a seguir a um número.
+ *
+ * O campo é livre e o modelo usa-o às vezes para descrever o método inteiro. Verificado ao vivo,
+ * num título de análise: "r=0,52 coeficiente de correlação de Pearson (n=10 províncias, ano 2022;
+ * confundimento plausível: dimensão territorial da província)". A unidade é colada ao valor em
+ * todo o lado onde ele aparece, por isso uma frase aqui torna ilegível o título, os cartões e o
+ * texto de uma vez só.
+ *
+ * Corta no primeiro parêntesis ou ponto e vírgula, que é onde a descrição costuma começar, e
+ * desiste da unidade se mesmo assim continuar do tamanho de uma frase: um número sem unidade lê-se
+ * bem, um número seguido de um parágrafo não.
+ */
+export function limparUnidade(bruta: unknown): string | undefined {
+  if (typeof bruta !== 'string') return undefined
+  const cortada = bruta.split(/[(;]/)[0].trim().replace(/\s+/g, ' ')
+  if (!cortada) return undefined
+  // 30 caracteres separa bem as duas coisas na pratica: deixa passar unidades legitimas compridas
+  // ("casos por 100 mil habitantes", 28) e barra nomes de metodo ("coeficiente de correlacao de
+  // Pearson", 36), que sao o que costuma aparecer aqui por engano.
+  return cortada.length <= 30 ? cortada : undefined
+}
+
+export function validarResultado(obj: any): ResultadoExecucaoCodigo {
   if (!obj || typeof obj !== 'object') {
     throw new Error('execucao_codigo: resposta não é um objecto JSON válido')
   }
@@ -83,7 +176,7 @@ function validarResultado(obj: any): ResultadoExecucaoCodigo {
     return {
       tipo: 'escalar',
       valor: obj.valor,
-      unidade: typeof obj.unidade === 'string' ? obj.unidade : undefined,
+      unidade: limparUnidade(obj.unidade),
     }
   }
   if (
@@ -95,12 +188,47 @@ function validarResultado(obj: any): ResultadoExecucaoCodigo {
     return {
       tipo: 'lista',
       itens: obj.itens.map((i: any) => ({ nome: i.nome, valor: i.valor })),
-      unidade: typeof obj.unidade === 'string' ? obj.unidade : undefined,
+      unidade: limparUnidade(obj.unidade),
     }
   }
   if (obj.tipo === 'impossivel') {
     return { tipo: 'impossivel', motivo: typeof obj.motivo === 'string' ? obj.motivo : 'sem motivo indicado' }
   }
+
+  // O cálculo correu, o JSON é válido, e perde-se o passo por causa do invólucro. Verificado ao
+  // vivo: uma soma por província devolvida como {"Tete": 37134, "Manica": 21000} em vez de
+  // {"tipo":"lista","itens":[...]}. São os mesmos números; recusá-los por causa da forma é deitar
+  // fora trabalho já feito, e o passo perdido custa à análise inteira.
+  const itensDeMapa = (fonte: any): { nome: string; valor: number }[] =>
+    Object.entries(fonte)
+      .filter(([, v]) => typeof v === 'number' && Number.isFinite(v))
+      .map(([nome, valor]) => ({ nome, valor: valor as number }))
+
+  // Lista sob outro nome ("resultado", "dados", "valores") ou sem o campo "tipo".
+  for (const campo of ['itens', 'resultado', 'resultados', 'dados', 'valores']) {
+    const v = obj[campo]
+    if (Array.isArray(v) && v.length > 0 && v.every((i: any) => i && typeof i.valor === 'number' && typeof i.nome === 'string')) {
+      return { tipo: 'lista', itens: v.map((i: any) => ({ nome: i.nome, valor: i.valor })), unidade: limparUnidade(obj.unidade) }
+    }
+    if (v && typeof v === 'object' && !Array.isArray(v)) {
+      const itens = itensDeMapa(v)
+      if (itens.length > 0) return { tipo: 'lista', itens, unidade: limparUnidade(obj.unidade) }
+    }
+  }
+
+  // Escalar sem "tipo": {"valor": 12} ou {"resultado": 12}.
+  for (const campo of ['valor', 'resultado', 'total']) {
+    if (typeof obj[campo] === 'number' && Number.isFinite(obj[campo])) {
+      return { tipo: 'escalar', valor: obj[campo], unidade: limparUnidade(obj.unidade) }
+    }
+  }
+
+  // O objecto inteiro é o mapa nome -> número.
+  const directo = itensDeMapa(obj)
+  if (directo.length > 0) {
+    return { tipo: 'lista', itens: directo, unidade: limparUnidade(obj.unidade) }
+  }
+
   throw new Error('execucao_codigo: resposta em formato inesperado (nem escalar, lista nem impossivel)')
 }
 
@@ -119,35 +247,68 @@ function extrairCodigo(blocos: any[]): string {
   return trechos.join('\n\n---\n\n')
 }
 
+export type TabelaParaCodigo = {
+  titulo: string
+  colunas: string[]
+  linhas: string[][]
+  n_linhas: number
+}
+
+/**
+ * `segunda` existe porque uma pergunta de cruzamento não se responde com um ficheiro só.
+ *
+ * Verificado ao vivo em três casos seguidos: o passo recebia apenas o primeiro dataset e o modelo
+ * respondia, com razão, "o ficheiro dados.csv contém apenas dados da camada de Tuberculose". O
+ * plano estava certo e os dados existiam; o passo morria só porque o segundo ficheiro nunca
+ * chegava ao sandbox.
+ */
 export async function executarComCodigo(
-  tabela: { titulo: string; colunas: string[]; linhas: string[][]; n_linhas: number },
+  tabela: TabelaParaCodigo,
   instrucao: string,
-  limiteLinhas: number = LIMITE_LINHAS_PADRAO
+  limiteLinhas: number = LIMITE_LINHAS_PADRAO,
+  segunda?: TabelaParaCodigo
 ): Promise<SaidaExecucaoCodigo> {
-  const linhasCap = tabela.linhas.slice(0, limiteLinhas)
-  const csv = paraCsv(tabela.colunas, linhasCap)
-  const amostraNota =
-    linhasCap.length < tabela.n_linhas
-      ? ` (amostra de ${linhasCap.length} das ${tabela.n_linhas} linhas totais — declara isto no resultado se for relevante para a precisão)`
-      : ''
+  const descrever = (t: TabelaParaCodigo, nome: string) => {
+    const cap = t.linhas.slice(0, limiteLinhas)
+    const nota =
+      cap.length < t.n_linhas
+        ? ` (amostra de ${cap.length} das ${t.n_linhas} linhas totais — declara isto no resultado se for relevante para a precisão)`
+        : ''
+    return { csv: paraCsv(t.colunas, cap), texto: `Tabela "${t.titulo}"${nota}, anexada como ${nome}.` }
+  }
+
+  const primeira = descrever(tabela, 'dados.csv')
+  const outra = segunda ? descrever(segunda, 'dados2.csv') : null
 
   const cliente = getCliente()
   const modelo = modeloPara('codigo')
 
   const ficheiro = await cliente.beta.files.upload({
-    file: await toFile(Buffer.from(csv, 'utf-8'), 'dados.csv', { type: 'text/csv' }),
+    file: await toFile(Buffer.from(primeira.csv, 'utf-8'), 'dados.csv', { type: 'text/csv' }),
     betas: [BETA_FILES_API],
   })
+  const ficheiro2 = outra
+    ? await cliente.beta.files.upload({
+        file: await toFile(Buffer.from(outra.csv, 'utf-8'), 'dados2.csv', { type: 'text/csv' }),
+        betas: [BETA_FILES_API],
+      })
+    : null
 
   try {
     const conteudoInicial = [
       {
         type: 'text',
         text:
-          `Tabela "${tabela.titulo}"${amostraNota}, anexada como dados.csv.\n\n` +
-          `Instrução específica a responder com código sobre estes dados:\n${instrucao}`,
+          `${primeira.texto}\n` +
+          (outra
+            ? `${outra.texto}\nSão dois ficheiros: cruza-os pela coluna geográfica comum (nome da ` +
+              `província ou do distrito), ao nível mais grosso dos dois, e nunca emparelhes linhas ` +
+              `pela ordem em que aparecem.\n`
+            : '') +
+          `\nInstrução específica a responder com código sobre estes dados:\n${instrucao}`,
       },
       { type: 'container_upload', file_id: ficheiro.id },
+      ...(ficheiro2 ? [{ type: 'container_upload', file_id: ficheiro2.id }] : []),
     ]
 
     let messages: any[] = [{ role: 'user', content: conteudoInicial }]
@@ -164,7 +325,7 @@ export async function executarComCodigo(
           messages,
           tools: [{ type: 'code_execution_20260120', name: 'code_execution' }],
         } as any,
-        { timeout: TIMEOUT_MS, headers: { 'anthropic-beta': BETA_FILES_API } }
+        { timeout: outra ? TIMEOUT_MS_DOIS_FICHEIROS : TIMEOUT_MS, headers: { 'anthropic-beta': BETA_FILES_API } }
       )
       tokensEntrada += resposta.usage?.input_tokens ?? 0
       tokensSaida += resposta.usage?.output_tokens ?? 0

@@ -11,7 +11,8 @@ export function ConditionalNavigation() {
   const isMainDashboard = pathname === '/dashboard' || pathname?.startsWith('/dashboard/')
   const isMapViewer = pathname?.startsWith('/maps/') && pathname !== '/maps'
   const isAiShare = pathname?.startsWith('/ai-insights/share/')
-  if (isMainDashboard || pathname?.startsWith('/admin') || isMapViewer || isAiShare) {
+  const isEmbed = pathname?.startsWith('/embed/')
+  if (isMainDashboard || pathname?.startsWith('/admin') || isMapViewer || isAiShare || isEmbed) {
     return null
   }
   

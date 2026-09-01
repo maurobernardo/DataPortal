@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Check, Share2 } from 'lucide-react'
+import { Check, Code2, Share2 } from 'lucide-react'
 
 /** Alterna `publico` (coluna já existente em `analises`) e copia o link actual para a área de
  *  transferência quando activa — partilhado entre a página de detalhe e o dashboard.
@@ -19,6 +19,7 @@ export function PartilharBotao({
   const [publico, setPublico] = useState(publicoInicial)
   const [aAlterar, setAAlterar] = useState(false)
   const [copiado, setCopiado] = useState(false)
+  const [embedCopiado, setEmbedCopiado] = useState(false)
 
   async function alternar() {
     setAAlterar(true)
@@ -42,23 +43,49 @@ export function PartilharBotao({
     }
   }
 
+  async function copiarEmbed() {
+    if (typeof window === 'undefined' || !navigator.clipboard) return
+    const embedUrl = `${window.location.origin}/embed/analise/${analiseId}`
+    const snippet = `<iframe src="${embedUrl}" width="100%" height="600" style="border:0" loading="lazy" title="Análise do Data Portal"></iframe>`
+    await navigator.clipboard.writeText(snippet).catch(() => {})
+    setEmbedCopiado(true)
+    setTimeout(() => setEmbedCopiado(false), 2000)
+  }
+
+  // A variante "clara" continua a assentar em classes utilitárias porque é usada sobre o
+  // cabeçalho verde da página de detalhe, fora do âmbito .pdx do sistema de design.
+  const classesBase =
+    variante === 'clara'
+      ? 'inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[13px] font-semibold transition-colors border-white/30 bg-white/10 text-white hover:bg-white/20'
+      : 'pdx-btn'
+
   return (
-    <button
-      type="button"
-      onClick={alternar}
-      disabled={aAlterar}
-      className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[13px] font-semibold transition-colors disabled:opacity-60 print:hidden ${
-        variante === 'clara'
-          ? publico
-            ? 'border-white/40 bg-white/20 text-white'
-            : 'border-white/30 bg-white/10 text-white hover:bg-white/20'
-          : publico
-            ? 'border-[#064E2C] bg-[#F1F8F4] text-[#064E2C]'
-            : 'border-[#E2E8E5] text-[var(--pd-ink-700)] hover:border-[#CFE3D6]'
-      }`}
-    >
-      {copiado ? <Check className="size-3.5" aria-hidden /> : <Share2 className="size-3.5" aria-hidden />}
-      {copiado ? 'Link copiado' : publico ? 'Link público activo' : 'Partilhar'}
-    </button>
+    <div className="inline-flex items-center gap-2 print:hidden">
+      <button
+        type="button"
+        onClick={alternar}
+        disabled={aAlterar}
+        className={
+          variante === 'clara'
+            ? `${classesBase} disabled:opacity-60${publico ? ' border-white/40 bg-white/20' : ''}`
+            : `pdx-btn${publico ? ' pdx-btn-activo' : ''}`
+        }
+      >
+        {copiado ? <Check className="size-3.5" aria-hidden /> : <Share2 className="size-3.5" aria-hidden />}
+        {copiado ? 'Link copiado' : publico ? 'Link público activo' : 'Partilhar'}
+      </button>
+
+      {publico && (
+        <button
+          type="button"
+          onClick={copiarEmbed}
+          title="Copiar código para incorporar esta análise noutro site"
+          className={classesBase}
+        >
+          {embedCopiado ? <Check className="size-3.5" aria-hidden /> : <Code2 className="size-3.5" aria-hidden />}
+          {embedCopiado ? 'Código copiado' : 'Incorporar'}
+        </button>
+      )}
+    </div>
   )
 }

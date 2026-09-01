@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { Search, X, Loader2 } from 'lucide-react'
-import { SearchSuggestionsPopover } from '@/components/SearchSuggestionsPopover'
+import { SearchSuggestionsPopover, type SearchSuggestionItem } from '@/components/SearchSuggestionsPopover'
 
 export function AlfCatalogToolbar({
   initialSearch,
@@ -14,6 +14,7 @@ export function AlfCatalogToolbar({
 }) {
   const [searchQuery, setSearchQuery] = useState(initialSearch || '')
   const [suggestions, setSuggestions] = useState<string[]>([])
+  const [sugestoesInteligentes, setSugestoesInteligentes] = useState<SearchSuggestionItem[]>([])
   const [loadingSuggestions, setLoadingSuggestions] = useState(false)
   const searchWrapRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
@@ -47,6 +48,40 @@ export function AlfCatalogToolbar({
     return () => clearTimeout(timeout)
   }, [searchQuery])
 
+  // Busca inteligente (PLANO-INTELIGENCIA-PORTAL.md): directamente no mesmo campo, como um grupo
+  // extra dentro das mesmas sugestões, em vez de um botão à parte. Silenciosa se falhar (ex.: sem
+  // sessão iniciada) — a busca por palavra-chave continua a funcionar normalmente.
+  useEffect(() => {
+    const q = searchQuery.trim()
+    if (q.length < 4) {
+      setSugestoesInteligentes([])
+      return
+    }
+    const timeout = setTimeout(async () => {
+      try {
+        const res = await fetch('/api/search/semantico', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pergunta: q }),
+        })
+        if (!res.ok) { setSugestoesInteligentes([]); return }
+        const data = await res.json()
+        const datasets = Array.isArray(data?.datasets) ? data.datasets : []
+        setSugestoesInteligentes(
+          datasets.map((d: any) => ({
+            label: d.title,
+            href: `/dataset/${d.id}`,
+            kind: 'semantico' as const,
+            note: d.motivo,
+          }))
+        )
+      } catch {
+        setSugestoesInteligentes([])
+      }
+    }, 500)
+    return () => clearTimeout(timeout)
+  }, [searchQuery])
+
   const buildUrlWithSearch = (value: string) => {
     const params = new URLSearchParams(searchParams?.toString() || '')
     if (value.trim()) params.set('search', value.trim())
@@ -74,11 +109,12 @@ export function AlfCatalogToolbar({
         <div className="geo-ch-search">
           <Search className="shrink-0 text-[var(--pd-ink-300)]" size={18} aria-hidden />
           <input
-            type="search"
+            type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Procurar datasets…"
             aria-label="Pesquisar dados alfanuméricos"
+            autoComplete="off"
           />
           {searchQuery ? (
             <button
@@ -87,22 +123,26 @@ export function AlfCatalogToolbar({
                 setSearchQuery('')
                 router.push(buildUrlWithSearch(''))
               }}
-              className="shrink-0 text-[var(--pd-ink-300)] hover:text-[var(--pd-ink-700)]"
+              className="geo-ch-search-clear"
               aria-label="Limpar pesquisa"
             >
-              <X size={18} />
+              <X size={14} />
             </button>
           ) : loadingSuggestions ? (
             <Loader2 className="shrink-0 animate-spin text-[var(--pd-ink-300)]" size={16} aria-hidden />
           ) : null}
         </div>
         <SearchSuggestionsPopover
-          items={suggestions.map((s) => ({ label: s }))}
+          items={[...suggestions.map((s) => ({ label: s })), ...sugestoesInteligentes]}
           highlight={searchQuery}
           catalogContext="alfanumerico"
           useFixedPortal
           anchorRef={searchWrapRef}
           onSelect={(item) => {
+            if (item.href) {
+              router.push(item.href)
+              return
+            }
             setSearchQuery(item.label)
             router.push(buildUrlWithSearch(item.label))
           }}

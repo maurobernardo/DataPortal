@@ -16,6 +16,10 @@ export type ResumoOrigem = {
   paisPrincipal: { pais: string; total: number } | null
   porPais: { pais: string; total: number }[]
   porProvinciaMZ: { regiao: string; total: number }[]
+  /** Acessos de Moçambique sem província identificada pelo IP — comum em redes móveis
+   *  (Vodacom/Movitel/Tmcel), onde a base de geolocalização só sabe o país, não a província. Não
+   *  é um acesso perdido: conta no total, só não aparece na repartição por província. */
+  mzSemProvincia: number
   porTipoEvento: { tipoEvento: string; rotulo: string; total: number }[]
   recentes: { tipoEvento: string; rotulo: string; pais: string | null; regiao: string | null; cidade: string | null; criadoEm: string }[]
 }
@@ -29,6 +33,7 @@ export async function obterResumoOrigem(dias = 90): Promise<ResumoOrigem> {
     paisPrincipal: null,
     porPais: [],
     porProvinciaMZ: [],
+    mzSemProvincia: 0,
     porTipoEvento: [],
     recentes: [],
   }
@@ -54,6 +59,12 @@ export async function obterResumoOrigem(dias = 90): Promise<ResumoOrigem> {
       [dias]
     )) as [any[], unknown]
 
+    const [mzSemProvinciaRows] = (await db.execute(
+      `SELECT COUNT(*) AS total FROM AcessoOrigem
+       WHERE criado_em >= DATE_SUB(NOW(), INTERVAL ? DAY) AND pais = 'MZ' AND regiao IS NULL`,
+      [dias]
+    )) as [any[], unknown]
+
     const [porTipoRows] = (await db.execute(
       `SELECT tipo_evento, COUNT(*) AS total FROM AcessoOrigem
        WHERE criado_em >= DATE_SUB(NOW(), INTERVAL ? DAY)
@@ -72,6 +83,7 @@ export async function obterResumoOrigem(dias = 90): Promise<ResumoOrigem> {
       paisPrincipal: porPaisRows[0] ? { pais: porPaisRows[0].pais, total: Number(porPaisRows[0].total) } : null,
       porPais: porPaisRows.map((r: any) => ({ pais: r.pais, total: Number(r.total) })),
       porProvinciaMZ: porProvinciaRows.map((r: any) => ({ regiao: r.regiao, total: Number(r.total) })),
+      mzSemProvincia: Number(mzSemProvinciaRows[0]?.total ?? 0),
       porTipoEvento: porTipoRows.map((r: any) => ({
         tipoEvento: r.tipo_evento,
         rotulo: ROTULOS_EVENTO[r.tipo_evento] || r.tipo_evento,

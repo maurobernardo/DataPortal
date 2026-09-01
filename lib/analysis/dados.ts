@@ -146,15 +146,23 @@ function normalizar(s: string): string {
   // Província" e "Maputo Cidade" atribuía as DUAS populações ao código da Cidade de Maputo,
   // perdendo a província inteira). Trata-se como excepção antes da regra genérica, que é
   // correcta para todos os outros pares provincia/distrito/posto do país.
-  if (/^maputo\s+cidade$/.test(semAcentos)) return 'maputocidade'
+  // "City" além de "Cidade": datasets internacionais escrevem os qualificadores em inglês
+  // (verificado ao vivo, na base de electrificação RTM, que traz "Maputo City"). Sem isto a
+  // similaridade com "maputocidade" ficava em 0,67, abaixo do limiar de 0,92, e a capital caía
+  // fora de todos os cruzamentos sem que nada falhasse: a análise comparava 10 províncias em vez
+  // de 11 e ninguém reparava.
+  if (/^maputo\s+(cidade|city)$/.test(semAcentos)) return 'maputocidade'
 
   return (
     semAcentos
       // Qualificadores administrativos aparecem como prefixo ("Distrito de Lichinga") e como
       // sufixo ("Maputo Provincia"): removem-se os dois para que ambas as formas cheguem à
-      // mesma chave.
-      .replace(/^(distrito|posto administrativo|posto|cidade|provincia|municipio)\s+(de\s+|da\s+|do\s+)?/i, '')
-      .replace(/\s+(provincia|cidade|distrito|posto)$/i, '')
+      // mesma chave. As formas inglesas entram pela mesma razão do caso acima.
+      .replace(
+        /^(distrito|district|posto administrativo|posto|cidade|city|provincia|province|municipio)\s+(de\s+|da\s+|do\s+|of\s+)?/i,
+        ''
+      )
+      .replace(/\s+(provincia|province|cidade|city|distrito|district|posto)$/i, '')
       .replace(/[^a-z0-9?]/g, '')
       // Uma corrida de "?" representa um único carácter perdido na descodificação ("Zamb??zia"
       // por "Zambézia"): colapsá-la alinha o comprimento com o nome correcto, sem o que a
@@ -208,11 +216,23 @@ export async function resolverUnidadePorNome(
     const exacta = unidades.find((u) => normalizar(u.nome) === alvo)
     if (exacta) return { codigo: exacta.codigo, nivel, nome: exacta.nome }
   }
+  // Um "s" final é a variação mais comum de todas em nomes de lugar moçambicanos ("Vilankulos"
+  // é como a cidade é conhecida no turismo e no discurso comum; o registo administrativo é
+  // "Vilankulo") — mas custa 1/comprimento na distância de edição, e para nomes curtos isso chega
+  // a ficar abaixo do limiar de 0,92 por uma margem mínima (confirmado ao vivo: "vilankulos" vs
+  // "vilankulo" dá exactamente 0,90). Em vez de baixar o limiar global (o que aceitaria pares
+  // genuinamente diferentes só por acaso ficarem parecidos), tenta-se também a versão sem o "s"
+  // final de cada lado — só ajuda este caso específico e muito comum, não afrouxa o resto.
+  const semSFinal = (s: string) => (s.endsWith('s') && s.length > 3 ? s.slice(0, -1) : s)
   for (const nivel of ['admin1', 'admin2', 'admin3'] as NivelAdmin[]) {
     const unidades = await carregarUnidades(nivel)
     let melhor: { codigo: string; nome: string; sim: number } | null = null
     for (const u of unidades) {
-      const sim = similaridade(alvo, normalizar(u.nome))
+      const nomeNormalizado = normalizar(u.nome)
+      const sim = Math.max(
+        similaridade(alvo, nomeNormalizado),
+        similaridade(semSFinal(alvo), semSFinal(nomeNormalizado))
+      )
       if (sim >= 0.92 && (!melhor || sim > melhor.sim)) melhor = { codigo: u.codigo, nome: u.nome, sim }
     }
     if (melhor) return { codigo: melhor.codigo, nivel, nome: melhor.nome }
@@ -369,10 +389,22 @@ export async function detectarColunaGeografica(
   // Códigos hierárquicos guardados em colunas separadas (verificado no dataset Escolas:
   // ProvCodigo + DistritoCo + PostoCodig). Sem os concatenar, a análise ficaria presa na
   // província mesmo havendo posto administrativo nos dados, o que viola R4.
-  const colunasCodigo = tabela.colunas.filter((c) => {
+  // Um dataset real com códigos geográficos separados por coluna nunca tem mais do que uns
+  // poucos (província+distrito+posto, no máximo 3-4) — mas o filtro acima ("valores curtos,
+  // 1-3 dígitos") também apanha QUALQUER coluna numérica pequena, e datasets largos (ex.: uma
+  // tabela de população com uma coluna por faixa etária, 300+ colunas) podem ter dezenas delas.
+  // O laço abaixo é O(n³) em colunasCodigo (tenta todo o par e todo o trio), cada iteração com um
+  // await real — com "n" na casa das dezenas isto passa de milissegundos a HORAS (confirmado:
+  // travou uma análise real mais de 10 minutos com 372 colunas). Nenhum caso legítimo desta
+  // heurística precisa de mais do que um punhado de colunas candidatas; acima disso, é sinal de
+  // que a coluna curta é uma medida (idade, ano, faixa), não um código geográfico, e tentar à
+  // mesma só desperdiça tempo sem nunca ter sido o objectivo desta heurística.
+  const LIMITE_COLUNAS_CODIGO = 8
+  const colunasCodigoTodas = tabela.colunas.filter((c) => {
     const amostra = colunaValores(tabela, c).slice(0, 100).filter(Boolean)
     return amostra.length > 0 && amostra.every((v) => /^\d{1,3}$/.test(String(v).trim()))
   })
+  const colunasCodigo = colunasCodigoTodas.length <= LIMITE_COLUNAS_CODIGO ? colunasCodigoTodas : []
 
   for (let i = 0; i < colunasCodigo.length; i++) {
     for (let j = 0; j < colunasCodigo.length; j++) {

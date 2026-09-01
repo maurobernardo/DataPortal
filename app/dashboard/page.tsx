@@ -8,6 +8,7 @@ import {
   findAllRegisteredUsers,
   getAuthenticatedActivity,
 } from '@/lib/db'
+import { logger } from '@/lib/logger'
 
 async function getDashboardData() {
   const today = new Date()
@@ -293,7 +294,38 @@ export default async function DashboardPage() {
     redirect('/')
   }
 
-  const data = await getDashboardData()
+  // Mais de 20 consultas SQL sem nenhuma rede de segurança: uma única falha (ex.: uma coluna que
+  // ainda não existe numa instalação mais antiga) rebentava o painel principal do admin por
+  // inteiro — o mesmo tipo de "Application error" já encontrado e corrigido noutras páginas do
+  // admin. Mostra o painel a zeros em vez de nada, e regista o erro para investigar.
+  const data = await getDashboardData().catch(
+    (error): Awaited<ReturnType<typeof getDashboardData>> => {
+      logger.error('erro_carregar_dashboard_admin', { error })
+      return {
+        totalDatasets: 0,
+        totalViews: 0,
+        totalDownloads: 0,
+        totalVisitors: 0,
+        totalReports: 0,
+        totalReportRequests: 0,
+        viewsThisMonth: 0,
+        downloadsThisMonth: 0,
+        viewsChange: 0,
+        downloadsChange: 0,
+        topViewed: [],
+        topDownloaded: [],
+        statistics: [],
+        categoryStats: [],
+        recentActivity: [],
+        conversionRates: [],
+        userRetention: { returningUsers: 0, newUsers: 0, retentionRate: 0 },
+        categoryPerformance: [],
+        totalRegisteredUsers: 0,
+        registeredUsers: [],
+        authenticatedActivity: [],
+      }
+    }
+  )
 
   return <ModernDashboard data={data} user={user} />
 }

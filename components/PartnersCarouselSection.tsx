@@ -4,12 +4,14 @@ const partners = [
   { name: 'Angola', src: '/images/parceiros/angola.png' },
   { name: 'African', src: '/images/parceiros/african.png' },
   { name: 'Governo', src: '/images/parceiros/governo.png' },
+  { name: 'Governo de Angola', src: '/images/parceiros/angolagoverno.png' },
   { name: 'Dorcas', src: '/images/parceiros/dorcas.png' },
   { name: 'CAE', src: '/images/parceiros/cae.png' },
   { name: 'Ripple', src: '/images/parceiros/ripple.png' },
   { name: 'Women', src: '/images/parceiros/women.png' },
   { name: 'Digital', src: '/images/parceiros/digital.png' },
   { name: 'D4D', src: '/images/parceiros/d4d.png' },
+  { name: 'Data4Angola', src: '/images/parceiros/data4angola.png' },
   { name: 'GHG', src: '/images/parceiros/ghg.png' },
   { name: 'Esri', src: '/images/parceiros/esri.png' },
   { name: 'Move', src: '/images/parceiros/move.png' },
@@ -17,6 +19,11 @@ const partners = [
   { name: 'Remo', src: '/images/parceiros/remo.png' },
   { name: 'ITC', src: '/images/parceiros/itc.png' },
   { name: 'Fly', src: '/images/parceiros/fly.png' },
+  { name: 'Aero', src: '/images/parceiros/aero.png' },
+  { name: 'Harvest', src: '/images/parceiros/harvest.png' },
+  { name: 'ILG', src: '/images/parceiros/ilg.png' },
+  { name: 'UNDP', src: '/images/parceiros/undp.jpeg' },
+  { name: 'USAID', src: '/images/parceiros/usaid.png' },
 ]
 
 // Duplicated three times for seamless infinite loop
@@ -24,7 +31,7 @@ const track = [...partners, ...partners, ...partners]
 
 export function PartnersCarouselSection() {
   return (
-    <section className="font-body-stack py-14 md:py-20 bg-white relative overflow-hidden border-t border-[#E2E8E5]">
+    <section className="font-body-stack py-7 md:py-10 bg-white relative overflow-hidden border-t border-[#E2E8E5]">
       {/* Subtle top/bottom divider lines */}
       <div className="pointer-events-none absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#CFE3D6] to-transparent" />
       <div className="pointer-events-none absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#CFE3D6] to-transparent" />
@@ -58,17 +65,11 @@ export function PartnersCarouselSection() {
           <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-20 md:w-32 z-10 bg-gradient-to-l from-white to-transparent" />
 
           {/* Outer container: border + bg */}
-          <div className="overflow-hidden rounded-2xl border border-gray-100 bg-[#fafaf9] py-6">
-            {/* Row 1 — scrolls left */}
-            <div className="partners-track-row partners-scroll-left mb-4">
+          <div className="overflow-hidden rounded-2xl border border-gray-100 bg-[#fafaf9] py-8">
+            {/* Linha única — todos os logotipos passam na mesma faixa */}
+            <div className="partners-track-row partners-scroll-left">
               {track.map((p, i) => (
                 <PartnerLogo key={`a-${i}`} name={p.name} src={p.src} />
-              ))}
-            </div>
-            {/* Row 2 — scrolls right (reverse), creates depth */}
-            <div className="partners-track-row partners-scroll-right">
-              {[...track].reverse().map((p, i) => (
-                <PartnerLogo key={`b-${i}`} name={p.name} src={p.src} />
               ))}
             </div>
           </div>
@@ -90,10 +91,6 @@ export function PartnersCarouselSection() {
           0%   { transform: translateX(0); }
           100% { transform: translateX(-33.333%); }
         }
-        @keyframes scrollRight {
-          0%   { transform: translateX(-33.333%); }
-          100% { transform: translateX(0); }
-        }
         .partners-track-row {
           display: flex;
           width: max-content;
@@ -102,9 +99,6 @@ export function PartnersCarouselSection() {
         .partners-scroll-left {
           animation: scrollLeft 38s linear infinite;
         }
-        .partners-scroll-right {
-          animation: scrollRight 44s linear infinite;
-        }
         .partners-track-row:hover {
           animation-play-state: paused;
         }
@@ -112,11 +106,11 @@ export function PartnersCarouselSection() {
           display: flex;
           align-items: center;
           justify-content: center;
-          width: 148px;
-          height: 68px;
+          width: 200px;
+          height: 96px;
           flex-shrink: 0;
-          margin: 0 12px;
-          border-radius: 12px;
+          margin: 0 14px;
+          border-radius: 14px;
           border: 1px solid #e5e7eb;
           background: #ffffff;
           transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
@@ -128,8 +122,8 @@ export function PartnersCarouselSection() {
           box-shadow: 0 6px 16px rgba(6, 78, 44, 0.1);
         }
         .partner-logo-wrap img {
-          max-height: 44px;
-          max-width: 110px;
+          max-height: 64px;
+          max-width: 156px;
           width: auto;
           object-fit: contain;
           filter: grayscale(30%);

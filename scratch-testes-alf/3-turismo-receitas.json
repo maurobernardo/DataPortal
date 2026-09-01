@@ -1,0 +1,1269 @@
+{
+  "analise_id": "an_74162c41",
+  "compreensao": {
+    "pergunta_normalizada": "Qual foi a evolução das receitas do turismo internacional em Moçambique ao longo dos anos disponíveis?",
+    "idioma": "pt",
+    "intencao": "temporal",
+    "arquetipo_sugerido": "temporal",
+    "entidades": {
+      "geografias": [
+        {
+          "nome": "Moçambique",
+          "nivel": "nacional"
+        }
+      ],
+      "periodos": [
+        {
+          "expressao": "evolução ao longo do tempo, toda a série disponível"
+        }
+      ],
+      "metricas": [
+        "international_tourism_receipts"
+      ]
+    },
+    "ambiguidades": [
+      {
+        "descricao": "'Receitas do turismo' pode referir-se ao indicador agregado (international_tourism_receipts) ou à média derivada por chegada (derived_average_receipts_per_international_arrival)",
+        "opcoes": [
+          "receitas totais internacionais",
+          "receita média por chegada"
+        ]
+      }
+    ],
+    "perfil_utilizador_inferido": "cidadao",
+    "requer_desambiguacao": false,
+    "sub_perguntas": [
+      "Qual a tendência das receitas turísticas internacionais de Moçambique ao longo dos anos disponíveis?",
+      "Como evoluiu a série normalizada (índice base 100) desde o primeiro ano registado?",
+      "Qual a taxa de crescimento anual composta entre o primeiro e o último ano com dados?",
+      "Como se compara a receita turística antes e depois da pandemia de covid-19?",
+      "Qual a completude e fiabilidade dos dados de receitas turísticas disponíveis?"
+    ],
+    "passos": [
+      {
+        "id": "p1",
+        "tipo": "validacao",
+        "descricao_humana": "Verifica completude e fiabilidade dos dados de receitas turísticas disponíveis.",
+        "depende_de": [],
+        "metodo": "perfil_coluna",
+        "dataset_id": 54,
+        "coluna_metrica": "value",
+        "produz": [
+          "qualidade_value"
+        ]
+      },
+      {
+        "id": "p2",
+        "tipo": "calculo",
+        "descricao_humana": "Testa se as receitas turísticas mostram tendência crescente, decrescente ou estável.",
+        "depende_de": [
+          "p1"
+        ],
+        "metodo": "tendencia_mann_kendall",
+        "dataset_id": 54,
+        "coluna_metrica": "value",
+        "coluna_tempo": "year",
+        "filtro_unidade": "cat:indicator=international_tourism_receipts",
+        "produz": [
+          "tendencia_receitas"
+        ]
+      },
+      {
+        "id": "p3",
+        "tipo": "calculo",
+        "descricao_humana": "Reindexa as receitas a 100 no primeiro ano para comparar variação relativa.",
+        "depende_de": [
+          "p1"
+        ],
+        "metodo": "indexar_base_100",
+        "dataset_id": 54,
+        "coluna_metrica": "value",
+        "coluna_tempo": "year",
+        "filtro_unidade": "cat:indicator=international_tourism_receipts",
+        "produz": [
+          "indice_receitas"
+        ]
+      },
+      {
+        "id": "p4",
+        "tipo": "calculo",
+        "descricao_humana": "Suaviza oscilações anuais das receitas turísticas com média móvel.",
+        "depende_de": [
+          "p1"
+        ],
+        "metodo": "media_movel",
+        "dataset_id": 54,
+        "coluna_metrica": "value",
+        "coluna_tempo": "year",
+        "filtro_unidade": "cat:indicator=international_tourism_receipts",
+        "produz": [
+          "media_movel_receitas"
+        ]
+      },
+      {
+        "id": "p5",
+        "tipo": "calculo",
+        "descricao_humana": "Calcula a taxa de crescimento anual composta entre o primeiro e o último ano.",
+        "depende_de": [
+          "p1"
+        ],
+        "metodo": "cagr",
+        "dataset_id": 54,
+        "coluna_metrica": "value",
+        "filtro_unidade": "cat:indicator=international_tourism_receipts",
+        "produz": [
+          "cagr_receitas"
+        ]
+      },
+      {
+        "id": "p6",
+        "tipo": "calculo",
+        "descricao_humana": "Compara receitas turísticas antes e depois da pandemia de covid-19.",
+        "depende_de": [
+          "p2"
+        ],
+        "metodo": "comparar_periodos",
+        "dataset_id": 54,
+        "coluna_metrica": "value",
+        "filtro_unidade": "cat:indicator=international_tourism_receipts",
+        "produz": [
+          "comparacao_pandemia"
+        ]
+      }
+    ],
+    "nivel_geo_alvo": [],
+    "metricas_alvo": [
+      "international_tourism_receipts"
+    ],
+    "justificacao_arquetipo": "A pergunta pede explicitamente a evolução temporal de uma métrica única (receitas do turismo), sem componente geográfica sub-nacional disponível nos dados; por isso o arquétipo temporal, com tendência, índice base 100, média móvel e comparação pré/pós-pandemia, responde directamente sem necessidade de mapas.",
+    "pergunta_original": "Qual foi a evolução das receitas do turismo em Moçambique?"
+  },
+  "plano": {
+    "sub_perguntas": [
+      "Qual a tendência das receitas turísticas internacionais de Moçambique ao longo dos anos disponíveis?",
+      "Como evoluiu a série normalizada (índice base 100) desde o primeiro ano registado?",
+      "Qual a taxa de crescimento anual composta entre o primeiro e o último ano com dados?",
+      "Como se compara a receita turística antes e depois da pandemia de covid-19?",
+      "Qual a completude e fiabilidade dos dados de receitas turísticas disponíveis?"
+    ],
+    "passos": [
+      {
+        "id": "p1",
+        "tipo": "validacao",
+        "descricao_humana": "Verifica completude e fiabilidade dos dados de receitas turísticas disponíveis.",
+        "depende_de": [],
+        "metodo": "perfil_coluna",
+        "dataset_id": 54,
+        "coluna_metrica": "value",
+        "produz": [
+          "qualidade_value"
+        ]
+      },
+      {
+        "id": "p2",
+        "tipo": "calculo",
+        "descricao_humana": "Testa se as receitas turísticas mostram tendência crescente, decrescente ou estável.",
+        "depende_de": [
+          "p1"
+        ],
+        "metodo": "tendencia_mann_kendall",
+        "dataset_id": 54,
+        "coluna_metrica": "value",
+        "coluna_tempo": "year",
+        "filtro_unidade": "cat:indicator=international_tourism_receipts",
+        "produz": [
+          "tendencia_receitas"
+        ]
+      },
+      {
+        "id": "p3",
+        "tipo": "calculo",
+        "descricao_humana": "Reindexa as receitas a 100 no primeiro ano para comparar variação relativa.",
+        "depende_de": [
+          "p1"
+        ],
+        "metodo": "indexar_base_100",
+        "dataset_id": 54,
+        "coluna_metrica": "value",
+        "coluna_tempo": "year",
+        "filtro_unidade": "cat:indicator=international_tourism_receipts",
+        "produz": [
+          "indice_receitas"
+        ]
+      },
+      {
+        "id": "p4",
+        "tipo": "calculo",
+        "descricao_humana": "Suaviza oscilações anuais das receitas turísticas com média móvel.",
+        "depende_de": [
+          "p1"
+        ],
+        "metodo": "media_movel",
+        "dataset_id": 54,
+        "coluna_metrica": "value",
+        "coluna_tempo": "year",
+        "filtro_unidade": "cat:indicator=international_tourism_receipts",
+        "produz": [
+          "media_movel_receitas"
+        ]
+      },
+      {
+        "id": "p5",
+        "tipo": "calculo",
+        "descricao_humana": "Calcula a taxa de crescimento anual composta entre o primeiro e o último ano.",
+        "depende_de": [
+          "p1"
+        ],
+        "metodo": "cagr",
+        "dataset_id": 54,
+        "coluna_metrica": "value",
+        "filtro_unidade": "cat:indicator=international_tourism_receipts",
+        "produz": [
+          "cagr_receitas"
+        ]
+      },
+      {
+        "id": "p6",
+        "tipo": "calculo",
+        "descricao_humana": "Compara receitas turísticas antes e depois da pandemia de covid-19.",
+        "depende_de": [
+          "p2"
+        ],
+        "metodo": "comparar_periodos",
+        "dataset_id": 54,
+        "coluna_metrica": "value",
+        "filtro_unidade": "cat:indicator=international_tourism_receipts",
+        "produz": [
+          "comparacao_pandemia"
+        ]
+      }
+    ],
+    "nivel_geo_alvo": [],
+    "metricas_alvo": [
+      "international_tourism_receipts"
+    ],
+    "justificacao_arquetipo": "A pergunta pede explicitamente a evolução temporal de uma métrica única (receitas do turismo), sem componente geográfica sub-nacional disponível nos dados; por isso o arquétipo temporal, com tendência, índice base 100, média móvel e comparação pré/pós-pandemia, responde directamente sem necessidade de mapas."
+  },
+  "suficiencia": {
+    "cobertura": [
+      {
+        "sub_pergunta": "Qual a tendência das receitas turísticas internacionais de Moçambique ao longo dos anos disponíveis?",
+        "coberto": true,
+        "fonte": "dataset_selecionado"
+      },
+      {
+        "sub_pergunta": "Como evoluiu a série normalizada (índice base 100) desde o primeiro ano registado?",
+        "coberto": true,
+        "fonte": "dataset_selecionado"
+      },
+      {
+        "sub_pergunta": "Qual a taxa de crescimento anual composta entre o primeiro e o último ano com dados?",
+        "coberto": true,
+        "fonte": "dataset_selecionado"
+      },
+      {
+        "sub_pergunta": "Como se compara a receita turística antes e depois da pandemia de covid-19?",
+        "coberto": true,
+        "fonte": "dataset_selecionado"
+      },
+      {
+        "sub_pergunta": "Qual a completude e fiabilidade dos dados de receitas turísticas disponíveis?",
+        "coberto": true,
+        "fonte": "dataset_selecionado"
+      }
+    ],
+    "confianca_sem_enriquecimento": 1,
+    "precisa_enriquecimento": false,
+    "alvos_enriquecimento": []
+  },
+  "contexto": {
+    "tabelas": {},
+    "ligacoes": {},
+    "calcs": {
+      "p1_coluna": {
+        "id": "p1_coluna",
+        "valor": "value",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique v1"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique v1"
+          ]
+        }
+      },
+      "p1_n_total": {
+        "id": "p1_n_total",
+        "valor": 999,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique v1"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique v1"
+          ]
+        }
+      },
+      "p1_n_preenchidos": {
+        "id": "p1_n_preenchidos",
+        "valor": 90,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique v1"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique v1"
+          ]
+        }
+      },
+      "p1_completude_pct": {
+        "id": "p1_completude_pct",
+        "valor": 9,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique v1"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique v1"
+          ]
+        }
+      },
+      "p1_n_distintos": {
+        "id": "p1_n_distintos",
+        "valor": 86,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique v1"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique v1"
+          ]
+        }
+      },
+      "p1_tipo": {
+        "id": "p1_tipo",
+        "valor": "numerica",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique v1"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique v1"
+          ]
+        }
+      },
+      "p2_S": {
+        "id": "p2_S",
+        "valor": -502,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique v1"
+          ],
+          "linhas_usadas": 90,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique v1"
+          ]
+        }
+      },
+      "p2_z": {
+        "id": "p2_z",
+        "valor": -1.7462,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique v1"
+          ],
+          "linhas_usadas": 90,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique v1"
+          ]
+        }
+      },
+      "p2_p": {
+        "id": "p2_p",
+        "valor": 0.080781,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique v1"
+          ],
+          "linhas_usadas": 90,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique v1"
+          ]
+        }
+      },
+      "p2_declive_sen": {
+        "id": "p2_declive_sen",
+        "valor": -0.083527,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique v1"
+          ],
+          "linhas_usadas": 90,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique v1"
+          ]
+        }
+      },
+      "p2_direccao": {
+        "id": "p2_direccao",
+        "valor": "sem tendência",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique v1"
+          ],
+          "linhas_usadas": 90,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique v1"
+          ]
+        }
+      },
+      "p2_n": {
+        "id": "p2_n",
+        "valor": 90,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique v1"
+          ],
+          "linhas_usadas": 90,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique v1"
+          ]
+        }
+      },
+      "p2_interpretacao": {
+        "id": "p2_interpretacao",
+        "valor": "Não há evidência de tendência: as variações observadas são compatíveis com flutuação aleatória (p = 0.0808).",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique v1"
+          ],
+          "linhas_usadas": 90,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique v1"
+          ]
+        }
+      },
+      "p5_interpretacao": {
+        "id": "p5_interpretacao",
+        "valor": "Crescimento médio de NaN% por período ao longo de undefined períodos.",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique v1"
+          ],
+          "linhas_usadas": 90,
+          "metodo": "cagr",
+          "fontes": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique v1"
+          ]
+        }
+      },
+      "p6_direccao": {
+        "id": "p6_direccao",
+        "valor": "estável",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique v1"
+          ],
+          "linhas_usadas": 90,
+          "metodo": "comparar_periodos",
+          "fontes": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique v1"
+          ]
+        }
+      }
+    },
+    "series": [],
+    "graficos": [
+      {
+        "passo_id": "p2",
+        "tipo": "linha",
+        "titulo": "Testa se as receitas turísticas mostram tendência crescente, decrescente ou estável.",
+        "eixoX": [
+          "2000",
+          "2001",
+          "2002",
+          "2002",
+          "2002",
+          "2003",
+          "2003",
+          "2003",
+          "2004",
+          "2004",
+          "2004",
+          "2005",
+          "2005",
+          "2005",
+          "2005",
+          "2005",
+          "2006",
+          "2006",
+          "2006",
+          "2006",
+          "2006",
+          "2007",
+          "2007",
+          "2007",
+          "2007",
+          "2007",
+          "2008",
+          "2008",
+          "2008",
+          "2008",
+          "2008",
+          "2009",
+          "2009",
+          "2009",
+          "2009",
+          "2009",
+          "2010",
+          "2010",
+          "2010",
+          "2010",
+          "2010",
+          "2011",
+          "2011",
+          "2011",
+          "2011",
+          "2011",
+          "2012",
+          "2012",
+          "2012",
+          "2012",
+          "2012",
+          "2013",
+          "2013",
+          "2013",
+          "2013",
+          "2013",
+          "2014",
+          "2014",
+          "2014",
+          "2014",
+          "2014",
+          "2015",
+          "2015",
+          "2015",
+          "2015",
+          "2015",
+          "2016",
+          "2016",
+          "2016",
+          "2016",
+          "2016",
+          "2017",
+          "2017",
+          "2017",
+          "2017",
+          "2017",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2020",
+          "2020",
+          "2020",
+          "2020"
+        ],
+        "series": [
+          {
+            "nome": "Valor",
+            "valores": [
+              122000000,
+              132000000,
+              65000000,
+              115000000,
+              68.9289501590668,
+              106000000,
+              141000000,
+              146.0055096418733,
+              96000000,
+              140000000,
+              135.0210970464135,
+              138000000,
+              6.61164841899536,
+              187000000,
+              6.46857435495173,
+              144.65408805031447,
+              145000000,
+              5.22189294428279,
+              196000000,
+              5.76730433781291,
+              132.4200913242009,
+              182000000,
+              6.33958896819362,
+              209000000,
+              5.69845507138935,
+              144.55917394757745,
+              213000000,
+              6.63849125289591,
+              241000000,
+              5.22917645130104,
+              148.01945795691452,
+              217000000,
+              7.86558535327128,
+              247000000,
+              5.53031221312163,
+              126.82641729982467,
+              135000000,
+              5.23631450152084,
+              247000000,
+              5.22621416224497,
+              73.52941176470588,
+              171000000,
+              4.90777474041301,
+              264000000,
+              3.46537907861535,
+              84.9478390461997,
+              224000000,
+              4.81964164395901,
+              247000000,
+              1.9917988604442,
+              101.5412511332729,
+              228000000,
+              4.7817718609597,
+              313000000,
+              2.52749633779479,
+              115.73604060913705,
+              225000000,
+              4.84784929563624,
+              331000000,
+              2.8512914298599,
+              128.49800114220446,
+              202000000,
+              4.8840738691601,
+              322000000,
+              3.04187559881143,
+              123.62301101591187,
+              114000000,
+              3.02492700040369,
+              290000000,
+              3.69513409686847,
+              66.47230320699708,
+              164000000,
+              3.03010932563729,
+              237000000,
+              2.94418745280321,
+              108.3223249669749,
+              331000000,
+              4.85639949737129,
+              135000000,
+              1.18278748105744,
+              115.33101045296168,
+              324000000,
+              5.66652398610687,
+              99000000,
+              1.01152994956997,
+              159.37038858829317,
+              113000000,
+              2.51037793162729,
+              95000000,
+              1.09052635257041
+            ]
+          }
+        ],
+        "categoria": "temporal"
+      },
+      {
+        "passo_id": "p3",
+        "tipo": "linha",
+        "titulo": "Reindexa as receitas a 100 no primeiro ano para comparar variação relativa.",
+        "eixoX": [
+          "2000",
+          "2001",
+          "2002",
+          "2002",
+          "2002",
+          "2003",
+          "2003",
+          "2003",
+          "2004",
+          "2004",
+          "2004",
+          "2005",
+          "2005",
+          "2005",
+          "2005",
+          "2005",
+          "2006",
+          "2006",
+          "2006",
+          "2006",
+          "2006",
+          "2007",
+          "2007",
+          "2007",
+          "2007",
+          "2007",
+          "2008",
+          "2008",
+          "2008",
+          "2008",
+          "2008",
+          "2009",
+          "2009",
+          "2009",
+          "2009",
+          "2009",
+          "2010",
+          "2010",
+          "2010",
+          "2010",
+          "2010",
+          "2011",
+          "2011",
+          "2011",
+          "2011",
+          "2011",
+          "2012",
+          "2012",
+          "2012",
+          "2012",
+          "2012",
+          "2013",
+          "2013",
+          "2013",
+          "2013",
+          "2013",
+          "2014",
+          "2014",
+          "2014",
+          "2014",
+          "2014",
+          "2015",
+          "2015",
+          "2015",
+          "2015",
+          "2015",
+          "2016",
+          "2016",
+          "2016",
+          "2016",
+          "2016",
+          "2017",
+          "2017",
+          "2017",
+          "2017",
+          "2017",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2020",
+          "2020",
+          "2020",
+          "2020"
+        ],
+        "series": [
+          {
+            "nome": "Valor",
+            "valores": [
+              100,
+              108.2,
+              53.28,
+              94.26,
+              0,
+              86.89,
+              115.57,
+              0,
+              78.69,
+              114.75,
+              0,
+              113.11,
+              0,
+              153.28,
+              0,
+              0,
+              118.85,
+              0,
+              160.66,
+              0,
+              0,
+              149.18,
+              0,
+              171.31,
+              0,
+              0,
+              174.59,
+              0,
+              197.54,
+              0,
+              0,
+              177.87,
+              0,
+              202.46,
+              0,
+              0,
+              110.66,
+              0,
+              202.46,
+              0,
+              0,
+              140.16,
+              0,
+              216.39,
+              0,
+              0,
+              183.61,
+              0,
+              202.46,
+              0,
+              0,
+              186.89,
+              0,
+              256.56,
+              0,
+              0,
+              184.43,
+              0,
+              271.31,
+              0,
+              0,
+              165.57,
+              0,
+              263.93,
+              0,
+              0,
+              93.44,
+              0,
+              237.7,
+              0,
+              0,
+              134.43,
+              0,
+              194.26,
+              0,
+              0,
+              271.31,
+              0,
+              110.66,
+              0,
+              0,
+              265.57,
+              0,
+              81.15,
+              0,
+              0,
+              92.62,
+              0,
+              77.87,
+              0
+            ]
+          }
+        ],
+        "categoria": "temporal"
+      },
+      {
+        "passo_id": "p4",
+        "tipo": "linha",
+        "titulo": "Suaviza oscilações anuais das receitas turísticas com média móvel.",
+        "eixoX": [
+          "2000",
+          "2001",
+          "2002",
+          "2002",
+          "2002",
+          "2003",
+          "2003",
+          "2003",
+          "2004",
+          "2004",
+          "2004",
+          "2005",
+          "2005",
+          "2005",
+          "2005",
+          "2005",
+          "2006",
+          "2006",
+          "2006",
+          "2006",
+          "2006",
+          "2007",
+          "2007",
+          "2007",
+          "2007",
+          "2007",
+          "2008",
+          "2008",
+          "2008",
+          "2008",
+          "2008",
+          "2009",
+          "2009",
+          "2009",
+          "2009",
+          "2009",
+          "2010",
+          "2010",
+          "2010",
+          "2010",
+          "2010",
+          "2011",
+          "2011",
+          "2011",
+          "2011",
+          "2011",
+          "2012",
+          "2012",
+          "2012",
+          "2012",
+          "2012",
+          "2013",
+          "2013",
+          "2013",
+          "2013",
+          "2013",
+          "2014",
+          "2014",
+          "2014",
+          "2014",
+          "2014",
+          "2015",
+          "2015",
+          "2015",
+          "2015",
+          "2015",
+          "2016",
+          "2016",
+          "2016",
+          "2016",
+          "2016",
+          "2017",
+          "2017",
+          "2017",
+          "2017",
+          "2017",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2020",
+          "2020",
+          "2020",
+          "2020"
+        ],
+        "series": [
+          {
+            "nome": "Valor",
+            "valores": [
+              null,
+              106333333.3333,
+              104000000,
+              60000022.9763,
+              73666689.643,
+              82333356.3097,
+              82333382.0018,
+              79000048.6685,
+              78666715.3352,
+              78666711.6737,
+              92666711.6737,
+              46000047.2109,
+              108333335.5372,
+              62333337.6934,
+              62333383.7076,
+              48333383.7076,
+              48333383.292,
+              113666668.4073,
+              65333336.9964,
+              65333379.3958,
+              60666712.7291,
+              60666712.9199,
+              130333335.4465,
+              69666670.6793,
+              69666716.7525,
+              71000050.0859,
+              71000050.3992,
+              151333335.5462,
+              80333337.2892,
+              80333384.4162,
+              72333384.4162,
+              72333385.295,
+              154666669.2885,
+              82333337.7986,
+              82333377.4522,
+              45000044.1189,
+              45000044.0209,
+              127333335.0788,
+              82333336.8208,
+              82333359.5852,
+              57000026.2519,
+              57000026.1457,
+              145000001.6359,
+              88000002.7911,
+              88000029.4711,
+              74666696.1377,
+              74666696.5892,
+              157000001.6065,
+              82333335.6038,
+              82333367.8444,
+              76000034.511,
+              76000035.441,
+              180333334.9273,
+              104333335.7698,
+              104333372.7545,
+              75000039.4212,
+              75000040.1946,
+              185333334.9493,
+              110333335.8997,
+              110333377.1164,
+              67333377.1164,
+              67333377.794,
+              174666668.2947,
+              107333335.9753,
+              107333375.555,
+              38000042.2216,
+              38000042.216,
+              134666667.675,
+              96666668.9067,
+              96666690.0558,
+              54666690.0558,
+              54666689.8341,
+              133666667.6767,
+              79000001.9914,
+              79000037.0888,
+              110333370.4222,
+              110333371.0596,
+              155333334.9521,
+              45000002.0131,
+              45000038.8379,
+              108000038.8379,
+              108000040.3325,
+              141000001.8888,
+              33000002.226,
+              33000053.4606,
+              37666720.1273,
+              37666720.6269,
+              69333334.1701,
+              31666667.867,
+              null
+            ]
+          }
+        ],
+        "categoria": "temporal"
+      }
+    ],
+    "destaques": [],
+    "avisos": [],
+    "enriquecimentoPopulacao": {},
+    "camadasBrutas": [],
+    "qualidade": [
+      {
+        "coluna": "Value",
+        "completude_pct": 9,
+        "n_distintos": 86,
+        "tipo": "numerica"
+      }
+    ],
+    "codigoExecutado": [],
+    "custoExecucaoCodigo": 0
+  },
+  "achados": [],
+  "narrativa": {
+    "titulo": "Receitas do turismo em Moçambique não mostram uma tendência estatisticamente clara",
+    "subtitulo": "O teste de Mann-Kendall aponta direcção \"{{calc:p2_direccao}}\" (p={{calc:p2_p}}), e o cálculo de crescimento anual composto não pôde ser produzido por falta de dados suficientes",
+    "resposta_directa": "Com os dados disponíveis, não há evidência estatística de que as receitas do turismo em Moçambique tenham subido ou descido de forma consistente ao longo do período: o teste dá direcção \"{{calc:p2_direccao}}\" com p={{calc:p2_p}}, acima do limiar habitual de significância. A comparação entre o período antes e depois da covid-19 mostra um padrão \"{{calc:p6_direccao}}\", sem alteração clara.",
+    "numeros_chave": [
+      {
+        "calc_id": "p2_z",
+        "rotulo": "Estatística z do teste de tendência",
+        "contexto": "Valor negativo sugere uma ligeira inclinação descendente, mas não é forte o suficiente para ser conclusivo"
+      },
+      {
+        "calc_id": "p2_p",
+        "rotulo": "Valor-p do teste de tendência",
+        "contexto": "Acima de 0,05: não se pode afirmar com confiança que existe tendência real, seja de subida ou de descida"
+      },
+      {
+        "calc_id": "p2_declive_sen",
+        "rotulo": "Declive de Sen por período",
+        "contexto": "Estimativa robusta da inclinação da série, ligeiramente negativa"
+      },
+      {
+        "calc_id": "p2_n",
+        "rotulo": "Observações usadas no teste de tendência",
+        "contexto": "Número de registos com valor preenchido entre 2000 e 2025 usados para testar a evolução"
+      },
+      {
+        "calc_id": "p6_direccao",
+        "rotulo": "Comparação entre períodos",
+        "contexto": "Direcção da variação entre o período anterior e o período mais recente da série"
+      },
+      {
+        "calc_id": "p1_n_distintos",
+        "rotulo": "Valores distintos na coluna de receitas",
+        "contexto": "Reflecte que a coluna junta cinco indicadores diferentes (receitas, despesas, média por chegada, quotas de exportação e importação), não uma única série de receitas"
+      }
+    ],
+    "o_que_mostram": "O teste estatístico não encontra uma tendência significativa nas receitas do turismo: a direcção calculada é \"{{calc:p2_direccao}}\", com um valor-p de {{calc:p2_p}}, próximo mas acima do limiar de 0,05 normalmente usado para dizer que um padrão é real e não acaso. O declive de Sen ({{calc:p2_declive_sen}} por período) sugere uma ligeira queda, mas demasiado fraca para ser afirmada com confiança. A comparação entre o período antes e depois da covid-19 mostra um resultado \"{{calc:p6_direccao}}\", ou seja, sem uma quebra ou recuperação nítida entre os dois momentos nos dados disponíveis.\n\nNão foi possível calcular a taxa de crescimento anual composta entre o primeiro e o último ano com dados: a fórmula não produziu um resultado válido, o que por si só é um sinal de que faltam pontos-chave na série (nomeadamente anos recentes, como o próprio dataset assinala para o período pós-2020).",
+    "porque": "Uma explicação possível para a ausência de tendência clara é que o turismo em Moçambique foi afectado por choques distintos e por vezes opostos ao longo do período: ciclones, instabilidade em certas regiões e, mais recentemente, a pandemia de covid-19, que interromperam qualquer trajectória de crescimento sustentado. Mas há uma explicação alternativa igualmente plausível e menos ligada ao turismo em si: a coluna analisada mistura cinco indicadores com unidades diferentes (dólares correntes, percentagem de exportações, dólares por chegada), pelo que parte da variação captada pelo teste pode reflectir a mistura de séries diferentes, não uma evolução real das receitas.",
+    "o_que_nao_diz": [
+      "O cálculo da taxa de crescimento anual composta falhou (resultado inválido), por isso não é possível afirmar aqui a que ritmo cresceram ou caíram as receitas por ano.",
+      "A coluna de valores usada nos testes junta receitas, despesas, média de gasto por chegada e quotas de exportação/importação num único campo; testar tendência sobre esta mistura é menos rigoroso do que isolar apenas a série de receitas.",
+      "Apenas 9% das 999 linhas do dataset têm valor preenchido (90 linhas), e as próprias notas do dataset indicam que faltam dados de receitas para o período pós-2020, o que limita qualquer leitura sobre os anos mais recentes.",
+      "O valor-p de 0,08 está próximo do limiar de significância: não se pode excluir que exista uma tendência de queda real que os dados actuais são insuficientes para confirmar."
+    ],
+    "como_chegamos": "Aplicámos o teste de Mann-Kendall, que verifica se existe uma tendência de subida ou de descida ao longo do tempo sem exigir que a relação seja perfeitamente linear, e o declive de Sen para estimar a magnitude dessa possível tendência. Comparámos ainda o período antes e depois da covid-19 e tentámos calcular o crescimento anual composto entre o primeiro e o último ano com dados, cálculo que não foi possível completar por falta de valores suficientes.",
+    "fontes": [
+      {
+        "instituicao": "World Bank",
+        "documento": "World Development Indicators (WDI) API, indicadores de turismo internacional para Moçambique",
+        "ano": 2022
+      }
+    ]
+  },
+  "narrativa_resolvida": {
+    "titulo": "Receitas do turismo em Moçambique não mostram uma tendência estatisticamente clara",
+    "subtitulo": "O teste de Mann-Kendall aponta direcção \"sem tendência\" (p=0,08), e o cálculo de crescimento anual composto não pôde ser produzido por falta de dados suficientes",
+    "resposta_directa": "Com os dados disponíveis, não há evidência estatística de que as receitas do turismo em Moçambique tenham subido ou descido de forma consistente ao longo do período: o teste dá direcção \"sem tendência\" com p=0,08, acima do limiar habitual de significância. A comparação entre o período antes e depois da covid-19 mostra um padrão \"estável\", sem alteração clara.",
+    "numeros_chave": [
+      {
+        "calc_id": "p2_z",
+        "rotulo": "Estatística z do teste de tendência",
+        "contexto": "Valor negativo sugere uma ligeira inclinação descendente, mas não é forte o suficiente para ser conclusivo",
+        "valor": "-1,75"
+      },
+      {
+        "calc_id": "p2_p",
+        "rotulo": "Valor-p do teste de tendência",
+        "contexto": "Acima de 0,05: não se pode afirmar com confiança que existe tendência real, seja de subida ou de descida",
+        "valor": "0,08"
+      },
+      {
+        "calc_id": "p2_declive_sen",
+        "rotulo": "Declive de Sen por período",
+        "contexto": "Estimativa robusta da inclinação da série, ligeiramente negativa",
+        "valor": "-0,08"
+      },
+      {
+        "calc_id": "p2_n",
+        "rotulo": "Observações usadas no teste de tendência",
+        "contexto": "Número de registos com valor preenchido entre 2000 e 2025 usados para testar a evolução",
+        "valor": "90"
+      },
+      {
+        "calc_id": "p6_direccao",
+        "rotulo": "Comparação entre períodos",
+        "contexto": "Direcção da variação entre o período anterior e o período mais recente da série",
+        "valor": "estável"
+      },
+      {
+        "calc_id": "p1_n_distintos",
+        "rotulo": "Valores distintos na coluna de receitas",
+        "contexto": "Reflecte que a coluna junta cinco indicadores diferentes (receitas, despesas, média por chegada, quotas de exportação e importação), não uma única série de receitas",
+        "valor": "86"
+      }
+    ],
+    "o_que_mostram": "O teste estatístico não encontra uma tendência significativa nas receitas do turismo: a direcção calculada é \"sem tendência\", com um valor-p de 0,08, próximo mas acima do limiar de 0,05 normalmente usado para dizer que um padrão é real e não acaso. O declive de Sen (-0,08 por período) sugere uma ligeira queda, mas demasiado fraca para ser afirmada com confiança. A comparação entre o período antes e depois da covid-19 mostra um resultado \"estável\", ou seja, sem uma quebra ou recuperação nítida entre os dois momentos nos dados disponíveis.\n\nNão foi possível calcular a taxa de crescimento anual composta entre o primeiro e o último ano com dados: a fórmula não produziu um resultado válido, o que por si só é um sinal de que faltam pontos-chave na série (nomeadamente anos recentes, como o próprio dataset assinala para o período pós-2020).",
+    "porque": "Uma explicação possível para a ausência de tendência clara é que o turismo em Moçambique foi afectado por choques distintos e por vezes opostos ao longo do período: ciclones, instabilidade em certas regiões e, mais recentemente, a pandemia de covid-19, que interromperam qualquer trajectória de crescimento sustentado. Mas há uma explicação alternativa igualmente plausível e menos ligada ao turismo em si: a coluna analisada mistura cinco indicadores com unidades diferentes (dólares correntes, percentagem de exportações, dólares por chegada), pelo que parte da variação captada pelo teste pode reflectir a mistura de séries diferentes, não uma evolução real das receitas.",
+    "o_que_nao_diz": [
+      "O cálculo da taxa de crescimento anual composta falhou (resultado inválido), por isso não é possível afirmar aqui a que ritmo cresceram ou caíram as receitas por ano.",
+      "A coluna de valores usada nos testes junta receitas, despesas, média de gasto por chegada e quotas de exportação/importação num único campo; testar tendência sobre esta mistura é menos rigoroso do que isolar apenas a série de receitas.",
+      "Apenas 9% das 999 linhas do dataset têm valor preenchido (90 linhas), e as próprias notas do dataset indicam que faltam dados de receitas para o período pós-2020, o que limita qualquer leitura sobre os anos mais recentes.",
+      "O valor-p de 0,08 está próximo do limiar de significância: não se pode excluir que exista uma tendência de queda real que os dados actuais são insuficientes para confirmar."
+    ],
+    "como_chegamos": "Aplicámos o teste de Mann-Kendall, que verifica se existe uma tendência de subida ou de descida ao longo do tempo sem exigir que a relação seja perfeitamente linear, e o declive de Sen para estimar a magnitude dessa possível tendência. Comparámos ainda o período antes e depois da covid-19 e tentámos calcular o crescimento anual composto entre o primeiro e o último ano com dados, cálculo que não foi possível completar por falta de valores suficientes.",
+    "fontes": [
+      {
+        "instituicao": "World Bank",
+        "documento": "World Development Indicators (WDI) API, indicadores de turismo internacional para Moçambique",
+        "ano": 2022
+      }
+    ]
+  },
+  "critica": {
+    "objeccoes": [],
+    "bloqueia_publicacao": false
+  },
+  "custo_usd": 0.08364400000000001,
+  "duracao_ms": 106745,
+  "confianca": {
+    "percentagem": 100,
+    "datasetsUsados": 1,
+    "ligacoesGeograficas": [],
+    "completudeMediaPct": 9,
+    "valoresDerivados": 0,
+    "passosViaCodigo": 0
+  }
+}

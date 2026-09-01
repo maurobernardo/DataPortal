@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { deleteDataset, findCategoryById, findDatasetById, findDatasetUpdateSubscriberEmails, updateDataset } from '@/lib/db'
+import { deleteDataset, findAllRegisteredUsers, findCategoryById, findDatasetById, findDatasetUpdateSubscriberEmails, findUsuariosComAnaliseSobreDataset, updateDataset } from '@/lib/db'
 import { getCurrentAdmin } from '@/lib/auth'
-import { hasAuthMailConfig, sendDatasetUpdatedEmail } from '@/lib/mailer'
+import { hasAuthMailConfig, sendAnomaliaVersaoEmail, sendDatasetUpdatedEmail, sendReanaliseRecomendadaEmail } from '@/lib/mailer'
+import { compararValoresEntreVersoes } from '@/lib/analysis/inteligencia-catalogo'
+import { logAudit } from '@/lib/audit'
 import { logger } from '@/lib/logger'
 
 const ALLOWED_DATA_TYPES = new Set(['geoespacial', 'alfanumerico'])
@@ -75,7 +77,7 @@ export async function PUT(
       minimumUnit: data.minimumUnit || null,
       keywords: data.keywords || null,
       dataType,
-    })
+    }, user.email)
 
     if (!dataset) {
       return NextResponse.json(
@@ -90,6 +92,42 @@ export async function PUT(
           Promise.all(emails.map((email) => sendDatasetUpdatedEmail(email, dataset.title, id)))
         )
         .catch((error) => logger.error('dataset_update_subscriber_email_error', { error }))
+
+      // Alerta proactivo: chega também a quem nunca subscreveu nada, só porque já analisou este
+      // dataset por IA — o portal avisa sozinho em vez de esperar que a pessoa se lembre de voltar.
+      findUsuariosComAnaliseSobreDataset(id)
+        .then((utilizadores) =>
+          Promise.all(
+            utilizadores.map((u) => {
+              const idsCsv = (() => {
+                try {
+                  return (JSON.parse(u.datasetIdsRaw) as number[]).join(',')
+                } catch {
+                  return String(id)
+                }
+              })()
+              return sendReanaliseRecomendadaEmail(u.email, dataset.title, u.pergunta, idsCsv)
+            })
+          )
+        )
+        .catch((error) => logger.error('dataset_update_reanalise_email_error', { error }))
+    }
+
+    // Alerta de anomalia entre versões (best-effort, nunca bloqueia a resposta): só corre quando
+    // o ficheiro foi mesmo substituído, comparando a soma de cada coluna numérica entre a versão
+    // anterior e a nova.
+    if (existing.filePath && nextFilePath !== existing.filePath) {
+      compararValoresEntreVersoes(
+        { filePath: existing.filePath, dataType: existing.dataType },
+        { filePath: dataset.filePath, dataType: dataset.dataType }
+      )
+        .then(async (anomalias) => {
+          if (anomalias.length === 0 || !hasAuthMailConfig()) return
+          const utilizadores = await findAllRegisteredUsers()
+          const admins = utilizadores.filter((u) => u.role === 'admin')
+          await Promise.all(admins.map((a) => sendAnomaliaVersaoEmail(a.email, dataset.title, id, anomalias)))
+        })
+        .catch((error) => logger.error('dataset_anomalia_versao_error', { error, id }))
     }
 
     return NextResponse.json(dataset)
@@ -122,9 +160,17 @@ export async function DELETE(
       )
     }
 
-    await deleteDataset(id)
+    await deleteDataset(id, user.email)
 
-    return NextResponse.json({ success: true })
+    logAudit({
+      actorEmail: user.email,
+      action: 'eliminar_dataset',
+      entityType: 'dataset',
+      entityId: id,
+      details: `${existing.title} (movido para a lixeira, recuperável em /admin/lixeira)`,
+    })
+
+    return NextResponse.json({ success: true, lixeira: true })
   } catch (error: any) {
     logger.error('error_deleting_dataset', { error: error })
     return NextResponse.json(

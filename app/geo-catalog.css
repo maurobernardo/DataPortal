@@ -11,12 +11,44 @@
 }
 
 .geo-catalog-header {
-  background: linear-gradient(180deg, var(--pd-surface-0), #f2f7f3);
-  border-bottom: 1px solid #E2E8E5;
-  padding: 28px 0 22px;
+  position: relative;
+  border-bottom: none;
+  padding: 44px 0 36px;
+  min-height: 260px;
+  display: flex;
+  align-items: center;
 }
+.geo-catalog-header .geo-ch-inner { position: relative; z-index: 2; }
+.geo-catalog-header .geo-ch-eyebrow { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.24); color: #EAF5EE; }
+.geo-catalog-header .geo-ch-title { color: #fff; }
+.geo-catalog-header .geo-ch-lede { color: rgba(255,255,255,.82); }
+.geo-catalog-header .geo-ch-stat strong { color: #fff; }
+.geo-catalog-header .geo-ch-stat span { color: rgba(255,255,255,.68); }
+.geo-catalog-header .pd-breadcrumbs-item { color: rgba(255,255,255,.72); }
+.geo-catalog-header .pd-breadcrumbs-home { color: rgba(255,255,255,.72); }
+.geo-catalog-header .pd-breadcrumbs-sep { color: rgba(255,255,255,.4); }
+.geo-catalog-header .pd-breadcrumbs-current { color: #fff; }
+.geo-catalog-header .pd-breadcrumbs-item:hover:not(.pd-breadcrumbs-current) { color: #fff; }
+.geo-catalog-header .geo-ch-toolbar { border-top-color: rgba(255,255,255,.2); }
+.geo-catalog-header .geo-ch-search {
+  background: rgba(255,255,255,.14);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid rgba(255,255,255,.32);
+  box-shadow: 0 10px 30px rgba(4,20,12,0.25);
+}
+.geo-catalog-header .geo-ch-search:focus-within {
+  border-color: rgba(255,255,255,.6);
+  box-shadow: 0 0 0 3px rgba(255,255,255,.16);
+}
+.geo-catalog-header .geo-ch-search input { color: #fff; }
+.geo-catalog-header .geo-ch-search input::placeholder { color: rgba(255,255,255,.62); }
+.geo-catalog-header .geo-ch-search svg { color: rgba(255,255,255,.75) !important; }
+.geo-catalog-header .geo-sort-select { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.32); color: #fff; }
+.geo-catalog-header .geo-sort-select option { color: var(--pd-ink-700); background: #fff; }
 
 .geo-ch-inner {
+  width: 100%;
   max-width: 1440px;
   margin: 0 auto;
   padding: 0 16px;
@@ -44,6 +76,18 @@
     gap: 24px;
     flex-wrap: wrap;
   }
+}
+
+.geo-ch-eyebrow-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.geo-ch-ethics-badge {
+  margin-bottom: 8px;
+  padding: 5px 12px !important;
+  font-size: 11px !important;
 }
 
 .geo-ch-eyebrow {
@@ -170,11 +214,55 @@
   opacity: 1;
 }
 
+/* Remove decorações nativas do <input type="search"> (o "x" do sistema operativo e, em
+   Chrome/Edge, a seta de histórico de pesquisas) — o botão de limpar é sempre o nosso, com o
+   design do resto do portal, nunca a mistura dos dois a parecer um emoji solto. */
+.geo-ch-search input::-webkit-search-decoration,
+.geo-ch-search input::-webkit-search-cancel-button,
+.geo-ch-search input::-webkit-search-results-button,
+.geo-ch-search input::-webkit-search-results-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.geo-ch-search-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--pd-surface-100, #F1F5F3);
+  color: var(--pd-ink-500);
+  transition: background 0.15s, color 0.15s;
+}
+.geo-ch-search-clear:hover {
+  background: var(--pd-ink-100);
+  color: var(--pd-ink-700);
+}
+.geo-catalog-header .geo-ch-search-clear {
+  background: rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.85);
+}
+.geo-catalog-header .geo-ch-search-clear:hover {
+  background: rgba(255, 255, 255, 0.3);
+  color: #fff;
+}
+
 .geo-toolbar-actions {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
   flex-shrink: 0;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .geo-toolbar-actions {
+    width: auto;
+  }
 }
 
 .geo-sort-select {
@@ -205,6 +293,45 @@
 
 .geo-btn-search:hover {
   background: var(--brand-primary-strong);
+}
+
+.geo-btn-export {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid #E2E8E5;
+  cursor: pointer;
+  background: var(--pd-surface-0);
+  color: var(--pd-ink-700);
+  white-space: nowrap;
+  text-decoration: none;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.geo-btn-export:hover {
+  border-color: var(--pd-green-700);
+  background: var(--pd-green-50);
+  color: var(--pd-green-700);
+}
+
+.geo-catalog-container {
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 16px 16px 0;
+}
+
+@media (min-width: 768px) {
+  .geo-catalog-container { padding: 24px 20px 0; }
+}
+
+@media (min-width: 1100px) {
+  .geo-catalog-container { padding: 28px 32px 0; }
 }
 
 .geo-catalog-body {
@@ -430,50 +557,8 @@
   white-space: nowrap;
 }
 
-.geo-recently-viewed {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 12px;
-  flex-wrap: wrap;
-}
-
-.geo-recently-viewed-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--pd-ink-500);
-  white-space: nowrap;
-}
-
-.geo-recently-viewed-list {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.geo-recently-viewed-chip {
-  display: inline-block;
-  max-width: 180px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  padding: 4px 10px;
-  border-radius: 100px;
-  font-size: 11px;
-  font-weight: 500;
-  background: var(--pd-surface-100);
-  color: var(--pd-ink-700);
-  border: 1px solid var(--pd-ink-100);
-  text-decoration: none;
-}
-
-.geo-recently-viewed-chip:hover {
-  border-color: var(--pd-green-700);
-  color: var(--pd-green-900);
-}
+/* .geo-recently-viewed* movido para app/globals.css: é usado por RecentlyViewedRail em páginas
+   que não importam geo-catalog.css (relatórios, mapas), onde ficava sem estilo nenhum. */
 
 .geo-results-meta-actions {
   display: flex;
@@ -880,10 +965,12 @@
   transition: background 0.15s, transform 0.15s;
   white-space: nowrap;
   width: 100%;
+  min-width: 0;
 }
 @media (min-width: 480px) {
   .geo-layer-details-btn {
     width: auto;
+    flex: 1 1 auto;
   }
 }
 
@@ -891,10 +978,40 @@
   background: var(--brand-primary-strong);
 }
 
+/* Botão "Analisar": cor sólida distinta (violeta, a mesma associada a "AI Insights" no menu) e
+   uma pulsação suave e contínua — é a acção que leva à funcionalidade de IA do portal, por isso
+   fica deliberadamente mais destacada que "Ver detalhes" em vez de ficar em contorno discreto. */
+.geo-layer-analyse-btn {
+  background: #6B4FBB;
+  color: white;
+  border: none;
+  animation: geo-analyse-heartbeat 2.4s ease-in-out infinite;
+}
+.geo-layer-analyse-btn:hover {
+  background: #5A3FA3;
+  animation-play-state: paused;
+}
+@keyframes geo-analyse-heartbeat {
+  0%, 62%, 100% { box-shadow: 0 0 0 0 rgba(107, 79, 187, 0); transform: scale(1); }
+  15% { box-shadow: 0 0 0 6px rgba(107, 79, 187, 0.22); transform: scale(1.045); }
+  30% { box-shadow: 0 0 0 0 rgba(107, 79, 187, 0); transform: scale(1); }
+  45% { box-shadow: 0 0 0 4px rgba(107, 79, 187, 0.16); transform: scale(1.03); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .geo-layer-analyse-btn { animation: none; }
+}
+
 .geo-layer-footer-actions {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 8px;
+}
+@media (max-width: 479px) {
+  .geo-layer-footer-actions {
+    width: 100%;
+  }
 }
 
 .geo-favorite-btn {
@@ -923,11 +1040,16 @@
   border-color: color-mix(in srgb, #DC2626 30%, transparent);
 }
 
+/* Flutuante a sério: `position: fixed` relativo à janela, não `sticky` (que só se mantém preso
+   enquanto o contentor pai está visível — numa lista longa com "Ver mais", a barra acabava por
+   ficar presa lá em baixo, no fim do documento, em vez de acompanhar o ecrã). */
 .geo-batch-bar {
-  position: sticky;
-  bottom: 16px;
-  z-index: 20;
-  margin: 16px auto 0;
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  z-index: 60;
+  width: calc(100% - 32px);
   max-width: 640px;
   display: flex;
   align-items: center;
@@ -1093,8 +1215,174 @@
   color: var(--pd-ink-400);
 }
 
+.geo-compare-legend-meta {
+  font-size: 10px;
+  color: var(--pd-ink-500);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 .geo-compare-legend-status--error {
   color: #9F1616;
+}
+
+.geo-coverage-heatmap {
+  background: #fff;
+  border: 1px solid #E2E8E5;
+  border-radius: 14px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.geo-coverage-heatmap-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--pd-green-800);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.geo-coverage-heatmap-toggle svg:last-child {
+  margin-left: auto;
+}
+
+.geo-coverage-heatmap-body {
+  padding: 4px 16px 16px;
+  border-top: 1px solid #EEF2F0;
+}
+
+.geo-coverage-heatmap-hint {
+  font-size: 12.5px;
+  color: var(--pd-ink-500);
+  margin: 10px 0 14px;
+}
+
+.geo-coverage-heatmap-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.geo-coverage-heatmap-row {
+  display: grid;
+  grid-template-columns: 108px 1fr 28px;
+  align-items: center;
+  gap: 10px;
+}
+
+.geo-coverage-heatmap-label {
+  font-size: 12.5px;
+  color: var(--pd-ink-700);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.geo-coverage-heatmap-bar-track {
+  display: block;
+  height: 10px;
+  border-radius: 6px;
+  background: #F3F5F4;
+  overflow: hidden;
+}
+
+.geo-coverage-heatmap-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 6px;
+  transition: width 0.3s ease;
+}
+
+.geo-coverage-heatmap-count {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--pd-ink-700);
+  text-align: right;
+}
+
+.geo-coverage-heatmap-note {
+  margin-top: 12px;
+  font-size: 11.5px;
+  color: var(--pd-ink-400);
+}
+
+.geo-coverage-heatmap-link {
+  display: inline-block;
+  margin-top: 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--pd-green-700);
+}
+
+.geo-coverage-heatmap-link:hover {
+  text-decoration: underline;
+}
+
+.geo-detail-provenance-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.geo-detail-provenance-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  color: var(--pd-ink-600);
+}
+
+.geo-detail-provenance-history {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #E2E8E5;
+}
+
+.geo-detail-provenance-toggle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pd-green-700);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.geo-detail-provenance-toggle:hover {
+  text-decoration: underline;
+}
+
+.geo-detail-provenance-timeline {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-left: 2px solid #CFE3D6;
+  padding-left: 14px;
+}
+
+.geo-detail-provenance-timeline li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12.5px;
+}
+
+.geo-detail-provenance-timeline-date {
+  font-weight: 700;
+  color: var(--pd-ink-800);
+}
+
+.geo-detail-provenance-timeline-desc {
+  color: var(--pd-ink-500);
 }
 
 .geo-catalog-map-view {
@@ -1395,10 +1683,12 @@
   align-items: center;
   gap: 10px;
   padding: 10px 18px 10px 14px;
+  font-family: inherit;
   font-size: 14px;
   font-weight: 600;
   color: var(--pd-green-800);
   text-decoration: none;
+  cursor: pointer;
   margin-bottom: 20px;
   background: var(--pd-surface-0);
   border: 1px solid #cfe3d6;
@@ -1992,7 +2282,7 @@
 .alf-detail-stats {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 6px;
+  gap: 10px 20px;
 }
 @media (min-width: 480px) {
   .alf-detail-stats {
@@ -2000,11 +2290,12 @@
   }
 }
 
+/* Sem caixa cinzenta própria: já vivem dentro do cartão de pré-visualização (que já tem borda e
+   sombra) — uma caixa dentro de outra caixa é o padrão "cartões aninhados" a evitar. Em vez disso,
+   só um traço vertical de cor à esquerda, como um separador de estatística, não outro cartão. */
 .alf-detail-stat {
-  background: var(--pd-surface-50);
-  padding: 10px 12px;
-  border-radius: 8px;
-  border: 1px solid #E2E8E5;
+  padding: 2px 0 2px 10px;
+  border-left: 2px solid var(--pd-green-100);
 }
 
 .alf-detail-stat-key {
@@ -2017,9 +2308,9 @@
 }
 
 .alf-detail-stat-val {
-  color: var(--pd-ink-900);
-  font-weight: 700;
-  font-size: 14px;
+  color: var(--pd-green-800);
+  font-weight: 800;
+  font-size: 16px;
   font-family: ui-monospace, monospace;
 }
 
@@ -2191,10 +2482,26 @@
 }
 
 .alf-sample-table {
-  width: 100%;
+  /* `width: 100%` obrigava a tabela a caber no contentor, e por isso o `overflow-x: auto` do
+     `.alf-sample-scroll` nunca chegava a ter nada para rolar: as colunas espremiam-se e as que
+     não coubessem ficavam simplesmente de fora. Com `max-content` a tabela toma a largura de que
+     precisa e a barra horizontal aparece; o `min-width` mantém-na a encher a caixa quando há
+     poucas colunas. */
+  width: max-content;
+  min-width: 100%;
   border-collapse: collapse;
   font-size: 10px;
   font-family: ui-monospace, monospace;
+}
+
+/* Sem isto, uma célula com texto longo alarga a coluna sem limite e a tabela fica com uma largura
+   impossível de percorrer. */
+.alf-sample-table th,
+.alf-sample-table td {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .alf-sample-table thead {

@@ -8,14 +8,13 @@ import {
   Database,
   Eye,
   FileText,
-  ImageOff,
   Package,
   LineChart,
+  BarChart3,
+  BadgeCheck,
 } from 'lucide-react'
 import type { GeoDataset } from '@/components/geo/types'
-import { GeoLayerThumb } from '@/components/geo/GeoLayerThumb'
-import { GeoLayerCardMap } from '@/components/geo/GeoLayerCardMap'
-import { AlfLayerThumb } from '@/components/alf/AlfLayerThumb'
+import { CategoryThumb } from '@/components/geo/CategoryThumb'
 import { getPopularityTier } from '@/components/geo/geo-utils'
 import { FavoriteButton } from '@/components/FavoriteButton'
 
@@ -82,7 +81,6 @@ export function GeoLayerCard({
   const formatClass =
     formatChipClass[dataset.format] ??
     'bg-[var(--pd-surface-100)] text-[var(--pd-ink-700)] border-[var(--pd-ink-100)]'
-  const previewKnownUnavailable = dataset.previewAvailable === 0 || dataset.previewAvailable === false
 
   return (
     <article className={`geo-layer-card${selected ? ' selected' : ''}${checked ? ' batch-checked' : ''}`}>
@@ -109,16 +107,13 @@ export function GeoLayerCard({
         aria-label={`${selectLabel}: ${dataset.title}`}
       >
         <div className="geo-layer-thumb">
-          {thumbVariant === 'alf' ? (
-            <AlfLayerThumb index={index} datasetId={dataset.id} />
-          ) : (
-            <>
-              <GeoLayerThumb index={index} datasetId={dataset.id} />
-              <div className="absolute inset-0 z-0">
-                <GeoLayerCardMap datasetId={dataset.id} />
-              </div>
-            </>
-          )}
+          <CategoryThumb
+            title={dataset.title}
+            keywords={dataset.keywords || ''}
+            category={dataset.category.name}
+            index={index}
+            kind={thumbVariant}
+          />
           <span className="geo-layer-thumb-format z-10">{dataset.format}</span>
           {popularityTier && (
             <span className={`geo-layer-popular geo-layer-popular--${popularityTier.key} z-10`}>
@@ -126,17 +121,20 @@ export function GeoLayerCard({
               {popularityTier.label}
             </span>
           )}
-          {previewKnownUnavailable && (
-            <span className="geo-layer-preview-unavailable z-10" title="Pré-visualização indisponível para este ficheiro">
-              <ImageOff className="size-3" aria-hidden />
-              Sem pré-visualização
-            </span>
-          )}
         </div>
 
         <div className="geo-layer-body">
           <div className="flex flex-wrap items-center gap-2 mb-2">
             <span className="geo-layer-category">{dataset.category.name}</span>
+            {dataset.certificacao === 'fonte_oficial_confirmada' && (
+              <span
+                className="inline-flex items-center gap-1 rounded-full bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 text-[10px] font-bold"
+                title="Fonte oficial confirmada por um administrador do portal"
+              >
+                <BadgeCheck className="size-3" aria-hidden />
+                Fonte confirmada
+              </span>
+            )}
           </div>
 
           <h3 className="geo-layer-name">
@@ -163,14 +161,14 @@ export function GeoLayerCard({
               <Database className="size-3.5 text-[var(--pd-green-700)]" aria-hidden />
               <div>
                 <span className="geo-layer-meta-label">Fonte</span>
-                <span className="geo-layer-meta-value truncate">{dataset.source || '—'}</span>
+                <span className="geo-layer-meta-value truncate">{dataset.source || 'N/D'}</span>
               </div>
             </div>
             <div className="geo-layer-meta-item">
               <Calendar className="size-3.5 text-[var(--pd-green-700)]" aria-hidden />
               <div>
                 <span className="geo-layer-meta-label">Ano</span>
-                <span className="geo-layer-meta-value">{dataset.year || '—'}</span>
+                <span className="geo-layer-meta-value">{dataset.year || 'N/D'}</span>
               </div>
             </div>
             <div className="geo-layer-meta-item">
@@ -202,6 +200,15 @@ export function GeoLayerCard({
         <span className="geo-layer-downloads">↓ {dataset.downloads.toLocaleString('pt-BR')} downloads</span>
         <div className="geo-layer-footer-actions">
           <FavoriteButton datasetId={dataset.id} initialFavorited={isFavorited} />
+          <Link
+            href={`/analise/nova?datasets=${dataset.id}`}
+            className="geo-layer-details-btn geo-layer-analyse-btn"
+            onClick={(e) => e.stopPropagation()}
+            title="Abrir este dataset já seleccionado no AI Insights (precisa de sessão iniciada)"
+          >
+            Analisar
+            <BarChart3 className="size-4" aria-hidden />
+          </Link>
           <Link
             href={`/dataset/${dataset.id}`}
             className="geo-layer-details-btn"

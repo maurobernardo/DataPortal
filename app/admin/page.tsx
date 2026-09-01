@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 import { getCurrentUserProfile } from '@/lib/auth'
 import { AdminPanel } from '@/components/AdminPanel'
@@ -29,14 +30,20 @@ export default async function AdminPage({
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 md:ml-64">
+      <div className="flex-1 min-w-0 md:ml-64">
         {/* Header */}
         <AdminHeader user={user} />
 
         {/* Content */}
         <div className="p-4 md:p-6">
           <div className="max-w-7xl mx-auto">
-            <AdminPanel initialTab={tab} />
+            {/* DatasetForm (dentro do AdminPanel) usa useSearchParams: sem Suspense aqui, a
+                navegação client-side (link da sidebar, sem recarregar a página) rebentava com
+                "Application error" — só a navegação directa por URL funcionava, porque essa passa
+                por um pedido de página completo em vez do router client-side do Next. */}
+            <Suspense fallback={null}>
+              <AdminPanel initialTab={tab} />
+            </Suspense>
           </div>
         </div>
       </div>

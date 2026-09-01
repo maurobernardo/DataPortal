@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import {
@@ -31,6 +31,7 @@ import {
 } from 'chart.js'
 import { AdminSidebar } from './AdminSidebar'
 import { DashboardHeader } from './DashboardHeader'
+import { RelatoriosAgendadosPainel } from './admin/RelatoriosAgendadosPainel'
 
 ChartJS.register(ArcElement, Tooltip, Legend, BarElement, CategoryScale, LinearScale, PointElement, LineElement)
 
@@ -135,37 +136,6 @@ interface ModernDashboardProps {
 type TemporalPeriod = '7' | '30' | 'month'
 
 export function ModernDashboard({ data, user }: ModernDashboardProps) {
-  const router = useRouter()
-  const [roleUpdatingId, setRoleUpdatingId] = useState<number | null>(null)
-
-  async function handleRoleToggle(targetId: number, currentRole: string) {
-    const nextRole = currentRole === 'admin' ? 'user' : 'admin'
-    const confirmMsg =
-      nextRole === 'admin'
-        ? 'Promover este utilizador a administrador?'
-        : 'Remover o acesso de administrador deste utilizador?'
-    if (!confirm(confirmMsg)) return
-
-    setRoleUpdatingId(targetId)
-    try {
-      const res = await fetch(`/api/admin/users/${targetId}/role`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role: nextRole }),
-      })
-      if (!res.ok) {
-        const body = await res.json().catch(() => null)
-        alert(body?.error || 'Erro ao atualizar papel do utilizador')
-        return
-      }
-      router.refresh()
-    } catch {
-      alert('Erro ao atualizar papel do utilizador')
-    } finally {
-      setRoleUpdatingId(null)
-    }
-  }
-
   const [reportFilters, setReportFilters] = useState<ReportFilter>({
     startDate: '',
     endDate: '',
@@ -256,7 +226,7 @@ export function ModernDashboard({ data, user }: ModernDashboardProps) {
         const downloadUrl = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = downloadUrl;
-        a.download = 'dashboard-report.pdf';
+        a.download = 'data-portal-relatorio.pdf';
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(downloadUrl);
@@ -283,7 +253,7 @@ export function ModernDashboard({ data, user }: ModernDashboardProps) {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 md:ml-64">
+      <div className="flex-1 min-w-0 md:ml-64">
         {/* Header */}
         <DashboardHeader user={user} />
 
@@ -355,6 +325,8 @@ export function ModernDashboard({ data, user }: ModernDashboardProps) {
                 </div>
               </div>
             </div>
+
+            <RelatoriosAgendadosPainel />
 
             {/* Cards Principais */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6">
@@ -605,10 +577,10 @@ export function ModernDashboard({ data, user }: ModernDashboardProps) {
                     <div className="flex-1">
                       <p className="font-semibold text-gray-800 text-sm">
                         {activity.type === 'view' ? 'Visualização' : 'Download'} de{' '}
-                        {activity.dataset.title}
+                        {activity.dataset?.title || 'dataset entretanto removido'}
                       </p>
                       <p className="text-xs text-gray-500">
-                        {activity.dataset.category.name} •{' '}
+                        {activity.dataset?.category?.name ? `${activity.dataset.category.name} • ` : ''}
                         {format(new Date(activity.createdAt as string), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                       </p>
                     </div>
@@ -616,86 +588,23 @@ export function ModernDashboard({ data, user }: ModernDashboardProps) {
                 ))}
               </div>
             </div>
-            {/* Utilizadores registados */}
-            <div className="bg-white rounded-xl p-4 md:p-6 shadow-lg border border-gray-100">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h3 className="text-lg font-bold text-gray-800">Utilizadores registados</h3>
-                  <p className="text-sm text-gray-500">
-                    {data.totalRegisteredUsers.toLocaleString('pt-BR')} conta(s) no portal
-                  </p>
-                </div>
+            {/* Utilizadores registados: gestão completa (promover, activar/desactivar) já vive
+                em /admin/utilizadores, com o seu próprio log de auditoria — este card fica só
+                com o resumo e um atalho, em vez de duplicar a tabela e a lógica aqui. */}
+            <div className="bg-white rounded-xl p-4 md:p-6 shadow-lg border border-gray-100 flex items-center justify-between gap-4 flex-wrap">
+              <div>
+                <h3 className="text-lg font-bold text-gray-800">Utilizadores registados</h3>
+                <p className="text-sm text-gray-500">
+                  {data.totalRegisteredUsers.toLocaleString('pt-BR')} conta(s) no portal
+                </p>
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-gray-200 text-left text-gray-500">
-                      <th className="py-2 pr-4 font-semibold">Nome</th>
-                      <th className="py-2 pr-4 font-semibold">Email</th>
-                      <th className="py-2 pr-4 font-semibold">Estado</th>
-                      <th className="py-2 pr-4 font-semibold">Perfil</th>
-                      <th className="py-2 font-semibold">Registo</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.registeredUsers.length === 0 ? (
-                      <tr>
-                        <td colSpan={5} className="py-6 text-center text-gray-500">
-                          Nenhum utilizador registado.
-                        </td>
-                      </tr>
-                    ) : (
-                      data.registeredUsers.map((u) => (
-                        <tr key={u.id} className="border-b border-gray-100 last:border-0">
-                          <td className="py-3 pr-4 font-medium text-gray-800">{u.name}</td>
-                          <td className="py-3 pr-4 text-gray-600">{u.email}</td>
-                          <td className="py-3 pr-4">
-                            <span
-                              className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${
-                                u.emailVerified
-                                  ? 'bg-green-100 text-green-800'
-                                  : 'bg-amber-100 text-amber-800'
-                              }`}
-                            >
-                              {u.emailVerified ? 'Confirmado' : 'Pendente'}
-                            </span>
-                          </td>
-                          <td className="py-3 pr-4">
-                            <div className="flex items-center gap-2">
-                              <span
-                                className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold capitalize ${
-                                  u.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-600'
-                                }`}
-                              >
-                                {u.role}
-                              </span>
-                              {u.email !== user.email && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleRoleToggle(u.id, u.role)}
-                                  disabled={roleUpdatingId === u.id}
-                                  className="text-xs font-semibold text-green-700 hover:underline disabled:opacity-50 disabled:no-underline whitespace-nowrap"
-                                >
-                                  {roleUpdatingId === u.id ? (
-                                    <Loader2 className="w-3.5 h-3.5 animate-spin inline" />
-                                  ) : u.role === 'admin' ? (
-                                    'Remover admin'
-                                  ) : (
-                                    'Promover'
-                                  )}
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                          <td className="py-3 text-gray-500 whitespace-nowrap">
-                            {format(new Date(u.createdAt), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
+              <Link
+                href="/admin/utilizadores"
+                className="inline-flex items-center gap-2 rounded-lg bg-green-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-800 transition-colors"
+              >
+                <Users className="w-4 h-4" aria-hidden />
+                Gerir utilizadores
+              </Link>
             </div>
 
             {/* Actividade de utilizadores autenticados */}

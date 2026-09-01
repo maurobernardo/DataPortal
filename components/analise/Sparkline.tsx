@@ -1,7 +1,7 @@
 /** Mini-gráfico de tendência dentro de um cartão de KPI — só aparece quando o cálculo vem de uma
  *  série temporal real (o chamador já verificou isso); não desenha nada a partir de menos de 2
  *  pontos, porque uma linha entre um ponto só não mostra tendência nenhuma. */
-export function Sparkline({ valores, cor = '#064E2C' }: { valores: (number | null)[]; cor?: string }) {
+export function Sparkline({ valores, cor = '#175a41' }: { valores: (number | null)[]; cor?: string }) {
   const nums = valores.filter((v): v is number => typeof v === 'number')
   if (nums.length < 2) return null
 

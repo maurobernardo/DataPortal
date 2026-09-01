@@ -36,6 +36,7 @@ export function DatasetMapPreview({
   bbox,
   className,
   showToggle = true,
+  zoomControl = true,
 }: {
   geojson: any
   bbox?: [number, number, number, number] | null
@@ -43,6 +44,10 @@ export function DatasetMapPreview({
   /** false em contextos onde o mapa fica dentro de outro elemento interactivo (ex.: card
    *  clicável) — dois <button> aninhados são HTML inválido e quebram a hidratação. */
   showToggle?: boolean
+  /** false em usos puramente ilustrativos (ex.: cartão de destaque na home), onde os botões +/-
+   *  do Leaflet só disputam espaço com selos sobrepostos, sem função nenhuma (scroll já vem
+   *  desligado por omissão neste componente). */
+  zoomControl?: boolean
 }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<Map | null>(null)
@@ -66,7 +71,7 @@ export function DatasetMapPreview({
 
       const map = L.map(containerRef.current, {
         scrollWheelZoom: false,
-        zoomControl: true,
+        zoomControl,
         attributionControl: true,
       }).setView([0, 0], 2)
 

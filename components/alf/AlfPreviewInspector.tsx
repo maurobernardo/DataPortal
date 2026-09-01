@@ -1,13 +1,13 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Loader2, ArrowUpDown, ArrowUp, ArrowDown, Search, TrendingUp, TrendingDown, Minus } from 'lucide-react'
+import { ArrowUpDown, ArrowUp, ArrowDown, Search } from 'lucide-react'
 import {
   columnLabel,
+  ordenarColunasPorVariacao,
   columnRange,
   countDuplicateRows,
   countOutliers,
-  detectTrend,
   distinctCount,
   fillPercent,
   inferColumnType,
@@ -55,7 +55,16 @@ export function AlfPreviewInspector({
   const colCount = preview?.columns.length ?? 0
   const rowCount = preview?.rows.length ?? 0
   const displayCols = preview?.columns.slice(0, variant === 'detail' ? 12 : 8) ?? []
-  const sampleCols = preview?.columns.slice(0, variant === 'detail' ? 8 : 5) ?? []
+  // A amostra mostra TODAS as colunas: o corte às 5 ou 8 primeiras deixava de fora exactamente as
+  // que interessavam nos ficheiros em formato longo, e a caixa já rola na horizontal.
+  // Memorizado porque `sampleCols` é dependência do useMemo das linhas filtradas: um array novo a
+  // cada render fazia essa memorização nunca acertar, e o filtro recalculava tudo a cada tecla.
+  const ordenacao = useMemo(
+    () => ordenarColunasPorVariacao(preview?.columns ?? [], preview?.rows ?? []),
+    [preview]
+  )
+  const sampleCols = ordenacao.columns
+  const colunasMovidas = ordenacao.constantes.length + ordenacao.identificadores.length
   const collapsedLimit = variant === 'detail' ? 12 : 6
 
   const columnStats = displayCols.map((col, i) => {
@@ -70,7 +79,6 @@ export function AlfPreviewInspector({
   })
 
   const duplicateCount = preview ? countDuplicateRows(preview.rows) : 0
-  const trend = useMemo(() => (preview ? detectTrend(preview) : null), [preview])
 
   const filteredRows = useMemo(() => {
     if (!preview) return []
@@ -114,11 +122,23 @@ export function AlfPreviewInspector({
 
   if (loading) {
     return (
-      <div
-        className={`flex items-center justify-center gap-2 text-sm text-[var(--pd-ink-500)]${variant === 'detail' ? ' min-h-[280px]' : ' py-10'}`}
-      >
-        <Loader2 className="size-5 animate-spin text-[var(--pd-green-700)]" />
-        A carregar pré-visualização…
+      <div className={`p-3${variant === 'detail' ? ' min-h-[280px]' : ''}`} aria-label="A carregar pré-visualização">
+        <div className="flex gap-2 mb-3">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="pd-skeleton h-6 flex-1" style={{ animationDelay: `${i * 60}ms` }} />
+          ))}
+        </div>
+        {[...Array(6)].map((_, r) => (
+          <div key={r} className="flex gap-2 mb-2">
+            {[...Array(5)].map((_, c) => (
+              <div
+                key={c}
+                className="pd-skeleton h-4 flex-1"
+                style={{ animationDelay: `${(r * 5 + c) * 30}ms`, opacity: 1 - r * 0.1 }}
+              />
+            ))}
+          </div>
+        ))}
       </div>
     )
   }
@@ -204,28 +224,6 @@ export function AlfPreviewInspector({
                 </>
               ) : null}
             </p>
-          )}
-          {trend && (
-            <div
-              className={`mt-3 flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold ${
-                trend.direction === 'up'
-                  ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-                  : trend.direction === 'down'
-                    ? 'border-red-200 bg-red-50 text-red-800'
-                    : 'border-gray-200 bg-gray-50 text-gray-700'
-              }`}
-            >
-              {trend.direction === 'up' ? (
-                <TrendingUp className="size-3.5 shrink-0" aria-hidden />
-              ) : trend.direction === 'down' ? (
-                <TrendingDown className="size-3.5 shrink-0" aria-hidden />
-              ) : (
-                <Minus className="size-3.5 shrink-0" aria-hidden />
-              )}
-              <span>
-                Tendência em {columnLabel(trend.column)}: {trend.direction === 'flat' ? 'estável' : `${trend.changePercent > 0 ? '+' : ''}${trend.changePercent}%`} ao longo de {columnLabel(trend.dateColumn)} (amostra)
-              </span>
-            </div>
           )}
         </div>
 
@@ -337,9 +335,11 @@ export function AlfPreviewInspector({
                     {expanded ? 'Mostrar menos' : `Mostrar mais (${filteredRows.length - collapsedLimit} linhas)`}
                   </button>
                 )}
-                {colCount > sampleCols.length && (
+                {colunasMovidas > 0 && (
                   <p className="alf-preview-inspector__hint">
-                    + {colCount - sampleCols.length} colunas não mostradas na amostra
+                    {colunasMovidas === 1 ? '1 coluna foi movida' : `${colunasMovidas} colunas foram movidas`} para
+                    o fim da tabela: identificadores, ou colunas com o mesmo valor em todas as linhas da amostra.
+                    Nenhuma foi escondida.
                   </p>
                 )}
               </>

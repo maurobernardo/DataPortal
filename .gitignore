@@ -44,3 +44,7 @@ next-env.d.ts
 # `npm run geoip:update`, nunca commitado
 /data/geoip/*.mmdb
 
+# artefactos de deploy manual (zip do build/node_modules para o servidor): pesados, descartáveis,
+# e nunca precisam de ficar no histórico
+*.zip
+

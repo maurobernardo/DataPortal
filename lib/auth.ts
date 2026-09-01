@@ -49,7 +49,30 @@ export async function getCurrentUser(): Promise<SessionPayload | null> {
   return verifySessionToken(token)
 }
 
+/**
+ * 2FA deixou de ser opcional para administradores (PLANO-SEGURANCA.md): uma conta admin tem
+ * alcance total (eliminar datasets, promover outros admins), por isso qualquer rota de API
+ * administrativa exige TOTP activo, não só o papel "admin". `app/admin/layout.tsx` e
+ * `app/dashboard/layout.tsx` já impedem o acesso às páginas sem 2FA; isto é a mesma exigência do
+ * lado das rotas de API, para nenhuma ficar acessível só porque foi chamada directamente.
+ */
 export async function getCurrentAdmin(): Promise<SessionPayload | null> {
+  const profile = await getCurrentUserProfile()
+  if (!profile || profile.role !== 'admin') {
+    return null
+  }
+  const { findUserById } = await import('@/lib/db')
+  const user = await findUserById(profile.id)
+  if (!user?.totp_enabled) {
+    return null
+  }
+  return { userId: profile.id, email: profile.email, role: 'admin' }
+}
+
+/** Só para os próprios endpoints de configuração do 2FA (setup/enable/disable): têm de funcionar
+ *  antes do 2FA estar activo, senão um admin nunca conseguiria configurá-lo pela primeira vez.
+ *  Nunca usar isto para nenhuma outra rota administrativa. */
+export async function getCurrentAdminSemExigir2FA(): Promise<SessionPayload | null> {
   const profile = await getCurrentUserProfile()
   if (!profile || profile.role !== 'admin') {
     return null
@@ -64,6 +87,9 @@ export async function getCurrentUserProfile() {
   const { findUserById } = await import('@/lib/db')
   const user = await findUserById(session.userId)
   if (!user) return null
+  // Sessão já emitida antes de a conta ser desactivada: nega o acesso em vez de esperar pelo
+  // próximo login. `active` chega como TINYINT (0/1) ou undefined em bases sem a coluna ainda.
+  if ((user as any).active === 0 || (user as any).active === false) return null
 
   const role = normalizeRole(user.role)
 

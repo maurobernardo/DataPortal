@@ -23,9 +23,9 @@ type GeoBundle = { features: GeoFeature[] }
 type Props = { dataPath: string; title: string; subtitle: string; badges?: string[] }
 
 const CROP_COLOR: Record<string, string> = { Maize: '#1D6E4B', Rice: '#C99700', Sorghum: '#7B4B22', Millet: '#1B6CA8' }
-const fmt = (n: number | null | undefined) => (n == null ? '—' : Math.round(n).toLocaleString('pt-PT'))
+const fmt = (n: number | null | undefined) => (n == null ? 'N/D' : Math.round(n).toLocaleString('pt-PT'))
 const short = (n: number | null | undefined) => {
-  if (n == null) return '—'
+  if (n == null) return 'N/D'
   if (n >= 1e6) return (n / 1e6).toFixed(2).replace(/\.?0+$/, '') + 'M'
   if (n >= 1e3) return Math.round(n / 1e3) + 'k'
   return String(Math.round(n))
@@ -298,7 +298,7 @@ export default function CerealProductionDashboard({ dataPath, title, subtitle, b
         s += `<circle cx="${b.cx.toFixed(1)}" cy="${b.cy.toFixed(1)}" r="${(b.r + 2).toFixed(1)}" fill="rgba(6,43,30,.32)" pointer-events="none"/>`
         s += `<circle class="cr-bub" cx="${b.cx.toFixed(1)}" cy="${b.cy.toFixed(1)}" r="${b.r.toFixed(1)}" fill="${b.has ? '#FFFFFF' : '#EDF1EC'}" fill-opacity="${b.has ? 0.94 : 0.8}" stroke="${sel ? '#F2C21A' : '#0C3F2C'}" stroke-width="${sel ? 3.4 : 1.6}" tabindex="0" data-p="${b.n}"/>`
         const fs = Math.max(8.6, Math.min(13, b.r * 0.62))
-        s += `<text class="cr-bubv" x="${b.cx.toFixed(1)}" y="${(b.cy + fs * 0.34).toFixed(1)}" text-anchor="middle" font-size="${fs.toFixed(1)}" pointer-events="none">${b.has ? short(b.v) : '—'}</text>`
+        s += `<text class="cr-bubv" x="${b.cx.toFixed(1)}" y="${(b.cy + fs * 0.34).toFixed(1)}" text-anchor="middle" font-size="${fs.toFixed(1)}" pointer-events="none">${b.has ? short(b.v) : 'N/D'}</text>`
         s += `<text class="cr-bubn" x="${b.cx.toFixed(1)}" y="${(b.cy + b.r + 9.5).toFixed(1)}" text-anchor="middle">${b.n === 'Maputo Provincia' ? 'Maputo' : b.n}</text>`
       })
     s += '</svg>'
@@ -572,14 +572,14 @@ export default function CerealProductionDashboard({ dataPath, title, subtitle, b
           </div>
           <div className="cr-kpi">
             <div className="n">
-              {model.area ? fmt(model.area) : '—'}
+              {model.area ? fmt(model.area) : 'N/D'}
               {model.area ? <small>ha</small> : null}
             </div>
             <div className="l">{isAvg ? 'Média de ' : ''}área cultivada</div>
           </div>
           <div className="cr-kpi">
             <div className="n">
-              {model.yieldKgHa ? fmt(model.yieldKgHa) : '—'}
+              {model.yieldKgHa ? fmt(model.yieldKgHa) : 'N/D'}
               {model.yieldKgHa ? <small>kg/ha</small> : null}
             </div>
             <div className="l">Rendimento</div>
@@ -709,7 +709,7 @@ export default function CerealProductionDashboard({ dataPath, title, subtitle, b
                 <div dangerouslySetInnerHTML={{ __html: wlHtml }} onClick={(e) => onWlAction(e)} onMouseMove={(e) => onWlAction(e, true)} onMouseLeave={hideTip} />
               ) : (
                 <div className="cr-empty">
-                  {crop === 'All' ? 'Cereais' : cropLabel(crop)} tem apenas uma ronda de inquérito — sem alteração para comparar.
+                  {crop === 'All' ? 'Cereais' : cropLabel(crop)} tem apenas uma ronda de inquérito; sem alteração para comparar.
                 </div>
               )}
             </div>
@@ -786,7 +786,7 @@ export default function CerealProductionDashboard({ dataPath, title, subtitle, b
 
         <p className="cr-footer">
           Fonte: {bundle.fonte} · fronteiras: shapefile de províncias fornecido, EPSG:4326 · imagem de satélite: Esri World Imagery. As rondas são
-          periódicas, não anuais — anos ausentes do filtro nunca foram inquiridos, pelo que a &quot;média&quot; é a média das rondas com dados, não de
+          periódicas, não anuais; anos ausentes do filtro nunca foram inquiridos, pelo que a &quot;média&quot; é a média das rondas com dados, não de
           cada ano civil. O sorgo e o milheto têm dados provinciais apenas para a ronda de 2023.
         </p>
       </div>

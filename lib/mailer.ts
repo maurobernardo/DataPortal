@@ -346,6 +346,115 @@ export async function sendDatasetUpdatedEmail(to: string, datasetTitle: string, 
   })
 }
 
+/**
+ * Alerta proactivo (PLANO-INTELIGENCIA-PORTAL.md): diferente de `sendDatasetUpdatedEmail`, que só
+ * chega a quem clicou explicitamente "avisar-me" — este chega a quem já fez uma análise de IA
+ * sobre este dataset, mesmo sem ter subscrito nada, porque o dataset que analisaram mudou. O
+ * portal deixa de depender só de o utilizador se lembrar de voltar a perguntar.
+ */
+export async function sendReanaliseRecomendadaEmail(
+  to: string,
+  datasetTitle: string,
+  perguntaAnterior: string,
+  datasetIds: string
+): Promise<void> {
+  const user = getRequiredEnv('SMTP_USER')
+  const transporter = createSmtpTransporter()
+  const novaAnaliseUrl = `${getSiteUrl()}/analise/nova?datasets=${encodeURIComponent(datasetIds)}&pergunta=${encodeURIComponent(perguntaAnterior)}`
+
+  const bodyHtml = [
+    paragraph(`O dataset <strong>${datasetTitle}</strong> foi actualizado com dados mais recentes.`),
+    paragraph(`Já fez uma análise de IA sobre este tema ("${perguntaAnterior}"). Pode valer a pena repetir a mesma pergunta para ver se a resposta mudou.`),
+    ctaButton('Repetir a análise com os dados novos', novaAnaliseUrl),
+  ].join('')
+
+  await transporter.sendMail({
+    from: `"Data Portal" <${user}>`,
+    to,
+    subject: `Data Portal: novos dados para uma análise que já fez`,
+    text: [
+      `O dataset "${datasetTitle}" foi actualizado com dados mais recentes.`,
+      `Já fez uma análise sobre este tema ("${perguntaAnterior}"). Pode valer a pena repetir a pergunta.`,
+      '',
+      `Repetir a análise: ${novaAnaliseUrl}`,
+    ].join('\n'),
+    html: emailShell({
+      heading: 'Novos dados para uma análise que já fez',
+      bodyHtml,
+      footerHtml: footerNote(
+        'Recebe este email porque já fez uma análise de IA Insights usando este dataset, e ele foi actualizado desde então.'
+      ),
+    }),
+  })
+}
+
+/**
+ * Alerta de anomalia entre versões (PLANO-INTELIGENCIA-PORTAL.md): diferente dos outros alertas
+ * de dataset actualizado, este vai só para admins — é um aviso de "confira isto", não uma
+ * novidade para quem segue o dataset.
+ */
+export async function sendAnomaliaVersaoEmail(
+  to: string,
+  datasetTitle: string,
+  datasetId: number,
+  anomalias: { coluna: string; totalAnterior: number; totalNovo: number; variacaoPercentual: number }[]
+): Promise<void> {
+  const user = getRequiredEnv('SMTP_USER')
+  const transporter = createSmtpTransporter()
+  const datasetUrl = `${getSiteUrl()}/dataset/${datasetId}`
+
+  const linhasTexto = anomalias.map(
+    (a) =>
+      `${a.coluna}: ${a.totalAnterior.toLocaleString('pt-BR')} → ${a.totalNovo.toLocaleString('pt-BR')} (${a.variacaoPercentual >= 0 ? '+' : ''}${(a.variacaoPercentual * 100).toFixed(0)}%)`
+  )
+
+  const tabelaHtml = `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px 0; border-collapse:collapse;">
+      <tr>
+        <td style="padding:8px 10px; font-size:12px; font-weight:700; color:#4A5A52; border-bottom:1px solid #E2E8E5;">Coluna</td>
+        <td style="padding:8px 10px; font-size:12px; font-weight:700; color:#4A5A52; border-bottom:1px solid #E2E8E5;">Antes</td>
+        <td style="padding:8px 10px; font-size:12px; font-weight:700; color:#4A5A52; border-bottom:1px solid #E2E8E5;">Depois</td>
+        <td style="padding:8px 10px; font-size:12px; font-weight:700; color:#4A5A52; border-bottom:1px solid #E2E8E5;">Variação</td>
+      </tr>
+      ${anomalias
+        .map(
+          (a) => `
+        <tr>
+          <td style="padding:8px 10px; font-size:13px; color:#1F2A24; border-bottom:1px solid #F1F8F4;">${a.coluna}</td>
+          <td style="padding:8px 10px; font-size:13px; color:#1F2A24; border-bottom:1px solid #F1F8F4;">${a.totalAnterior.toLocaleString('pt-BR')}</td>
+          <td style="padding:8px 10px; font-size:13px; color:#1F2A24; border-bottom:1px solid #F1F8F4;">${a.totalNovo.toLocaleString('pt-BR')}</td>
+          <td style="padding:8px 10px; font-size:13px; font-weight:700; color:${a.variacaoPercentual >= 0 ? '#0A6B3D' : '#9F1616'}; border-bottom:1px solid #F1F8F4;">${a.variacaoPercentual >= 0 ? '+' : ''}${(a.variacaoPercentual * 100).toFixed(0)}%</td>
+        </tr>`
+        )
+        .join('')}
+    </table>`
+
+  const bodyHtml = [
+    paragraph(`O dataset <strong>${datasetTitle}</strong> foi actualizado e alguns valores mudaram de forma acentuada face à versão anterior:`),
+    tabelaHtml,
+    paragraph('Se esta variação for esperada (ex.: correcção de um erro anterior, novo período de referência), pode ignorar este alerta.'),
+    ctaButton('Ver dataset', datasetUrl),
+  ].join('')
+
+  await transporter.sendMail({
+    from: `"Data Portal" <${user}>`,
+    to,
+    subject: `Data Portal: variação acentuada em "${datasetTitle}"`,
+    text: [
+      `O dataset "${datasetTitle}" foi actualizado e alguns valores mudaram de forma acentuada:`,
+      '',
+      ...linhasTexto,
+      '',
+      `Ver dataset: ${datasetUrl}`,
+    ].join('\n'),
+    html: emailShell({
+      heading: 'Variação acentuada entre versões',
+      bodyHtml,
+      footerHtml: footerNote('Recebe este alerta por ser administrador do Data Portal.'),
+    }),
+  })
+}
+
 const CONTENT_TYPE_LABELS: Record<'dataset' | 'relatorio' | 'dashboard', string> = {
   dataset: 'dataset',
   relatorio: 'relatório',
@@ -530,6 +639,50 @@ export async function sendWelcomeEmail(to: string, name: string): Promise<void> 
       bodyHtml,
       footerHtml: defaultFooter(to),
     }),
+  })
+}
+
+/**
+ * Exportação agendada de relatórios: o PDF vai como anexo, não como link, porque quem recebe é
+ * sempre um admin já com acesso ao painel — o objectivo é ele chegar directo à caixa de correio
+ * sem precisar de voltar a entrar no portal para o descarregar.
+ */
+export async function sendRelatorioAgendadoEmail(
+  to: string,
+  nomeRelatorio: string,
+  periodoLabel: string,
+  pdfBuffer: Buffer
+): Promise<void> {
+  const user = getRequiredEnv('SMTP_USER')
+  const transporter = createSmtpTransporter()
+  const dashboardUrl = `${getSiteUrl()}/dashboard`
+
+  const bodyHtml = [
+    paragraph(`Segue em anexo o relatório agendado <strong>${nomeRelatorio}</strong>, com os dados ${periodoLabel}.`),
+    ctaButton('Abrir painel de administração', dashboardUrl),
+  ].join('')
+
+  await transporter.sendMail({
+    from: `"Data Portal" <${user}>`,
+    to,
+    subject: `Data Portal: relatório agendado "${nomeRelatorio}"`,
+    text: [
+      `Segue em anexo o relatório agendado "${nomeRelatorio}", com os dados ${periodoLabel}.`,
+      '',
+      `Ver painel: ${dashboardUrl}`,
+    ].join('\n'),
+    html: emailShell({
+      heading: 'Relatório agendado',
+      bodyHtml,
+      footerHtml: footerNote('Recebe este relatório porque foi adicionado como destinatário de uma exportação agendada no Data Portal.'),
+    }),
+    attachments: [
+      {
+        filename: `data-portal-relatorio-${nomeRelatorio.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf`,
+        content: pdfBuffer,
+        contentType: 'application/pdf',
+      },
+    ],
   })
 }
 

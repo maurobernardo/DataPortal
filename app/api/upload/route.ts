@@ -11,6 +11,10 @@ const ALLOWED_EXTENSIONS = new Set([
   '.zip', '.geojson', '.json', '.tif', '.tiff', '.shp', '.shx', '.dbf', '.prj', '.kml', '.kmz', '.gpkg',
   '.csv', '.xlsx', '.xls', '.ods', '.xml', '.txt', '.tsv',
   '.png', '.jpg', '.jpeg', '.webp', '.gif',
+  // Relatórios: nenhum dos 13 registados tinha ficheiro, e a causa era esta lista, não falta de
+  // vontade de ninguém — .pdf nunca esteve na allowlist, por isso todo carregamento de relatório
+  // falhava em silêncio antes de chegar ao disco.
+  '.pdf',
 ])
 
 /** Extrai e valida a extensão do nome original — rejeita qualquer coisa fora de `.[a-z0-9]{1,6}` para impedir path traversal via nome de ficheiro manipulado. */

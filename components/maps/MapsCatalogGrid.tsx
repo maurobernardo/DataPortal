@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react'
 import { Search } from 'lucide-react'
 import { MapCard } from '@/components/maps/MapCard'
+import { RevealOnScroll } from '@/components/RevealOnScroll'
 import type { PublicMapDashboard } from '@/lib/maps-catalog'
 import type { PreviewMapa } from '@/lib/maps-preview-data'
 
@@ -69,14 +70,15 @@ export function MapsCatalogGrid({
         <p className="mp-catalog-empty">Nenhum mapa corresponde à pesquisa.</p>
       ) : (
         <div className="mp-gallery-grid">
-          {filtered.map((map) => (
-            <MapCard
-              key={map.slug}
-              map={map}
-              isFavorited={favoriteIds?.has(map.slug) ?? false}
-              viewCount={viewCounts?.[map.slug]}
-              preview={previews?.[map.slug]}
-            />
+          {filtered.map((map, index) => (
+            <RevealOnScroll key={map.slug} delayMs={Math.min(index, 5) * 60}>
+              <MapCard
+                map={map}
+                index={index}
+                isFavorited={favoriteIds?.has(map.slug) ?? false}
+                viewCount={viewCounts?.[map.slug]}
+              />
+            </RevealOnScroll>
           ))}
         </div>
       )}

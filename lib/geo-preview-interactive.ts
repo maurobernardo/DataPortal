@@ -700,9 +700,9 @@ export function getPathStyle(
 export function formatValue(value: unknown, unit = '') {
   const n = toNumber(value)
   if (n === null) {
-    if (value === null || value === undefined) return '—'
+    if (value === null || value === undefined) return 'N/D'
     const text = fixEncodingText(value)
-    return text || '—'
+    return text || 'N/D'
   }
   const text = Number.isInteger(n) ? String(n) : n.toLocaleString('pt-BR', { maximumFractionDigits: 2 })
   return unit ? `${text}${unit}` : text

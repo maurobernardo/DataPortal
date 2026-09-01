@@ -1,3 +1,4 @@
+import { Check } from 'lucide-react'
 import { applyMapOverrides, MAP_CATALOG } from '@/lib/maps-catalog'
 import { MapCatalogHeroVisual } from '@/components/maps/MapCatalogHeroVisual'
 import { MapsCatalogGrid } from '@/components/maps/MapsCatalogGrid'
@@ -41,7 +42,9 @@ export default async function MapsCatalogPage() {
 
   return (
     <div className="mp-page">
-      <section className="mp-hero">
+      <section className="mp-hero pd-photo-hero">
+        <div className="pd-photo-hero-bg" style={{ backgroundImage: "url('/images/fundo7.webp')" }} aria-hidden />
+        <div className="pd-photo-hero-scrim" aria-hidden />
         <div className="mp-hero-inner">
           <div>
             <div className="mp-eyebrow">Mapas inteligentes · Inteligência geográfica</div>
@@ -68,6 +71,20 @@ export default async function MapsCatalogPage() {
                 </div>
               )}
             </div>
+
+            {heroMap && heroMap.highlights && heroMap.highlights.length > 0 && (
+              <div className="mp-hero-capabilities">
+                <p className="mp-hero-capabilities-label">O que pode fazer em cada experiência</p>
+                <ul>
+                  {heroMap.highlights.slice(0, 4).map((h) => (
+                    <li key={h}>
+                      <Check className="size-4" aria-hidden />
+                      <span>{h}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
 
           {heroMap ? <MapCatalogHeroVisual map={heroMap} preview={previewMapa} /> : null}

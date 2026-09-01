@@ -1,0 +1,1197 @@
+{
+  "analise_id": "an_eb7811b1",
+  "compreensao": {
+    "pergunta_normalizada": "Existe relação espacial entre a localização das barragens e das estações eléctricas em Moçambique?",
+    "idioma": "pt",
+    "intencao": "geoespacial",
+    "arquetipo_sugerido": "geoespacial",
+    "entidades": {
+      "geografias": [
+        {
+          "nome": "Moçambique",
+          "nivel": "admin0"
+        }
+      ],
+      "periodos": [],
+      "metricas": [
+        "distância barragem-estação eléctrica mais próxima",
+        "contagem de estações eléctricas por raio",
+        "capacidade das barragens",
+        "bacia hidrográfica"
+      ]
+    },
+    "ambiguidades": [
+      {
+        "descricao": "O raio/limiar de distância para considerar 'proximidade' não foi especificado na pergunta",
+        "opcoes": [
+          "10 km",
+          "20 km",
+          "50 km"
+        ]
+      }
+    ],
+    "perfil_utilizador_inferido": "investigador",
+    "requer_desambiguacao": false,
+    "sub_perguntas": [
+      "Qual a distância real entre cada barragem e a estação eléctrica mais próxima?",
+      "Quantas estações eléctricas existem num raio de 20 km de cada barragem?",
+      "Como se distribuem as barragens pelas principais bacias hidrográficas?",
+      "Existem barragens com capacidade de armazenamento atípica, potencialmente ligadas a produção eléctrica?",
+      "Os dados de ano de construção das barragens têm valores em falta ou codificados como sentinela?"
+    ],
+    "passos": [
+      {
+        "id": "p1",
+        "tipo": "validacao",
+        "descricao_humana": "Verifica valores em falta no ano de construção das barragens (código -999).",
+        "depende_de": [],
+        "metodo": "perfil_coluna",
+        "dataset_id": 31,
+        "coluna_metrica": "AnoConstru",
+        "produz": [
+          "qualidade_ano_construcao"
+        ]
+      },
+      {
+        "id": "p2",
+        "tipo": "geoestatistica",
+        "descricao_humana": "Calcula a distância real de cada barragem à estação eléctrica mais próxima.",
+        "depende_de": [],
+        "metodo": "distancia_minima",
+        "dataset_id": 31,
+        "dataset_id_2": 35,
+        "coluna_grupo": "20",
+        "produz": [
+          "distancia_minima_barragem_estacao"
+        ]
+      },
+      {
+        "id": "p3",
+        "tipo": "geoestatistica",
+        "descricao_humana": "Conta estações eléctricas dentro de 20 km de cada barragem.",
+        "depende_de": [],
+        "metodo": "contagem_buffer",
+        "dataset_id": 31,
+        "dataset_id_2": 35,
+        "coluna_grupo": "20",
+        "produz": [
+          "contagem_estacoes_20km"
+        ]
+      },
+      {
+        "id": "p4",
+        "tipo": "consulta",
+        "descricao_humana": "Mostra distribuição das barragens pelas principais bacias hidrográficas.",
+        "depende_de": [],
+        "metodo": "perfil_coluna",
+        "dataset_id": 31,
+        "coluna_metrica": "BaciaMaior",
+        "produz": [
+          "distribuicao_bacia"
+        ]
+      },
+      {
+        "id": "p5",
+        "tipo": "calculo",
+        "descricao_humana": "Identifica barragens com capacidade de armazenamento atípica.",
+        "depende_de": [],
+        "metodo": "detectar_outliers",
+        "dataset_id": 31,
+        "coluna_metrica": "Capacidade",
+        "produz": [
+          "outliers_capacidade"
+        ]
+      },
+      {
+        "id": "p6",
+        "tipo": "calculo",
+        "descricao_humana": "Resume estatísticas nacionais de capacidade das barragens para contexto.",
+        "depende_de": [],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 31,
+        "coluna_metrica": "Capacidade",
+        "produz": [
+          "resumo_capacidade_nacional"
+        ]
+      }
+    ],
+    "nivel_geo_alvo": [
+      "admin3"
+    ],
+    "metricas_alvo": [
+      "distância barragem-estação mais próxima",
+      "contagem de estações num raio de 20km",
+      "capacidade das barragens"
+    ],
+    "justificacao_arquetipo": "A pergunta pede explicitamente uma relação espacial entre dois conjuntos de pontos geográficos (barragens e estações eléctricas), sem unidade administrativa comum declarada entre eles; os métodos de distância real (distancia_minima, contagem_buffer) são os adequados para responder directamente, complementados por análise descritiva de contexto sobre as barragens (dataset 35 não tem colunas conhecidas nem ligação administrativa, pelo que só pode entrar via geometria).",
+    "pergunta_original": "Existe relação espacial entre as barragens e as estações eléctricas?"
+  },
+  "plano": {
+    "sub_perguntas": [
+      "Qual a distância real entre cada barragem e a estação eléctrica mais próxima?",
+      "Quantas estações eléctricas existem num raio de 20 km de cada barragem?",
+      "Como se distribuem as barragens pelas principais bacias hidrográficas?",
+      "Existem barragens com capacidade de armazenamento atípica, potencialmente ligadas a produção eléctrica?",
+      "Os dados de ano de construção das barragens têm valores em falta ou codificados como sentinela?"
+    ],
+    "passos": [
+      {
+        "id": "p1",
+        "tipo": "validacao",
+        "descricao_humana": "Verifica valores em falta no ano de construção das barragens (código -999).",
+        "depende_de": [],
+        "metodo": "perfil_coluna",
+        "dataset_id": 31,
+        "coluna_metrica": "AnoConstru",
+        "produz": [
+          "qualidade_ano_construcao"
+        ]
+      },
+      {
+        "id": "p2",
+        "tipo": "geoestatistica",
+        "descricao_humana": "Calcula a distância real de cada barragem à estação eléctrica mais próxima.",
+        "depende_de": [],
+        "metodo": "distancia_minima",
+        "dataset_id": 31,
+        "dataset_id_2": 35,
+        "coluna_grupo": "20",
+        "produz": [
+          "distancia_minima_barragem_estacao"
+        ]
+      },
+      {
+        "id": "p3",
+        "tipo": "geoestatistica",
+        "descricao_humana": "Conta estações eléctricas dentro de 20 km de cada barragem.",
+        "depende_de": [],
+        "metodo": "contagem_buffer",
+        "dataset_id": 31,
+        "dataset_id_2": 35,
+        "coluna_grupo": "20",
+        "produz": [
+          "contagem_estacoes_20km"
+        ]
+      },
+      {
+        "id": "p4",
+        "tipo": "consulta",
+        "descricao_humana": "Mostra distribuição das barragens pelas principais bacias hidrográficas.",
+        "depende_de": [],
+        "metodo": "perfil_coluna",
+        "dataset_id": 31,
+        "coluna_metrica": "BaciaMaior",
+        "produz": [
+          "distribuicao_bacia"
+        ]
+      },
+      {
+        "id": "p5",
+        "tipo": "calculo",
+        "descricao_humana": "Identifica barragens com capacidade de armazenamento atípica.",
+        "depende_de": [],
+        "metodo": "detectar_outliers",
+        "dataset_id": 31,
+        "coluna_metrica": "Capacidade",
+        "produz": [
+          "outliers_capacidade"
+        ]
+      },
+      {
+        "id": "p6",
+        "tipo": "calculo",
+        "descricao_humana": "Resume estatísticas nacionais de capacidade das barragens para contexto.",
+        "depende_de": [],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 31,
+        "coluna_metrica": "Capacidade",
+        "produz": [
+          "resumo_capacidade_nacional"
+        ]
+      }
+    ],
+    "nivel_geo_alvo": [
+      "admin3"
+    ],
+    "metricas_alvo": [
+      "distância barragem-estação mais próxima",
+      "contagem de estações num raio de 20km",
+      "capacidade das barragens"
+    ],
+    "justificacao_arquetipo": "A pergunta pede explicitamente uma relação espacial entre dois conjuntos de pontos geográficos (barragens e estações eléctricas), sem unidade administrativa comum declarada entre eles; os métodos de distância real (distancia_minima, contagem_buffer) são os adequados para responder directamente, complementados por análise descritiva de contexto sobre as barragens (dataset 35 não tem colunas conhecidas nem ligação administrativa, pelo que só pode entrar via geometria)."
+  },
+  "suficiencia": {
+    "cobertura": [
+      {
+        "sub_pergunta": "Qual a distância real entre cada barragem e a estação eléctrica mais próxima?",
+        "coberto": true,
+        "fonte": "dataset_selecionado"
+      },
+      {
+        "sub_pergunta": "Quantas estações eléctricas existem num raio de 20 km de cada barragem?",
+        "coberto": true,
+        "fonte": "dataset_selecionado"
+      },
+      {
+        "sub_pergunta": "Como se distribuem as barragens pelas principais bacias hidrográficas?",
+        "coberto": true,
+        "fonte": "dataset_selecionado"
+      },
+      {
+        "sub_pergunta": "Existem barragens com capacidade de armazenamento atípica, potencialmente ligadas a produção eléctrica?",
+        "coberto": true,
+        "fonte": "dataset_selecionado"
+      },
+      {
+        "sub_pergunta": "Os dados de ano de construção das barragens têm valores em falta ou codificados como sentinela?",
+        "coberto": true,
+        "fonte": "dataset_selecionado"
+      }
+    ],
+    "confianca_sem_enriquecimento": 0.92,
+    "precisa_enriquecimento": false,
+    "alvos_enriquecimento": [
+      {
+        "sub_pergunta": "Quantas estações eléctricas existem num raio de 20 km de cada barragem?",
+        "lacuna": "Dataset 35 carece de coluna operacionalidade/estado; não se sabe se contagens devem incluir estações em reabilitação ou obsoletas",
+        "prioridade": 2,
+        "fonte_alvo": "outro_dataset_portal"
+      },
+      {
+        "sub_pergunta": "Qual a distância real entre cada barragem e a estação eléctrica mais próxima?",
+        "lacuna": "Dataset 35 sem informação de tipo de energia (renovável vs fóssil); relação hidro apenas implícita",
+        "prioridade": 1,
+        "fonte_alvo": "outro_dataset_portal"
+      }
+    ]
+  },
+  "contexto": {
+    "tabelas": {},
+    "ligacoes": {},
+    "calcs": {
+      "p1_coluna": {
+        "id": "p1_coluna",
+        "valor": "AnoConstru",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Barragens"
+          ],
+          "linhas_usadas": 13,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Barragens"
+          ]
+        }
+      },
+      "p1_n_total": {
+        "id": "p1_n_total",
+        "valor": 13,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Barragens"
+          ],
+          "linhas_usadas": 13,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Barragens"
+          ]
+        }
+      },
+      "p1_n_preenchidos": {
+        "id": "p1_n_preenchidos",
+        "valor": 13,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Barragens"
+          ],
+          "linhas_usadas": 13,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Barragens"
+          ]
+        }
+      },
+      "p1_completude_pct": {
+        "id": "p1_completude_pct",
+        "valor": 100,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Barragens"
+          ],
+          "linhas_usadas": 13,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Barragens"
+          ]
+        }
+      },
+      "p1_n_distintos": {
+        "id": "p1_n_distintos",
+        "valor": 10,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Barragens"
+          ],
+          "linhas_usadas": 13,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Barragens"
+          ]
+        }
+      },
+      "p1_tipo": {
+        "id": "p1_tipo",
+        "valor": "numerica",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Barragens"
+          ],
+          "linhas_usadas": 13,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Barragens"
+          ]
+        }
+      },
+      "p4_coluna": {
+        "id": "p4_coluna",
+        "valor": "BaciaMaior",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Barragens"
+          ],
+          "linhas_usadas": 13,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Barragens"
+          ]
+        }
+      },
+      "p4_n_total": {
+        "id": "p4_n_total",
+        "valor": 13,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Barragens"
+          ],
+          "linhas_usadas": 13,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Barragens"
+          ]
+        }
+      },
+      "p4_n_preenchidos": {
+        "id": "p4_n_preenchidos",
+        "valor": 13,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Barragens"
+          ],
+          "linhas_usadas": 13,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Barragens"
+          ]
+        }
+      },
+      "p4_completude_pct": {
+        "id": "p4_completude_pct",
+        "valor": 100,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Barragens"
+          ],
+          "linhas_usadas": 13,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Barragens"
+          ]
+        }
+      },
+      "p4_n_distintos": {
+        "id": "p4_n_distintos",
+        "valor": 4,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Barragens"
+          ],
+          "linhas_usadas": 13,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Barragens"
+          ]
+        }
+      },
+      "p4_tipo": {
+        "id": "p4_tipo",
+        "valor": "categorica",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Barragens"
+          ],
+          "linhas_usadas": 13,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Barragens"
+          ]
+        }
+      },
+      "p5_limite_inferior": {
+        "id": "p5_limite_inferior",
+        "valor": -2266500,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Barragens"
+          ],
+          "linhas_usadas": 13,
+          "metodo": "detectar_outliers",
+          "fontes": [
+            "Barragens"
+          ]
+        }
+      },
+      "p5_limite_superior": {
+        "id": "p5_limite_superior",
+        "valor": 3817500,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Barragens"
+          ],
+          "linhas_usadas": 13,
+          "metodo": "detectar_outliers",
+          "fontes": [
+            "Barragens"
+          ]
+        }
+      },
+      "p5_n": {
+        "id": "p5_n",
+        "valor": 2,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Barragens"
+          ],
+          "linhas_usadas": 13,
+          "metodo": "detectar_outliers",
+          "fontes": [
+            "Barragens"
+          ]
+        }
+      },
+      "p6_nome_max": {
+        "id": "p6_nome_max",
+        "valor": "Chahora Bassa",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Barragens"
+          ],
+          "linhas_usadas": 1,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Barragens"
+          ]
+        }
+      },
+      "p6_nome_min": {
+        "id": "p6_nome_min",
+        "valor": "Chimoio",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Barragens"
+          ],
+          "linhas_usadas": 1,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Barragens"
+          ]
+        }
+      },
+      "p6_n": {
+        "id": "p6_n",
+        "valor": 13,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Barragens"
+          ],
+          "linhas_usadas": 13,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Barragens"
+          ]
+        }
+      },
+      "p6_soma": {
+        "id": "p6_soma",
+        "valor": 56968870,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Barragens"
+          ],
+          "linhas_usadas": 13,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Barragens"
+          ]
+        }
+      },
+      "p6_media": {
+        "id": "p6_media",
+        "valor": 4382220.7692,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Barragens"
+          ],
+          "linhas_usadas": 13,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Barragens"
+          ]
+        }
+      },
+      "p6_mediana": {
+        "id": "p6_mediana",
+        "valor": 402000,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Barragens"
+          ],
+          "linhas_usadas": 13,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Barragens"
+          ]
+        }
+      },
+      "p6_desvio": {
+        "id": "p6_desvio",
+        "valor": 10828046.4172,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Barragens"
+          ],
+          "linhas_usadas": 13,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Barragens"
+          ]
+        }
+      },
+      "p6_min": {
+        "id": "p6_min",
+        "valor": 270,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Barragens"
+          ],
+          "linhas_usadas": 13,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Barragens"
+          ]
+        }
+      },
+      "p6_max": {
+        "id": "p6_max",
+        "valor": 39000000,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Barragens"
+          ],
+          "linhas_usadas": 13,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Barragens"
+          ]
+        }
+      },
+      "p6_q1": {
+        "id": "p6_q1",
+        "valor": 15000,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Barragens"
+          ],
+          "linhas_usadas": 13,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Barragens"
+          ]
+        }
+      },
+      "p6_q3": {
+        "id": "p6_q3",
+        "valor": 1536000,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Barragens"
+          ],
+          "linhas_usadas": 13,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Barragens"
+          ]
+        }
+      },
+      "p6_coeficiente_variacao": {
+        "id": "p6_coeficiente_variacao",
+        "valor": 247.09,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Barragens"
+          ],
+          "linhas_usadas": 13,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Barragens"
+          ]
+        }
+      }
+    },
+    "series": [],
+    "graficos": [
+      {
+        "passo_id": "p4",
+        "tipo": "pizza",
+        "titulo": "Mostra distribuição das barragens pelas principais bacias hidrográficas.",
+        "eixoX": [
+          "Indian Ocean Coast",
+          "Limpopo Basin",
+          "East Central Coast",
+          "Zambezi Basin"
+        ],
+        "series": [
+          {
+            "nome": "BaciaMaior",
+            "valores": [
+              7,
+              3,
+              2,
+              1
+            ]
+          }
+        ]
+      }
+    ],
+    "destaques": [
+      {
+        "passo_id": "p6_max",
+        "titulo": "Resume estatísticas nacionais de capacidade das barragens para contexto. (maior)",
+        "nome": "Chahora Bassa",
+        "valor": 39000000,
+        "metrica": "Capacidade",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            32.70830000004503,
+            -15.566699999705179
+          ]
+        }
+      },
+      {
+        "passo_id": "p6_min",
+        "titulo": "Resume estatísticas nacionais de capacidade das barragens para contexto. (menor)",
+        "nome": "Chimoio",
+        "valor": 270,
+        "metrica": "Capacidade",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            33.51080000041975,
+            -19.225599999940016
+          ]
+        }
+      }
+    ],
+    "avisos": [
+      "Barragens: sem coluna de província/distrito nem lat/lon separados; a província de cada feição foi derivada da própria geometria (ponto representativo, aproximação — uma linha longa que atravesse mais do que uma unidade fica atribuída só à unidade do seu ponto médio).",
+      "Dataset 35 não pôde ser lido: Arquivo não encontrado no servidor",
+      "Enriquecimento: pesquisa de fontes externas desligada nesta análise (mais lenta); as lacunas identificadas fora de denominador populacional mantêm-se por declarar.",
+      "Passo \"Calcula a distância real de cada barragem à estação eléctrica mais próxima.\" não pôde ser executado: Passo p2: dataset(s) não carregado(s)",
+      "Passo \"Conta estações eléctricas dentro de 20 km de cada barragem.\" não pôde ser executado: Passo p3: dataset(s) não carregado(s)"
+    ],
+    "enriquecimentoPopulacao": {},
+    "camadasBrutas": [
+      {
+        "dataset_id": 31,
+        "titulo": "Barragens",
+        "tipoGeometria": "Point",
+        "colunasCategoricas": [
+          "Rio",
+          "CidadeMais",
+          "BaciaSecon",
+          "Provincia",
+          "Distrito"
+        ],
+        "rotulosAprendidos": {
+          "colunas": {},
+          "valores": {}
+        },
+        "features": [
+          {
+            "nome": "Bu‚ Maria",
+            "categorias": {
+              "Rio": "PungoŠ",
+              "CidadeMais": "Nhamatanda",
+              "BaciaSecon": "Pungoe",
+              "Provincia": "SOFALA",
+              "Distrito": "Nhamatanda"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                34.17859999979021,
+                -19.032199999830084
+              ]
+            }
+          },
+          {
+            "nome": "Chahora Bassa",
+            "categorias": {
+              "Rio": "Zambeze",
+              "CidadeMais": "Tete",
+              "BaciaSecon": "Zambezi",
+              "Provincia": "TETE",
+              "Distrito": "Maravia"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                32.70830000004503,
+                -15.566699999705179
+              ]
+            }
+          },
+          {
+            "nome": "Chicamba Real",
+            "categorias": {
+              "Rio": "Revu‚",
+              "CidadeMais": "Chimoio",
+              "BaciaSecon": "Buzi",
+              "Provincia": "MANICA",
+              "Distrito": "Sussundenga"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                33.133300000095005,
+                -19.161099999565295
+              ]
+            }
+          },
+          {
+            "nome": "Chimoio",
+            "categorias": {
+              "Rio": "Mezingaze",
+              "CidadeMais": "Vila Pery",
+              "BaciaSecon": "Buzi",
+              "Provincia": "MANICA",
+              "Distrito": "Gondola"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                33.51080000041975,
+                -19.225599999940016
+              ]
+            }
+          },
+          {
+            "nome": "Chipembe",
+            "categorias": {
+              "Rio": "Montepuez",
+              "CidadeMais": "Chipembe",
+              "BaciaSecon": "Montepuez / Megaruma",
+              "Provincia": "CABO DELGADO",
+              "Distrito": "Quissanga"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                40.28330000019491,
+                -12.561100000164858
+              ]
+            }
+          },
+          {
+            "nome": "Corumana",
+            "categorias": {
+              "Rio": "Sabi‚",
+              "CidadeMais": "Moamba",
+              "BaciaSecon": "Incomati",
+              "Provincia": "MAPUTO",
+              "Distrito": "Moamba"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                32.16670000000505,
+                -25.199999999900058
+              ]
+            }
+          },
+          {
+            "nome": "Macarretane",
+            "categorias": {
+              "Rio": "Limpopo",
+              "CidadeMais": "Chokw‚",
+              "BaciaSecon": "Limpopo",
+              "Provincia": "GAZA",
+              "Distrito": "Guija"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                32.89189999968528,
+                -24.442499999974984
+              ]
+            }
+          },
+          {
+            "nome": "Mapai",
+            "categorias": {
+              "Rio": "Limpopo",
+              "CidadeMais": "Vila Pinto Teixeira",
+              "BaciaSecon": "Limpopo",
+              "Provincia": "GAZA",
+              "Distrito": "Chicualacuala"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                31.950000000099976,
+                -22.88329999969517
+              ]
+            }
+          },
+          {
+            "nome": "Massingir",
+            "categorias": {
+              "Rio": "Elefantes",
+              "CidadeMais": "Chokw‚",
+              "BaciaSecon": "Elefantes",
+              "Provincia": "GAZA",
+              "Distrito": "Massingir"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                32.00000000000006,
+                -23.883300000394684
+              ]
+            }
+          },
+          {
+            "nome": "Mavuzi",
+            "categorias": {
+              "Rio": "Revue",
+              "CidadeMais": "Vila Pery",
+              "BaciaSecon": "Buzi",
+              "Provincia": "MANICA",
+              "Distrito": "Sussundenga"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                33.44890000033479,
+                -19.526099999915004
+              ]
+            }
+          },
+          {
+            "nome": "Moamba-Major-Secongene *",
+            "categorias": {
+              "Rio": "Incomati/major/Secongene",
+              "CidadeMais": "Moamba",
+              "BaciaSecon": "Pungoe",
+              "Provincia": "SOFALA",
+              "Distrito": "Nhamatanda"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                34.17859999979021,
+                -19.032199999830084
+              ]
+            }
+          },
+          {
+            "nome": "Nacala",
+            "categorias": {
+              "Rio": "Moecula",
+              "CidadeMais": "Nacala",
+              "BaciaSecon": "Ligonha",
+              "Provincia": "NAMPULA",
+              "Distrito": "Mossuril"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                40.555600000139975,
+                -14.733299999795122
+              ]
+            }
+          },
+          {
+            "nome": "Pequenos Libombos",
+            "categorias": {
+              "Rio": "Umbeluzi",
+              "CidadeMais": "Boane",
+              "BaciaSecon": "Black Umbuluzi",
+              "Provincia": "MAPUTO",
+              "Distrito": "Boane"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                32.26669999980521,
+                -26.05560000013986
+              ]
+            }
+          }
+        ],
+        "truncado": false
+      }
+    ],
+    "qualidade": [
+      {
+        "coluna": "AnoConstru",
+        "completude_pct": 100,
+        "n_distintos": 10,
+        "tipo": "numerica"
+      },
+      {
+        "coluna": "BaciaMaior",
+        "completude_pct": 100,
+        "n_distintos": 4,
+        "tipo": "categorica"
+      }
+    ],
+    "codigoExecutado": [],
+    "custoExecucaoCodigo": 0
+  },
+  "achados": [],
+  "narrativa": {
+    "titulo": "A relação espacial entre barragens e estações eléctricas não pôde ser calculada: o ficheiro das estações não carregou",
+    "subtitulo": "Falha técnica no dataset 35 (USGS, 2018) impediu o cálculo de distâncias e de contagens em buffer; só ficam disponíveis os padrões descritivos das 13 barragens catalogadas",
+    "resposta_directa": "Não é possível responder com números reais: o dataset de Estações Eléctricas (USGS, 2018) não foi encontrado no servidor, e os dois passos que calculariam a relação espacial (distância mínima e contagem em buffer de 20 km) falharam por essa razão. O que fica disponível é apenas a descrição das {{calc:p6_n}} barragens catalogadas, sem cruzamento com estações eléctricas.",
+    "numeros_chave": [
+      {
+        "calc_id": "p6_n",
+        "rotulo": "13 barragens no dataset AICD",
+        "contexto": "Universo total analisado nesta base; não inclui estações eléctricas por falha de carregamento do outro dataset."
+      },
+      {
+        "calc_id": "p6_max",
+        "rotulo": "Capacidade máxima de armazenamento",
+        "contexto": "Corresponde a {{calc:p6_nome_max}}, a maior barragem da amostra em capacidade."
+      },
+      {
+        "calc_id": "p6_min",
+        "rotulo": "Capacidade mínima de armazenamento",
+        "contexto": "Corresponde a {{calc:p6_nome_min}}, a menor barragem da amostra."
+      },
+      {
+        "calc_id": "p5_n",
+        "rotulo": "2 barragens são outliers estatísticos",
+        "contexto": "Fora do intervalo de Tukey em capacidade, indicando concentração assimétrica de grandes reservatórios."
+      },
+      {
+        "calc_id": "p4_n_distintos",
+        "rotulo": "4 bacias hidrográficas maiores",
+        "contexto": "As 13 barragens distribuem-se por apenas estas bacias, com a Indian Ocean Coast a concentrar a maioria."
+      },
+      {
+        "calc_id": "p6_coeficiente_variacao",
+        "rotulo": "Coeficiente de variação de 247%",
+        "contexto": "Mostra dispersão extrema nas capacidades de armazenamento entre barragens pequenas e grandes."
+      }
+    ],
+    "o_que_mostram": "Sem o dataset de estações eléctricas, não há como descrever a relação espacial pedida. O que os dados de barragens mostram isoladamente é uma distribuição muito assimétrica de capacidade: {{calc:p5_n}} barragens saem fora do intervalo normal (Tukey), puxadas por reservatórios muito grandes, enquanto a maioria fica com capacidades bem mais modestas. As 13 barragens concentram-se em apenas {{calc:p4_n_distintos}} bacias hidrográficas maiores, o que por si só sugere que qualquer eventual proximidade a estações eléctricas seguiria a geografia dos grandes rios, não uma distribuição aleatória no território.",
+    "porque": "Historicamente, grandes barragens como Cahora Bassa foram construídas em rios de grande caudal precisamente para gerar energia, o que tenderia a colocá-las perto de estações eléctricas por desenho, não por acaso espacial. Mas essa associação não pode ser confirmada nem quantificada aqui: falta o dataset de estações eléctricas, e mesmo que existisse, a proximidade também podia reflectir outros factores, como a localização de centros populacionais ou linhas de transmissão pré-existentes, e não uma relação causal directa entre as duas infraestruturas.",
+    "o_que_nao_diz": [
+      "O dataset de Estações Eléctricas (USGS, 2018) não foi encontrado no servidor, pelo que a distância real e a contagem de estações num raio de 20 km de cada barragem não foram calculadas: a pergunta central fica sem resposta quantitativa.",
+      "A província de cada barragem foi aproximada a partir de um ponto representativo da geometria, o que pode atribuir incorrectamente barragens em fronteira administrativa.",
+      "A coluna AnoConstru contém um valor sentinela (-999) usado para dados em falta, o que distorce qualquer média calculada sobre ela; a mediana ({{calc:p6_mediana}} para capacidade, não para o ano) é mais fiável do que a média nesses casos.",
+      "Com apenas 13 barragens no total, qualquer padrão espacial ou estatístico tem potência muito limitada e não deve ser generalizado para o país inteiro."
+    ],
+    "como_chegamos": "Tentámos calcular a distância de cada barragem à estação eléctrica mais próxima e contar estações num raio de 20 km, mas ambos os passos falharam porque o ficheiro do dataset 35 não carregou no servidor. Ficámos com a análise descritiva do dataset de barragens (perfil de colunas, detecção de outliers e estatística resumo de capacidade), que não responde à pergunta sobre relação espacial mas caracteriza o que existe.",
+    "fontes": [
+      {
+        "instituicao": "AICD, Africa Infrastructure Country Diagnostics",
+        "documento": "Barragens de Moçambique",
+        "ano": 2015
+      },
+      {
+        "instituicao": "USGS",
+        "documento": "Estações Eléctricas de Moçambique (ficheiro indisponível nesta execução)",
+        "ano": 2018
+      }
+    ]
+  },
+  "narrativa_resolvida": {
+    "titulo": "A relação espacial entre barragens e estações eléctricas não pôde ser calculada: o ficheiro das estações não carregou",
+    "subtitulo": "Falha técnica no dataset 35 (USGS, 2018) impediu o cálculo de distâncias e de contagens em buffer; só ficam disponíveis os padrões descritivos das 13 barragens catalogadas",
+    "resposta_directa": "Não é possível responder com números reais: o dataset de Estações Eléctricas (USGS, 2018) não foi encontrado no servidor, e os dois passos que calculariam a relação espacial (distância mínima e contagem em buffer de 20 km) falharam por essa razão. O que fica disponível é apenas a descrição das 13 barragens catalogadas, sem cruzamento com estações eléctricas.",
+    "numeros_chave": [
+      {
+        "calc_id": "p6_n",
+        "rotulo": "13 barragens no dataset AICD",
+        "contexto": "Universo total analisado nesta base; não inclui estações eléctricas por falha de carregamento do outro dataset.",
+        "valor": "13"
+      },
+      {
+        "calc_id": "p6_max",
+        "rotulo": "Capacidade máxima de armazenamento",
+        "contexto": "Corresponde a Chahora Bassa, a maior barragem da amostra em capacidade.",
+        "valor": "39 000 000"
+      },
+      {
+        "calc_id": "p6_min",
+        "rotulo": "Capacidade mínima de armazenamento",
+        "contexto": "Corresponde a Chimoio, a menor barragem da amostra.",
+        "valor": "270"
+      },
+      {
+        "calc_id": "p5_n",
+        "rotulo": "2 barragens são outliers estatísticos",
+        "contexto": "Fora do intervalo de Tukey em capacidade, indicando concentração assimétrica de grandes reservatórios.",
+        "valor": "2"
+      },
+      {
+        "calc_id": "p4_n_distintos",
+        "rotulo": "4 bacias hidrográficas maiores",
+        "contexto": "As 13 barragens distribuem-se por apenas estas bacias, com a Indian Ocean Coast a concentrar a maioria.",
+        "valor": "4"
+      },
+      {
+        "calc_id": "p6_coeficiente_variacao",
+        "rotulo": "Coeficiente de variação de 247%",
+        "contexto": "Mostra dispersão extrema nas capacidades de armazenamento entre barragens pequenas e grandes.",
+        "valor": "247"
+      }
+    ],
+    "o_que_mostram": "Sem o dataset de estações eléctricas, não há como descrever a relação espacial pedida. O que os dados de barragens mostram isoladamente é uma distribuição muito assimétrica de capacidade: 2 barragens saem fora do intervalo normal (Tukey), puxadas por reservatórios muito grandes, enquanto a maioria fica com capacidades bem mais modestas. As 13 barragens concentram-se em apenas 4 bacias hidrográficas maiores, o que por si só sugere que qualquer eventual proximidade a estações eléctricas seguiria a geografia dos grandes rios, não uma distribuição aleatória no território.",
+    "porque": "Historicamente, grandes barragens como Cahora Bassa foram construídas em rios de grande caudal precisamente para gerar energia, o que tenderia a colocá-las perto de estações eléctricas por desenho, não por acaso espacial. Mas essa associação não pode ser confirmada nem quantificada aqui: falta o dataset de estações eléctricas, e mesmo que existisse, a proximidade também podia reflectir outros factores, como a localização de centros populacionais ou linhas de transmissão pré-existentes, e não uma relação causal directa entre as duas infraestruturas.",
+    "o_que_nao_diz": [
+      "O dataset de Estações Eléctricas (USGS, 2018) não foi encontrado no servidor, pelo que a distância real e a contagem de estações num raio de 20 km de cada barragem não foram calculadas: a pergunta central fica sem resposta quantitativa.",
+      "A província de cada barragem foi aproximada a partir de um ponto representativo da geometria, o que pode atribuir incorrectamente barragens em fronteira administrativa.",
+      "A coluna AnoConstru contém um valor sentinela (-999) usado para dados em falta, o que distorce qualquer média calculada sobre ela; a mediana (402 000 para capacidade, não para o ano) é mais fiável do que a média nesses casos.",
+      "Com apenas 13 barragens no total, qualquer padrão espacial ou estatístico tem potência muito limitada e não deve ser generalizado para o país inteiro."
+    ],
+    "como_chegamos": "Tentámos calcular a distância de cada barragem à estação eléctrica mais próxima e contar estações num raio de 20 km, mas ambos os passos falharam porque o ficheiro do dataset 35 não carregou no servidor. Ficámos com a análise descritiva do dataset de barragens (perfil de colunas, detecção de outliers e estatística resumo de capacidade), que não responde à pergunta sobre relação espacial mas caracteriza o que existe.",
+    "fontes": [
+      {
+        "instituicao": "AICD, Africa Infrastructure Country Diagnostics",
+        "documento": "Barragens de Moçambique",
+        "ano": 2015
+      },
+      {
+        "instituicao": "USGS",
+        "documento": "Estações Eléctricas de Moçambique (ficheiro indisponível nesta execução)",
+        "ano": 2018
+      }
+    ]
+  },
+  "critica": {
+    "objeccoes": [],
+    "bloqueia_publicacao": false
+  },
+  "custo_usd": 0.143252,
+  "duracao_ms": 135855,
+  "confianca": {
+    "percentagem": 92,
+    "datasetsUsados": 1,
+    "ligacoesGeograficas": [
+      {
+        "dataset_id": 31,
+        "nivel": "admin3",
+        "taxa_correspondencia": 1
+      }
+    ],
+    "completudeMediaPct": 100,
+    "valoresDerivados": 0,
+    "passosViaCodigo": 0
+  }
+}

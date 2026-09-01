@@ -12,10 +12,18 @@ import {
   MapPin,
   FileText,
   LayoutDashboard,
+  BrainCircuit,
 } from 'lucide-react'
 import { useContactModal } from '@/components/ContactModalProvider'
+import { CountUp } from '@/components/CountUp'
 
 const PILLARS = [
+  {
+    icon: BrainCircuit,
+    label: 'Análise por Inteligência Artificial',
+    desc: 'Pergunta em português e recebe um dashboard com números reais, calculados na hora, com proveniência auditável.',
+    href: '/analise/nova',
+  },
   {
     icon: Globe2,
     label: 'Dados geoespaciais',
@@ -53,7 +61,7 @@ export function AboutSection() {
   return (
     <section
       id="sobre"
-      className="font-body-stack relative z-10 py-16 md:py-24 overflow-hidden bg-gradient-to-b from-[#f8faf8] to-[#f2f7f3] border-t border-[#E2E8E5]"
+      className="font-body-stack relative z-10 pt-8 pb-12 md:pt-10 md:pb-16 overflow-hidden bg-gradient-to-b from-[#f8faf8] to-[#f2f7f3] border-t border-[#E2E8E5]"
     >
       <div className="pointer-events-none absolute -top-32 -right-32 w-[480px] h-[480px] rounded-full bg-[radial-gradient(circle,_rgba(6,78,44,0.08)_0%,_transparent_70%)] opacity-80" />
       <div className="pointer-events-none absolute -bottom-20 -left-20 w-80 h-80 rounded-full bg-[radial-gradient(circle,_rgba(6,78,44,0.06)_0%,_transparent_70%)] opacity-80" />
@@ -94,7 +102,7 @@ export function AboutSection() {
                 {label}
               </p>
               <p className="text-[14px] text-gray-600 leading-relaxed mb-3">{desc}</p>
-              <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#064E2C]">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#064E2C]/[0.06] px-3 py-1.5 text-xs font-semibold text-[#064E2C] group-hover:bg-[#064E2C]/10 transition-colors">
                 Explorar <ArrowRight className="w-3.5 h-3.5" />
               </span>
             </Link>
@@ -102,7 +110,7 @@ export function AboutSection() {
         </div>
 
         <div
-          className="grid grid-cols-1 lg:grid-cols-2 gap-12 md:gap-16 items-start mb-14 animate-slide-up"
+          className="grid grid-cols-1 lg:grid-cols-2 gap-12 md:gap-16 items-start mb-8 animate-slide-up"
           style={{ animationDelay: '0.25s' }}
         >
           <div className="space-y-5">
@@ -112,32 +120,37 @@ export function AboutSection() {
             <p className="text-[15px] text-gray-600 leading-[1.8]">
               O <strong className="text-gray-900 font-semibold">DataPortal</strong> é a plataforma
               aberta da Data4Moz que reúne dados, indicadores e produtos de inteligência territorial
-              para servir instituições, academia, empresas e sociedade civil.
+              para apoiar instituições públicas e privadas, a academia, as empresas e a sociedade
+              civil.
             </p>
             <p className="text-[15px] text-gray-600 leading-[1.8]">
-              A plataforma permite descarregar datasets, consultar dashboards alfanuméricos, explorar
-              mapas com indicadores territoriais, incluindo saúde, infraestruturas, agricultura,
-              conservação, economia, entre outros sectores; e aceder a relatórios, através de
+              A plataforma permite descarregar conjuntos de dados, consultar dashboards, explorar
+              mapas com indicadores territoriais, nas áreas da saúde, infraestruturas, agricultura,
+              conservação, economia, turismo, entre outros sectores, e aceder a relatórios e outros
+              recursos analíticos. Por meio de um motor de análise baseado em Inteligência Artificial,
+              os utilizadores podem ainda interagir directamente com os dados em português, utilizando
               mecanismos consistentes de pesquisa e filtragem.
             </p>
             <p className="text-[15px] text-gray-600 leading-[1.8]">
               Com esta iniciativa, a Data4Moz reforça o seu compromisso de tornar os dados mais
-              acessíveis, comparáveis e úteis, contribuindo para um ecossistema de dados abertos mais
-              completo em Moçambique.
+              acessíveis, comparáveis e úteis para a tomada de decisão, contribuindo para o
+              fortalecimento do ecossistema de uso de dados em Moçambique.
             </p>
           </div>
 
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               {[
-                { num: '5', label: 'Áreas do portal (geo, alfa, dashboards, mapas, relatórios)' },
-                { num: '100%', label: 'Acesso aberto às publicações disponíveis' },
-              ].map(({ num, label }) => (
+                { num: 6, sufixo: '', label: 'Áreas do portal (IA, geo, alfa, dashboards, mapas, relatórios)' },
+                { num: 100, sufixo: '%', label: 'Acesso aberto às publicações disponíveis' },
+              ].map(({ num, sufixo, label }) => (
                 <div
-                  key={num}
+                  key={label}
                   className="border border-gray-200 rounded-xl p-5 hover:border-[#CFE3D6] hover:-translate-y-0.5 transition-all duration-200"
                 >
-                  <p className="font-extrabold text-3xl text-[#064E2C] leading-none mb-1.5">{num}</p>
+                  <p className="font-extrabold text-3xl text-[#064E2C] leading-none mb-1.5">
+                    <CountUp value={num} formatar={(n) => `${Math.round(n)}${sufixo}`} />
+                  </p>
                   <p className="text-xs text-gray-500 leading-snug">{label}</p>
                 </div>
               ))}
@@ -155,18 +168,19 @@ export function AboutSection() {
             <div className="border border-gray-200 rounded-xl p-5 hover:border-[#CFE3D6] transition-colors duration-200">
               <p className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
                 <BarChart3 className="w-4 h-4 text-[#064E2C]" />
-                Pesquisa · Visualização · Download · Dashboards
+                Pesquisa · Análise por IA · Download · Dashboards
               </p>
               <p className="text-xs text-gray-500 leading-relaxed">
                 A barra de pesquisa na página inicial sugere datasets, mapas publicados, dashboards e
-                relatórios, com atalhos directos para cada módulo.
+                relatórios, com atalhos directos para cada módulo; o botão «Modo IA» leva à análise
+                por Inteligência Artificial.
               </p>
             </div>
           </div>
         </div>
 
         <div
-          className="flex flex-wrap items-center justify-between gap-5 pt-8 border-t border-gray-100 animate-slide-up"
+          className="flex flex-wrap items-center justify-between gap-5 pt-5 border-t border-gray-100 animate-slide-up"
           style={{ animationDelay: '0.35s' }}
         >
           <div className="flex items-center gap-3">
@@ -176,7 +190,7 @@ export function AboutSection() {
             <div>
               <p className="text-sm font-bold text-gray-900">Data4Moz</p>
               <p className="text-xs text-gray-500">
-                Geoespacial · Alfanumérico · Dashboards · Mapas inteligentes · Relatórios
+                Análise por IA · Geoespacial · Alfanumérico · Dashboards · Mapas inteligentes · Relatórios
               </p>
             </div>
           </div>

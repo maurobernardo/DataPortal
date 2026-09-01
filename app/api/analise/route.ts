@@ -4,7 +4,10 @@ export const maxDuration = 800
 import { NextRequest } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import { executarPipeline, novoIdAnalise } from '@/lib/analysis/pipeline'
-import { criarAnalise, guardarResultado, registarErro } from '@/lib/analysis/persistencia'
+import { criarAnalise, guardarResultado, registarFalhaDegradada, registarInviavel } from '@/lib/analysis/persistencia'
+import { registarFalhaEstruturada } from '@/lib/analysis/falhas'
+import { AnaliseInviavelError } from '@/lib/analysis/viabilidade'
+import { gerarPerguntasViaveis } from '@/lib/analysis/perguntas-viaveis'
 import { rateLimit } from '@/lib/security'
 import { registarAcesso } from '@/lib/origem'
 import { logger } from '@/lib/logger'
@@ -19,7 +22,7 @@ const MAX_DATASETS = 3
  * mensagem é a única coisa que o utilizador vê.
  */
 function mensagemAmigavel(): string {
-  return 'Não foi possível concluir esta análise devido a uma falha temporária. Tente novamente — se persistir, tente com outra pergunta ou outros datasets.'
+  return 'Não foi possível concluir esta análise devido a uma falha temporária. Tente novamente; se persistir, tente com outra pergunta ou outros datasets.'
 }
 
 /**
@@ -88,34 +91,69 @@ export async function POST(request: NextRequest) {
 
       enviar({ tipo: 'inicio', analise_id: analiseId })
 
+      // Mantém a ligação viva durante etapas longas (planeamento, narrativa) que podem ficar
+      // 30-90s sem emitir nenhum evento: sem tráfego nesse intervalo, um proxy à frente do Node
+      // (Apache/Passenger no cPanel, por exemplo) pode considerar a ligação inactiva e cortá-la
+      // antes do pipeline terminar, mesmo com maxDuration alto no lado do Node. Um comentário SSE
+      // (linha a começar por ":") é ignorado pelo cliente mas conta como bytes na ligação.
+      const heartbeat = setInterval(() => {
+        try {
+          controlador.enqueue(codificador.encode(': heartbeat\n\n'))
+        } catch {
+          clearInterval(heartbeat)
+        }
+      }, 15000)
+
       // Falhas de rede (ex.: ECONNRESET a meio de uma chamada longa) podem acontecer em qualquer
       // ponto do pipeline, não só nas chamadas ao modelo (essas já têm a própria retentativa em
-      // router.ts). Uma segunda tentativa completa do zero é o que garante que o utilizador nunca
-      // fica sem resposta por causa de um problema transitório de rede, em vez de só das falhas
-      // que o router já sabia tratar.
+      // router.ts). Uma segunda tentativa é o que garante que o utilizador nunca fica sem resposta
+      // por causa de um problema transitório, em vez de só das falhas que o router já sabia tratar.
+      // A partir da 2ª tentativa corre em modo degradado (PLANO-MOTOR-FINAL.md, secção 3): repetir
+      // exactamente o mesmo plano depois de uma falha costuma falhar pela mesma razão, por isso a
+      // retentativa pede um plano mínimo em vez de repetir tal e qual.
       const MAX_TENTATIVAS_PIPELINE = 2
       let ultimoErro: any = null
       for (let tentativa = 1; tentativa <= MAX_TENTATIVAS_PIPELINE; tentativa++) {
         try {
-          const resultado = await executarPipeline(pergunta, datasetIds, enviar, analiseId, { fontesExternas })
+          const resultado = await executarPipeline(pergunta, datasetIds, enviar, analiseId, {
+            fontesExternas,
+            modoDegradado: tentativa > 1,
+          })
           await guardarResultado(resultado)
           ultimoErro = null
+          // Só agora, com o resultado já gravado, é seguro dizer ao cliente para navegar —
+          // antes disso a página /analise/{id} encontraria a base de dados ainda por actualizar.
+          enviar({ tipo: 'concluido', analise_id: analiseId, url: `/analise/${analiseId}` })
           break
         } catch (erro: any) {
+          // Uma recusa por inviabilidade é uma decisão, não uma avaria: repeti-la ia bater na
+          // mesma parede, e a retentativa corre em modo degradado (plano mínimo), que só tornaria
+          // a segunda resposta pior. Sai do ciclo e responde com a explicação e as alternativas.
+          if (erro instanceof AnaliseInviavelError) {
+            const sugestoes = await gerarPerguntasViaveis(datasetIds, undefined, pergunta)
+            await registarInviavel(analiseId, erro.evidencia, sugestoes, erro.diagnostico).catch((e) =>
+              logger.error('erro_registar_inviavel', { error: e, analiseId })
+            )
+            enviar({ tipo: 'inviavel', analise_id: analiseId, evidencia: erro.evidencia, sugestoes })
+            ultimoErro = null
+            break
+          }
           ultimoErro = erro
           logger.error('erro_pipeline_analise', { error: erro, analiseId, tentativa })
+          await registarFalhaEstruturada(analiseId, erro, tentativa)
         }
       }
       if (ultimoErro) {
-        await registarErro(analiseId, mensagemAmigavel()).catch(() => {})
-        enviar({
-          tipo: 'erro',
-          estagio: 'execucao',
-          mensagem: mensagemAmigavel(),
-          recuperavel: false,
-        })
+        // Nunca mostrar o ecrã de "análise não publicada": mesmo depois de repetir e falhar de
+        // vez, guarda-se uma análise válida (estado 'pronto') com uma explicação honesta, e o
+        // fluxo continua exactamente como uma análise concluída com sucesso.
+        await registarFalhaDegradada(analiseId, pergunta, mensagemAmigavel()).catch((e) =>
+          logger.error('erro_registar_falha_degradada', { error: e, analiseId })
+        )
+        enviar({ tipo: 'concluido', analise_id: analiseId, url: `/analise/${analiseId}` })
       }
 
+      clearInterval(heartbeat)
       try {
         controlador.close()
       } catch {

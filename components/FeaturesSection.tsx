@@ -17,6 +17,8 @@ import {
   BarChart3,
   MapPinned,
   FileText,
+  BrainCircuit,
+  Bell,
 } from 'lucide-react'
 import Link from 'next/link'
 import { RevealOnScroll } from './RevealOnScroll'
@@ -33,12 +35,22 @@ const mainFeatures: {
   href: string
 }[] = [
   {
+    icon: BrainCircuit,
+    title: 'Análise por Inteligência Artificial',
+    description:
+      'Pergunta em português, o motor planeia, calcula sobre os dados reais e critica-se antes de publicar. Cada número é auditável até ao dado de origem.',
+    tag: 'Novo',
+    num: '01',
+    variant: 'brand',
+    href: '/analise/nova',
+  },
+  {
     icon: Globe,
     title: 'Dados geoespaciais completos',
     description:
       'Catálogo organizado por categorias e temas, com metadados e formatos interoperáveis.',
     tag: 'Espacial',
-    num: '01',
+    num: '02',
     variant: 'brand',
     href: '/dados-espaciais',
   },
@@ -48,7 +60,7 @@ const mainFeatures: {
     description:
       'Pré-visualização de dados espaciais e páginas de detalhe para explorar cada dataset.',
     tag: 'Mapas',
-    num: '02',
+    num: '03',
     variant: 'red',
     href: '/dados-espaciais',
   },
@@ -58,7 +70,7 @@ const mainFeatures: {
     description:
       'Formatos comuns (SHP, GeoJSON, CSV, etc.) com registo de downloads na plataforma.',
     tag: 'Exportação',
-    num: '03',
+    num: '04',
     variant: 'brand',
     href: '/dados-espaciais',
   },
@@ -68,7 +80,17 @@ const mainFeatures: {
     description:
       'Filtros por categoria, ano, formato e palavras-chave nas áreas geoespacial e alfanumérica.',
     tag: 'Pesquisa',
-    num: '04',
+    num: '05',
+    variant: 'amber',
+    href: '/dados-alfanumericos',
+  },
+  {
+    icon: Bell,
+    title: 'Alertas de actualização',
+    description:
+      'Segue um dataset e recebe aviso automático sempre que for actualizado, sem ter de voltar a verificar.',
+    tag: 'Alertas',
+    num: '06',
     variant: 'amber',
     href: '/dados-alfanumericos',
   },
@@ -78,7 +100,7 @@ const mainFeatures: {
     description:
       'Informação sobre fonte, ano, formato e descrição para reutilização responsável dos dados.',
     tag: 'Qualidade',
-    num: '05',
+    num: '07',
     variant: 'brand',
     href: '/dados-espaciais',
   },
@@ -88,7 +110,7 @@ const mainFeatures: {
     description:
       'Visualizações e downloads agregados para perceber quais datasets são mais consultados.',
     tag: 'Estatísticas',
-    num: '06',
+    num: '08',
     variant: 'red',
     href: '/dados-espaciais',
   },
@@ -98,7 +120,7 @@ const mainFeatures: {
     description:
       'Painéis publicados no portal com pré-visualização e ligação directa ao conteúdo interactivo.',
     tag: 'Dashboards',
-    num: '07',
+    num: '09',
     variant: 'brand',
     href: '/dashboards-alfanumericos',
   },
@@ -108,7 +130,7 @@ const mainFeatures: {
     description:
       'Experiências geoespaciais com KPIs, gráficos, filtros cruzados e exportação, além do mapa base.',
     tag: 'Mapas',
-    num: '08',
+    num: '10',
     variant: 'amber',
     href: '/maps',
   },
@@ -118,7 +140,7 @@ const mainFeatures: {
     description:
       'Consulta e pedido de acesso a relatórios oficiais, com metadados de cobertura e parceiros.',
     tag: 'Relatórios',
-    num: '09',
+    num: '11',
     variant: 'red',
     href: '/relatorios',
   },
@@ -163,7 +185,7 @@ export function FeaturesSection() {
   const visible = showAll ? mainFeatures : mainFeatures.slice(0, 4)
 
   return (
-    <section className="font-body-stack py-16 md:py-24 bg-white relative overflow-hidden border-t border-[#E2E8E5]">
+    <section className="font-body-stack py-9 md:py-12 bg-white relative overflow-hidden border-t border-[#E2E8E5]">
       <div
         className="pointer-events-none absolute inset-0 -z-10 opacity-[0.04]"
         style={{
@@ -188,14 +210,14 @@ export function FeaturesSection() {
               <span className="text-[#064E2C]">o nosso portal</span>?
             </h2>
             <p className="text-[15px] md:text-[17px] text-gray-600 leading-relaxed">
-              Pesquisa, catálogo, downloads, dashboards alfanuméricos e relatórios, num só ecossistema
-              pensado para decisões com dados oficiais.
+              Pesquisa, catálogo, downloads, dashboards, mapas, análise por Inteligência Artificial
+              e relatórios, num só ecossistema pensado para decisões com dados oficiais.
             </p>
           </div>
 
           <div className="flex gap-8 md:gap-10 shrink-0">
             {[
-              { n: '9+', label: 'Funcionalidades' },
+              { n: '11+', label: 'Funcionalidades' },
               { n: '100%', label: 'Acesso aberto' },
               { n: '∞', label: 'Formatos' },
             ].map(({ n, label }) => (
@@ -288,19 +310,19 @@ export function FeaturesSection() {
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 flex-wrap">
           <Link
-            href="/dados-espaciais"
+            href="/analise/nova"
             className="group inline-flex items-center gap-3 px-8 py-3.5 bg-[#064E2C] text-white rounded-xl font-bold text-[15px] hover:bg-[#04361F] transition-all duration-200 hover:-translate-y-0.5 shadow-lg shadow-[rgba(6,78,44,0.2)]"
           >
-            <Search className="w-5 h-5 group-hover:scale-110 transition-transform" />
-            Explorar catálogos
+            <BrainCircuit className="w-5 h-5 group-hover:scale-110 transition-transform" />
+            Fazer uma análise por IA
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </Link>
           <Link
-            href="/maps"
+            href="/servicos"
             className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl border border-[#CFE3D6] bg-white text-[#064E2C] font-semibold text-[15px] hover:bg-[#F1F8F4] transition-all duration-200"
           >
             <MapPinned className="w-5 h-5" />
-            Mapas inteligentes
+            Ver todos os serviços
           </Link>
           <Link
             href="/#sobre"

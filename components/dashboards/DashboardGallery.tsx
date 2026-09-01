@@ -7,6 +7,7 @@ import { DashboardCardPreview } from '@/components/dashboards/DashboardCardPrevi
 import { DashboardVisitLink } from '@/components/dashboards/DashboardVisitLink'
 import { FavoriteButton } from '@/components/FavoriteButton'
 import { DashboardLastUpdateBadge } from '@/components/dashboards/DashboardLastUpdateBadge'
+import { RevealOnScroll } from '@/components/RevealOnScroll'
 
 export type PublicDashboard = {
   id: number
@@ -111,8 +112,9 @@ export function DashboardGallery({
             </p>
 
             <div className="db-gallery-grid db-gallery-grid--paged">
-              {visible.map((item) => (
-                <article key={item.id} className="db-gallery-card">
+              {visible.map((item, index) => (
+                <RevealOnScroll key={item.id} delayMs={Math.min(index, 5) * 60}>
+                <article className="db-gallery-card pd-card-lift">
                   <div className="db-gallery-card-thumb-wrap">
                     <DashboardCardPreview
                       title={item.name}
@@ -146,6 +148,7 @@ export function DashboardGallery({
                     </div>
                   </div>
                 </article>
+                </RevealOnScroll>
               ))}
             </div>
 

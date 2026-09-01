@@ -7,7 +7,7 @@ import {
   signPending2faToken,
   signSessionToken,
 } from '@/lib/auth'
-import { findUserByEmail, resolveUserRole, updateUserRole } from '@/lib/db'
+import { findUserByEmail, purgarContasComPedidoDeEliminacaoExpirado, resolveUserRole, updateUserRole } from '@/lib/db'
 import { isValidEmail, normalizeEmail, normalizeText, rateLimit } from '@/lib/security'
 import { logger } from '@/lib/logger'
 
@@ -16,6 +16,12 @@ export async function POST(request: Request) {
     const body = await request.json()
     const email = normalizeEmail(body?.email)
     const password = normalizeText(body?.password, 256)
+
+    // Sem infra de agendamento (cron) neste portal: aproveita o tráfego natural de logins para
+    // purgar, de vez em quando, contas cujo prazo de graça de eliminação já expirou. Nunca
+    // bloqueia o login em si (fire-and-forget) e a consulta interna é barata quando não há nada
+    // para purgar, que é o caso normal.
+    purgarContasComPedidoDeEliminacaoExpirado().catch((error) => logger.error('erro_purgar_contas_eliminadas', { error }))
 
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
     const rl = await rateLimit(`login:${ip}:${email}`, 10, 15 * 60 * 1000)
@@ -44,6 +50,13 @@ export async function POST(request: Request) {
 
     if (!isPasswordValid) {
       return NextResponse.json({ error: 'Credenciais inválidas' }, { status: 401 })
+    }
+
+    if (user.active === false || user.active === 0) {
+      return NextResponse.json(
+        { error: 'Esta conta foi desactivada. Contacte a equipa do portal para mais informação.' },
+        { status: 403 }
+      )
     }
 
     if (!user.emailVerified) {

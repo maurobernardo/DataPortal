@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
-import { MapCardThumb } from '@/components/maps/MapCardThumb'
+import { CategoryThumb } from '@/components/geo/CategoryThumb'
 import { MapRequestButton } from '@/components/maps/MapRequestButton'
 import { FavoriteButton } from '@/components/FavoriteButton'
 import { iconeParaCapacidade } from '@/lib/maps-highlight-icons'
@@ -8,18 +8,17 @@ import {
   MAP_EXPERIENCE_LABELS,
   type PublicMapDashboard,
 } from '@/lib/maps-catalog'
-import type { PreviewMapa } from '@/lib/maps-preview-data'
 
 export function MapCard({
   map,
+  index,
   isFavorited = false,
   viewCount,
-  preview,
 }: {
   map: PublicMapDashboard
+  index: number
   isFavorited?: boolean
   viewCount?: number
-  preview?: PreviewMapa | null
 }) {
   const exp = MAP_EXPERIENCE_LABELS[map.experienceType]
   const highlights = (map.highlights ?? []).slice(0, 2)
@@ -30,10 +29,17 @@ export function MapCard({
   const metaValues = [...map.badges.slice(0, 2), `${(viewCount ?? 0).toLocaleString('pt-PT')} visualizações`]
 
   return (
-    <article className="mp-card">
+    <article className="mp-card pd-card-lift">
       {/* a) Uma badge de tipo + favorito no canto oposto — sem ícone decorativo de mapa. */}
       <div className="mp-card-thumb">
-        <MapCardThumb preview={preview} />
+        <CategoryThumb
+          title={map.title}
+          keywords={[map.subtitle, ...(map.badges ?? [])].join(' ')}
+          category={map.category}
+          index={index}
+          kind="geo"
+          showKind={false}
+        />
         <span className={`mp-card-type mp-card-type--${map.experienceType}`}>{exp.short}</span>
       </div>
       <FavoriteButton

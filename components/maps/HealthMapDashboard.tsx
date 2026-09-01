@@ -121,11 +121,11 @@ export function HealthMapDashboard({
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;font-size:10px">
       <div style="color:#8b949e">População</div><div style="color:#e6edf3">${(p.pop_2017 || 0).toLocaleString('pt-PT')}</div>
       <div style="color:#8b949e">Área km²</div><div style="color:#e6edf3">${(p.area_km2 || 0).toLocaleString('pt-PT')}</div>
-      <div style="color:#8b949e">Classe</div><div style="color:#e6edf3">${p.urban_class || '—'}</div>
+      <div style="color:#8b949e">Classe</div><div style="color:#e6edf3">${p.urban_class || 'N/D'}</div>
       <div style="color:#8b949e">TECI</div><div style="color:#e6edf3">${fmt(p.TECI_adm3)}/10</div>
       <div style="color:#8b949e">HSSI</div><div style="color:#e6edf3">${fmt(p.HSSI_adm3)}/10</div>
       <div style="color:#8b949e">Cascata VIH</div><div style="color:#e6edf3">${fmt(p.HCCR_adm3)}%</div>
-      <div style="color:#8b949e">Ecotipo</div><div style="color:#e6edf3;font-size:9px">${p.malaria_ecotype || '—'}</div>
+      <div style="color:#8b949e">Ecotipo</div><div style="color:#e6edf3;font-size:9px">${p.malaria_ecotype || 'N/D'}</div>
     </div>
   </div>`
     },
@@ -348,10 +348,10 @@ export function HealthMapDashboard({
           attribution: '© OpenTopoMap',
           maxZoom: 17,
         }),
-        dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-          attribution: '© CartoDB',
-          maxZoom: 19,
-        }),
+        dark: L.tileLayer(
+          'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+          { attribution: '© Esri', maxZoom: 16 }
+        ),
         sat: L.tileLayer(
           'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
           { attribution: '© Esri', maxZoom: 18 }

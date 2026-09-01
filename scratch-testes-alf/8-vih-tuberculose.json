@@ -1,0 +1,1269 @@
+{
+  "analise_id": "an_504e5667",
+  "compreensao": {
+    "pergunta_normalizada": "Existe sobreposição geográfica entre a distribuição provincial dos casos de VIH/SIDA e de tuberculose em Moçambique?",
+    "idioma": "pt",
+    "intencao": "geoespacial",
+    "arquetipo_sugerido": "geoespacial",
+    "entidades": {
+      "geografias": [],
+      "periodos": [],
+      "metricas": [
+        "casos de VIH/SIDA (proxy: total em TARV)",
+        "casos de tuberculose notificados"
+      ]
+    },
+    "ambiguidades": [
+      {
+        "descricao": "O dataset de VIH/SIDA não tem uma coluna 'casos' directa; usa-se 'Total em TARV (contagem)' como proxy do peso da doença por província, em vez da 'Prevalência do HIV 15-49 (%)'.",
+        "opcoes": [
+          "Total em TARV (contagem)",
+          "Prevalência do HIV 15-49 (%)"
+        ]
+      }
+    ],
+    "perfil_utilizador_inferido": "investigador",
+    "requer_desambiguacao": false,
+    "sub_perguntas": [
+      "Qual a distribuição provincial dos casos de VIH/SIDA (TARV) em Moçambique?",
+      "Qual a distribuição provincial dos casos de tuberculose notificados?",
+      "As duas distribuições geográficas coincidem ou divergem entre províncias?",
+      "Existe correlação estatística entre a carga de VIH e de TB por província?",
+      "Há províncias atípicas que destoam do padrão geral em qualquer das doenças?"
+    ],
+    "passos": [
+      {
+        "id": "s1",
+        "tipo": "consulta",
+        "descricao_humana": "Soma casos de VIH (TARV) por província, nível mais fino disponível.",
+        "depende_de": [],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 51,
+        "coluna_metrica": "value",
+        "nivel_geo": "admin1",
+        "filtro_unidade": "cat:variable_name_pt=Total em TARV (contagem)",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "calc:vih_prov"
+        ]
+      },
+      {
+        "id": "s2",
+        "tipo": "consulta",
+        "descricao_humana": "Soma casos de tuberculose notificados por província.",
+        "depende_de": [],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 55,
+        "coluna_metrica": "value",
+        "nivel_geo": "admin1",
+        "filtro_unidade": "cat:variable_name_pt=Casos de TB Notificados — Todas as Formas (contagem)",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "calc:tb_prov"
+        ]
+      },
+      {
+        "id": "s3",
+        "tipo": "enriquecimento",
+        "descricao_humana": "Cruza as duas distribuições provinciais num mapa comparável e gráfico de dispersão.",
+        "depende_de": [
+          "s1",
+          "s2"
+        ],
+        "metodo": "juntar_datasets",
+        "dataset_id": 51,
+        "dataset_id_2": 55,
+        "coluna_metrica": "value",
+        "coluna_metrica_2": "value",
+        "nivel_geo": "admin1",
+        "produz": [
+          "calc:join_map",
+          "calc:scatter"
+        ]
+      },
+      {
+        "id": "s4",
+        "tipo": "calculo",
+        "descricao_humana": "Testa correlação (robusta a não linearidade) entre carga de VIH e de TB por província.",
+        "depende_de": [
+          "s3"
+        ],
+        "metodo": "correlacao_spearman",
+        "coluna_metrica": "value",
+        "coluna_metrica_2": "value_2",
+        "produz": [
+          "calc:corr_spearman"
+        ]
+      },
+      {
+        "id": "s5",
+        "tipo": "validacao",
+        "descricao_humana": "Verifica a qualidade e o nível de confiança (dq_tier) dos dados de VIH usados.",
+        "depende_de": [
+          "s1"
+        ],
+        "metodo": "perfil_coluna",
+        "dataset_id": 51,
+        "coluna_metrica": "dq_tier",
+        "produz": [
+          "calc:qualidade"
+        ]
+      },
+      {
+        "id": "s6",
+        "tipo": "calculo",
+        "descricao_humana": "Identifica províncias com carga de VIH atipicamente alta ou baixa face às restantes.",
+        "depende_de": [
+          "s1"
+        ],
+        "metodo": "detectar_outliers",
+        "dataset_id": 51,
+        "coluna_metrica": "value",
+        "filtro_unidade": "cat:variable_name_pt=Total em TARV (contagem)",
+        "produz": [
+          "calc:outliers_vih"
+        ]
+      }
+    ],
+    "nivel_geo_alvo": [
+      "admin1"
+    ],
+    "metricas_alvo": [
+      "Total em TARV (contagem)",
+      "Casos de TB Notificados — Todas as Formas (contagem)"
+    ],
+    "justificacao_arquetipo": "A pergunta pede explicitamente sobreposição geográfica entre dois indicadores de saúde distintos: o arquétipo geoespacial organiza mapas comparáveis, dispersão e teste de correlação espacial entre VIH e TB por província, o nível mais fino disponível em ambos os datasets.",
+    "pergunta_original": "Existe sobreposição geográfica entre os casos de VIH/SIDA e de tuberculose?"
+  },
+  "plano": {
+    "sub_perguntas": [
+      "Qual a distribuição provincial dos casos de VIH/SIDA (TARV) em Moçambique?",
+      "Qual a distribuição provincial dos casos de tuberculose notificados?",
+      "As duas distribuições geográficas coincidem ou divergem entre províncias?",
+      "Existe correlação estatística entre a carga de VIH e de TB por província?",
+      "Há províncias atípicas que destoam do padrão geral em qualquer das doenças?"
+    ],
+    "passos": [
+      {
+        "id": "s1",
+        "tipo": "consulta",
+        "descricao_humana": "Soma casos de VIH (TARV) por província, nível mais fino disponível.",
+        "depende_de": [],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 51,
+        "coluna_metrica": "value",
+        "nivel_geo": "admin1",
+        "filtro_unidade": "cat:variable_name_pt=Total em TARV (contagem)",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "calc:vih_prov"
+        ]
+      },
+      {
+        "id": "s2",
+        "tipo": "consulta",
+        "descricao_humana": "Soma casos de tuberculose notificados por província.",
+        "depende_de": [],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 55,
+        "coluna_metrica": "value",
+        "nivel_geo": "admin1",
+        "filtro_unidade": "cat:variable_name_pt=Casos de TB Notificados — Todas as Formas (contagem)",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "calc:tb_prov"
+        ]
+      },
+      {
+        "id": "s3",
+        "tipo": "enriquecimento",
+        "descricao_humana": "Cruza as duas distribuições provinciais num mapa comparável e gráfico de dispersão.",
+        "depende_de": [
+          "s1",
+          "s2"
+        ],
+        "metodo": "juntar_datasets",
+        "dataset_id": 51,
+        "dataset_id_2": 55,
+        "coluna_metrica": "value",
+        "coluna_metrica_2": "value",
+        "nivel_geo": "admin1",
+        "produz": [
+          "calc:join_map",
+          "calc:scatter"
+        ]
+      },
+      {
+        "id": "s4",
+        "tipo": "calculo",
+        "descricao_humana": "Testa correlação (robusta a não linearidade) entre carga de VIH e de TB por província.",
+        "depende_de": [
+          "s3"
+        ],
+        "metodo": "correlacao_spearman",
+        "coluna_metrica": "value",
+        "coluna_metrica_2": "value_2",
+        "produz": [
+          "calc:corr_spearman"
+        ]
+      },
+      {
+        "id": "s5",
+        "tipo": "validacao",
+        "descricao_humana": "Verifica a qualidade e o nível de confiança (dq_tier) dos dados de VIH usados.",
+        "depende_de": [
+          "s1"
+        ],
+        "metodo": "perfil_coluna",
+        "dataset_id": 51,
+        "coluna_metrica": "dq_tier",
+        "produz": [
+          "calc:qualidade"
+        ]
+      },
+      {
+        "id": "s6",
+        "tipo": "calculo",
+        "descricao_humana": "Identifica províncias com carga de VIH atipicamente alta ou baixa face às restantes.",
+        "depende_de": [
+          "s1"
+        ],
+        "metodo": "detectar_outliers",
+        "dataset_id": 51,
+        "coluna_metrica": "value",
+        "filtro_unidade": "cat:variable_name_pt=Total em TARV (contagem)",
+        "produz": [
+          "calc:outliers_vih"
+        ]
+      }
+    ],
+    "nivel_geo_alvo": [
+      "admin1"
+    ],
+    "metricas_alvo": [
+      "Total em TARV (contagem)",
+      "Casos de TB Notificados — Todas as Formas (contagem)"
+    ],
+    "justificacao_arquetipo": "A pergunta pede explicitamente sobreposição geográfica entre dois indicadores de saúde distintos: o arquétipo geoespacial organiza mapas comparáveis, dispersão e teste de correlação espacial entre VIH e TB por província, o nível mais fino disponível em ambos os datasets."
+  },
+  "suficiencia": {
+    "cobertura": [
+      {
+        "sub_pergunta": "Qual a distribuição provincial dos casos de VIH/SIDA (TARV) em Moçambique?",
+        "coberto": true,
+        "fonte": "dataset_selecionado",
+        "lacuna": "",
+        "accao": ""
+      },
+      {
+        "sub_pergunta": "Qual a distribuição provincial dos casos de tuberculose notificados?",
+        "coberto": true,
+        "fonte": "dataset_selecionado",
+        "lacuna": "",
+        "accao": ""
+      },
+      {
+        "sub_pergunta": "As duas distribuições geográficas coincidem ou divergem entre províncias?",
+        "coberto": true,
+        "fonte": "dataset_selecionado",
+        "lacuna": "",
+        "accao": ""
+      },
+      {
+        "sub_pergunta": "Existe correlação estatística entre a carga de VIH e de TB por província?",
+        "coberto": true,
+        "fonte": "dataset_selecionado",
+        "lacuna": "",
+        "accao": ""
+      },
+      {
+        "sub_pergunta": "Há províncias atípicas que destoam do padrão geral em qualquer das doenças?",
+        "coberto": true,
+        "fonte": "dataset_selecionado",
+        "lacuna": "",
+        "accao": ""
+      }
+    ],
+    "confianca_sem_enriquecimento": 0.92,
+    "precisa_enriquecimento": false,
+    "alvos_enriquecimento": []
+  },
+  "contexto": {
+    "tabelas": {},
+    "ligacoes": {},
+    "calcs": {
+      "s5_coluna": {
+        "id": "s5_coluna",
+        "valor": "dq_tier",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "s5",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L07 VIH/SIDA e ISTs Conjunto de Dados v1.0"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Data4Moz L07 VIH/SIDA e ISTs Conjunto de Dados v1.0"
+          ]
+        }
+      },
+      "s5_n_total": {
+        "id": "s5_n_total",
+        "valor": 999,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s5",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L07 VIH/SIDA e ISTs Conjunto de Dados v1.0"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Data4Moz L07 VIH/SIDA e ISTs Conjunto de Dados v1.0"
+          ]
+        }
+      },
+      "s5_n_preenchidos": {
+        "id": "s5_n_preenchidos",
+        "valor": 240,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s5",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L07 VIH/SIDA e ISTs Conjunto de Dados v1.0"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Data4Moz L07 VIH/SIDA e ISTs Conjunto de Dados v1.0"
+          ]
+        }
+      },
+      "s5_completude_pct": {
+        "id": "s5_completude_pct",
+        "valor": 24,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s5",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L07 VIH/SIDA e ISTs Conjunto de Dados v1.0"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Data4Moz L07 VIH/SIDA e ISTs Conjunto de Dados v1.0"
+          ]
+        }
+      },
+      "s5_n_distintos": {
+        "id": "s5_n_distintos",
+        "valor": 2,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s5",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L07 VIH/SIDA e ISTs Conjunto de Dados v1.0"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Data4Moz L07 VIH/SIDA e ISTs Conjunto de Dados v1.0"
+          ]
+        }
+      },
+      "s5_tipo": {
+        "id": "s5_tipo",
+        "valor": "categorica",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "s5",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L07 VIH/SIDA e ISTs Conjunto de Dados v1.0"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Data4Moz L07 VIH/SIDA e ISTs Conjunto de Dados v1.0"
+          ]
+        }
+      },
+      "s6_limite_inferior": {
+        "id": "s6_limite_inferior",
+        "valor": -163481.875,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s6",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L07 VIH/SIDA e ISTs Conjunto de Dados v1.0"
+          ],
+          "linhas_usadas": 240,
+          "metodo": "detectar_outliers",
+          "fontes": [
+            "Data4Moz L07 VIH/SIDA e ISTs Conjunto de Dados v1.0"
+          ]
+        }
+      },
+      "s6_limite_superior": {
+        "id": "s6_limite_superior",
+        "valor": 282509.125,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s6",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L07 VIH/SIDA e ISTs Conjunto de Dados v1.0"
+          ],
+          "linhas_usadas": 240,
+          "metodo": "detectar_outliers",
+          "fontes": [
+            "Data4Moz L07 VIH/SIDA e ISTs Conjunto de Dados v1.0"
+          ]
+        }
+      },
+      "s6_n": {
+        "id": "s6_n",
+        "valor": 16,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s6",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L07 VIH/SIDA e ISTs Conjunto de Dados v1.0"
+          ],
+          "linhas_usadas": 240,
+          "metodo": "detectar_outliers",
+          "fontes": [
+            "Data4Moz L07 VIH/SIDA e ISTs Conjunto de Dados v1.0"
+          ]
+        }
+      },
+      "s1_nome_max": {
+        "id": "s1_nome_max",
+        "valor": "ZAMBEZIA",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "s1",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L07 VIH/SIDA e ISTs Conjunto de Dados v1.0"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L07 VIH/SIDA e ISTs Conjunto de Dados v1.0"
+          ]
+        }
+      },
+      "s1_nome_min": {
+        "id": "s1_nome_min",
+        "valor": "TETE",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "s1",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L07 VIH/SIDA e ISTs Conjunto de Dados v1.0"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L07 VIH/SIDA e ISTs Conjunto de Dados v1.0"
+          ]
+        }
+      },
+      "s1_n": {
+        "id": "s1_n",
+        "valor": 11,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s1",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L07 VIH/SIDA e ISTs Conjunto de Dados v1.0"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L07 VIH/SIDA e ISTs Conjunto de Dados v1.0"
+          ]
+        }
+      },
+      "s1_soma": {
+        "id": "s1_soma",
+        "valor": 6556080,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s1",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L07 VIH/SIDA e ISTs Conjunto de Dados v1.0"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L07 VIH/SIDA e ISTs Conjunto de Dados v1.0"
+          ]
+        }
+      },
+      "s1_media": {
+        "id": "s1_media",
+        "valor": 596007.2727,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s1",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L07 VIH/SIDA e ISTs Conjunto de Dados v1.0"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L07 VIH/SIDA e ISTs Conjunto de Dados v1.0"
+          ]
+        }
+      },
+      "s1_mediana": {
+        "id": "s1_mediana",
+        "valor": 572832,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s1",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L07 VIH/SIDA e ISTs Conjunto de Dados v1.0"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L07 VIH/SIDA e ISTs Conjunto de Dados v1.0"
+          ]
+        }
+      },
+      "s1_desvio": {
+        "id": "s1_desvio",
+        "valor": 264831.1931,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s1",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L07 VIH/SIDA e ISTs Conjunto de Dados v1.0"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L07 VIH/SIDA e ISTs Conjunto de Dados v1.0"
+          ]
+        }
+      },
+      "s1_min": {
+        "id": "s1_min",
+        "valor": 333008,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s1",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L07 VIH/SIDA e ISTs Conjunto de Dados v1.0"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L07 VIH/SIDA e ISTs Conjunto de Dados v1.0"
+          ]
+        }
+      },
+      "s1_max": {
+        "id": "s1_max",
+        "valor": 1262713,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s1",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L07 VIH/SIDA e ISTs Conjunto de Dados v1.0"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L07 VIH/SIDA e ISTs Conjunto de Dados v1.0"
+          ]
+        }
+      },
+      "s1_q1": {
+        "id": "s1_q1",
+        "valor": 409913,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s1",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L07 VIH/SIDA e ISTs Conjunto de Dados v1.0"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L07 VIH/SIDA e ISTs Conjunto de Dados v1.0"
+          ]
+        }
+      },
+      "s1_q3": {
+        "id": "s1_q3",
+        "valor": 705471.5,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s1",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L07 VIH/SIDA e ISTs Conjunto de Dados v1.0"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L07 VIH/SIDA e ISTs Conjunto de Dados v1.0"
+          ]
+        }
+      },
+      "s1_coeficiente_variacao": {
+        "id": "s1_coeficiente_variacao",
+        "valor": 44.43,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s1",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L07 VIH/SIDA e ISTs Conjunto de Dados v1.0"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L07 VIH/SIDA e ISTs Conjunto de Dados v1.0"
+          ]
+        }
+      },
+      "s2_nome_max": {
+        "id": "s2_nome_max",
+        "valor": "ZAMBEZIA",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "s2",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L08 Conjunto de Dados Tuberculose_v1.0"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L08 Conjunto de Dados Tuberculose_v1.0"
+          ]
+        }
+      },
+      "s2_nome_min": {
+        "id": "s2_nome_min",
+        "valor": "NIASSA",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "s2",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L08 Conjunto de Dados Tuberculose_v1.0"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L08 Conjunto de Dados Tuberculose_v1.0"
+          ]
+        }
+      },
+      "s2_n": {
+        "id": "s2_n",
+        "valor": 11,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s2",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L08 Conjunto de Dados Tuberculose_v1.0"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L08 Conjunto de Dados Tuberculose_v1.0"
+          ]
+        }
+      },
+      "s2_soma": {
+        "id": "s2_soma",
+        "valor": 361094,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s2",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L08 Conjunto de Dados Tuberculose_v1.0"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L08 Conjunto de Dados Tuberculose_v1.0"
+          ]
+        }
+      },
+      "s2_media": {
+        "id": "s2_media",
+        "valor": 32826.7273,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s2",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L08 Conjunto de Dados Tuberculose_v1.0"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L08 Conjunto de Dados Tuberculose_v1.0"
+          ]
+        }
+      },
+      "s2_mediana": {
+        "id": "s2_mediana",
+        "valor": 28888,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s2",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L08 Conjunto de Dados Tuberculose_v1.0"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L08 Conjunto de Dados Tuberculose_v1.0"
+          ]
+        }
+      },
+      "s2_desvio": {
+        "id": "s2_desvio",
+        "valor": 16848.5064,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s2",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L08 Conjunto de Dados Tuberculose_v1.0"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L08 Conjunto de Dados Tuberculose_v1.0"
+          ]
+        }
+      },
+      "s2_min": {
+        "id": "s2_min",
+        "valor": 15043,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s2",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L08 Conjunto de Dados Tuberculose_v1.0"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L08 Conjunto de Dados Tuberculose_v1.0"
+          ]
+        }
+      },
+      "s2_max": {
+        "id": "s2_max",
+        "valor": 73951,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s2",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L08 Conjunto de Dados Tuberculose_v1.0"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L08 Conjunto de Dados Tuberculose_v1.0"
+          ]
+        }
+      },
+      "s2_q1": {
+        "id": "s2_q1",
+        "valor": 23301.5,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s2",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L08 Conjunto de Dados Tuberculose_v1.0"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L08 Conjunto de Dados Tuberculose_v1.0"
+          ]
+        }
+      },
+      "s2_q3": {
+        "id": "s2_q3",
+        "valor": 36501.5,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s2",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L08 Conjunto de Dados Tuberculose_v1.0"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L08 Conjunto de Dados Tuberculose_v1.0"
+          ]
+        }
+      },
+      "s2_coeficiente_variacao": {
+        "id": "s2_coeficiente_variacao",
+        "valor": 51.33,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "s2",
+        "proveniencia": {
+          "datasets": [
+            "Data4Moz L08 Conjunto de Dados Tuberculose_v1.0"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Data4Moz L08 Conjunto de Dados Tuberculose_v1.0"
+          ]
+        }
+      }
+    },
+    "series": [
+      {
+        "passo_id": "s1",
+        "nivel": "admin1",
+        "unidades": [
+          {
+            "codigo": "04",
+            "nome": "ZAMBEZIA",
+            "valor": 1262713
+          },
+          {
+            "codigo": "10",
+            "nome": "MAPUTO",
+            "valor": 713968
+          },
+          {
+            "codigo": "09",
+            "nome": "GAZA",
+            "valor": 712521
+          },
+          {
+            "codigo": "03",
+            "nome": "NAMPULA",
+            "valor": 698422
+          },
+          {
+            "codigo": "11",
+            "nome": "Maputo Cidade",
+            "valor": 623789
+          },
+          {
+            "codigo": "07",
+            "nome": "SOFALA",
+            "valor": 572832
+          },
+          {
+            "codigo": "06",
+            "nome": "MANICA",
+            "valor": 461801
+          },
+          {
+            "codigo": "01",
+            "nome": "NIASSA",
+            "valor": 455191
+          },
+          {
+            "codigo": "08",
+            "nome": "INHAMBANE",
+            "valor": 364635
+          },
+          {
+            "codigo": "02",
+            "nome": "CABO DELGADO",
+            "valor": 357200
+          },
+          {
+            "codigo": "05",
+            "nome": "TETE",
+            "valor": 333008
+          }
+        ],
+        "metrica": "Total em TARV (contagem)",
+        "normalizacao": "nenhuma",
+        "dataset_id": 51
+      },
+      {
+        "passo_id": "s2",
+        "nivel": "admin1",
+        "unidades": [
+          {
+            "codigo": "04",
+            "nome": "ZAMBEZIA",
+            "valor": 73951
+          },
+          {
+            "codigo": "03",
+            "nome": "NAMPULA",
+            "valor": 48580
+          },
+          {
+            "codigo": "07",
+            "nome": "SOFALA",
+            "valor": 40855
+          },
+          {
+            "codigo": "09",
+            "nome": "GAZA",
+            "valor": 32148
+          },
+          {
+            "codigo": "05",
+            "nome": "TETE",
+            "valor": 31273
+          },
+          {
+            "codigo": "06",
+            "nome": "MANICA",
+            "valor": 28888
+          },
+          {
+            "codigo": "10",
+            "nome": "MAPUTO",
+            "valor": 28090
+          },
+          {
+            "codigo": "11",
+            "nome": "Maputo Cidade",
+            "valor": 24239
+          },
+          {
+            "codigo": "08",
+            "nome": "INHAMBANE",
+            "valor": 22364
+          },
+          {
+            "codigo": "02",
+            "nome": "CABO DELGADO",
+            "valor": 15663
+          },
+          {
+            "codigo": "01",
+            "nome": "NIASSA",
+            "valor": 15043
+          }
+        ],
+        "metrica": "Casos de TB Notificados — Todas as Formas (contagem)",
+        "normalizacao": "nenhuma",
+        "dataset_id": 55
+      }
+    ],
+    "graficos": [
+      {
+        "passo_id": "s5",
+        "tipo": "pizza",
+        "titulo": "Verifica a qualidade e o nível de confiança (dq_tier) dos dados de VIH usados.",
+        "eixoX": [
+          "Decision-grade",
+          "Advisory"
+        ],
+        "series": [
+          {
+            "nome": "dq_tier",
+            "valores": [
+              201,
+              39
+            ]
+          }
+        ]
+      },
+      {
+        "passo_id": "s1_grafico_garantia",
+        "tipo": "barra",
+        "titulo": "Total em TARV (contagem): maiores unidades",
+        "eixoX": [
+          "ZAMBEZIA",
+          "MAPUTO",
+          "GAZA",
+          "NAMPULA",
+          "Maputo Cidade",
+          "SOFALA",
+          "MANICA",
+          "NIASSA",
+          "INHAMBANE",
+          "CABO DELGADO",
+          "TETE"
+        ],
+        "series": [
+          {
+            "nome": "Total em TARV (contagem)",
+            "valores": [
+              1262713,
+              713968,
+              712521,
+              698422,
+              623789,
+              572832,
+              461801,
+              455191,
+              364635,
+              357200,
+              333008
+            ]
+          }
+        ],
+        "categoria": "comparativo"
+      },
+      {
+        "passo_id": "s2_grafico_garantia",
+        "tipo": "barra",
+        "titulo": "Casos de TB Notificados — Todas as Formas (contagem): maiores unidades",
+        "eixoX": [
+          "ZAMBEZIA",
+          "NAMPULA",
+          "SOFALA",
+          "GAZA",
+          "TETE",
+          "MANICA",
+          "MAPUTO",
+          "Maputo Cidade",
+          "INHAMBANE",
+          "CABO DELGADO",
+          "NIASSA"
+        ],
+        "series": [
+          {
+            "nome": "Casos de TB Notificados — Todas as Formas (contagem)",
+            "valores": [
+              73951,
+              48580,
+              40855,
+              32148,
+              31273,
+              28888,
+              28090,
+              24239,
+              22364,
+              15663,
+              15043
+            ]
+          }
+        ],
+        "categoria": "comparativo"
+      }
+    ],
+    "destaques": [],
+    "avisos": [
+      "Data4Moz L07 VIH/SIDA e ISTs Conjunto de Dados v1.0: 1 valor(es) da coluna \"geography_name\" não correspondem a unidades administrativas de Moçambique (Nacional) e ficam fora dos totais por unidade.",
+      "Data4Moz L08 Conjunto de Dados Tuberculose_v1.0: 1 valor(es) da coluna \"geography_name\" não correspondem a unidades administrativas de Moçambique (Nacional) e ficam fora dos totais por unidade.",
+      "Passo \"Testa correlação (robusta a não linearidade) entre carga de VIH e de TB por província.\" não pôde ser executado: Passo s4: correlacao_spearman exige duas séries numéricas do mesmo tamanho (obteve 240 e 0); verificar coluna_metrica e coluna_metrica_2"
+    ],
+    "enriquecimentoPopulacao": {},
+    "camadasBrutas": [],
+    "qualidade": [
+      {
+        "coluna": "Dq Tier",
+        "completude_pct": 24,
+        "n_distintos": 2,
+        "tipo": "categorica"
+      }
+    ],
+    "codigoExecutado": [],
+    "custoExecucaoCodigo": 0
+  },
+  "achados": [],
+  "narrativa": {
+    "titulo": "Zambézia lidera tanto em pessoas com VIH em tratamento como em casos de tuberculose, mas não há teste estatístico que confirme a correlação entre as duas doenças por província",
+    "subtitulo": "Comparação da distribuição provincial de pessoas em TARV e de casos de tuberculose notificados em Moçambique",
+    "resposta_directa": "Há sobreposição parcial: Zambézia é, em termos absolutos, a província com mais pessoas em TARV ({{calc:s1_max}}) e também com mais casos de TB notificados ({{calc:s2_max}}). No entanto, nos extremos inferiores as duas doenças divergem: Tete tem o menor volume de TARV ({{calc:s1_min}}) enquanto Niassa tem o menor volume de TB notificada ({{calc:s2_min}}). A tentativa de calcular uma correlação formal entre as duas séries falhou por um problema técnico de alinhamento dos dados, por isso esta sobreposição é descritiva, não estatisticamente confirmada.",
+    "numeros_chave": [
+      {
+        "calc_id": "s1_max",
+        "rotulo": "Maior volume de TARV: Zambézia",
+        "contexto": "Zambézia regista o maior número absoluto de pessoas em tratamento antirretroviral entre as 11 províncias."
+      },
+      {
+        "calc_id": "s2_max",
+        "rotulo": "Maior volume de TB notificada: Zambézia",
+        "contexto": "A mesma província lidera também em casos de tuberculose notificados, coincidência que sugere sobreposição geográfica."
+      },
+      {
+        "calc_id": "s1_min",
+        "rotulo": "Menor volume de TARV: Tete",
+        "contexto": "Tete tem o menor número de pessoas em TARV entre as províncias analisadas."
+      },
+      {
+        "calc_id": "s2_min",
+        "rotulo": "Menor volume de TB notificada: Niassa",
+        "contexto": "Niassa, e não Tete, tem o menor número de casos de TB notificados: os extremos inferiores não coincidem."
+      },
+      {
+        "calc_id": "s1_coeficiente_variacao",
+        "rotulo": "Dispersão do VIH/TARV entre províncias",
+        "contexto": "Coeficiente de variação de 44,4% mostra desigualdade moderada na distribuição provincial do TARV."
+      },
+      {
+        "calc_id": "s2_coeficiente_variacao",
+        "rotulo": "Dispersão da TB entre províncias",
+        "contexto": "Coeficiente de variação de 51,3% mostra que a TB está distribuída de forma ainda mais desigual entre províncias do que o VIH."
+      },
+      {
+        "calc_id": "s6_n",
+        "rotulo": "16 valores atípicos identificados",
+        "contexto": "Ao nível de todas as variáveis dos dois conjuntos de dados, 16 registos ficam fora do intervalo esperado, sinal de que algumas combinações província/indicador se destacam fortemente do resto."
+      }
+    ],
+    "o_que_mostram": "No topo da distribuição, as duas doenças coincidem: Zambézia concentra tanto o maior número de pessoas em TARV como o maior número de casos de tuberculose notificados, o que é consistente com uma sobreposição geográfica no extremo superior. Mas essa coincidência não se repete no extremo inferior: Tete tem o menor volume de TARV, enquanto Niassa tem o menor volume de TB, o que enfraquece a ideia de uma sobreposição sistemática em toda a distribuição.\n\nA dispersão entre províncias é maior na tuberculose (coeficiente de variação de 51,3%) do que no VIH/TARV (44,4%), sugerindo que a carga de TB está mais concentrada em poucas províncias do que a carga de VIH em tratamento. Sem o teste de correlação formal, que não pôde ser executado, esta leitura fica limitada à comparação de extremos e de dispersão, não a uma medida estatística de associação entre as duas séries.",
+    "porque": "A explicação mais óbvia para Zambézia liderar em ambas as doenças não é uma ligação biológica directa, mas o tamanho da população: é uma das províncias mais populosas de Moçambique, com mais unidades sanitárias e mais casos registados de qualquer doença em termos absolutos. Existe também uma explicação clínica plausível, a co-infecção VIH/TB, em que pessoas com VIH têm maior risco de desenvolver tuberculose activa, mas os dados aqui usados (contagens absolutas por província, sem correlação validada) não permitem distinguir entre as duas hipóteses.",
+    "o_que_nao_diz": [
+      "O teste de correlação de Spearman entre carga de VIH e de TB por província não foi executado com sucesso (erro técnico de alinhamento dos dados), por isso não existe medida estatística formal de associação, apenas comparação descritiva de extremos.",
+      "Os números usados são contagens absolutas, não taxas por habitante: províncias mais populosas tendem a aparecer no topo em qualquer doença só por terem mais gente e mais unidades sanitárias, o que pode inflacionar a aparência de sobreposição.",
+      "O registo 'Nacional' foi excluído dos totais por província em ambos os conjuntos de dados, e os anos de cobertura diferem entre o VIH (2009 a 2022) e a TB (2015 a 2022), pelo que a comparação não é estritamente ano a ano.",
+      "Os valores atípicos detectados (16 registos) resultam de misturar variáveis com escalas muito diferentes (contagens e percentagens) numa só coluna, pelo que não isolam especificamente uma sobreposição geográfica entre VIH e TB."
+    ],
+    "como_chegamos": "Calculámos estatísticas descritivas (média, mediana, mínimo, máximo, coeficiente de variação) separadamente para a variável de pessoas em TARV e para a de casos de TB notificados, por província, e comparámos os extremos e a dispersão de cada distribuição. Tentámos complementar com uma correlação de Spearman entre as duas séries ao nível provincial, mas o passo falhou por desalinhamento técnico dos dados, pelo que a conclusão assenta apenas na comparação descritiva.",
+    "fontes": [
+      {
+        "instituicao": "MISAU DPC",
+        "documento": "Anuário Estatístico de Saúde (SISMA)",
+        "ano": 2022
+      },
+      {
+        "instituicao": "DHS/IDS",
+        "documento": "Inquérito Demográfico e de Saúde 2022-23",
+        "ano": 2022
+      },
+      {
+        "instituicao": "WHO",
+        "documento": "Global TB Report",
+        "ano": 2022
+      }
+    ]
+  },
+  "narrativa_resolvida": {
+    "titulo": "Zambézia lidera tanto em pessoas com VIH em tratamento como em casos de tuberculose, mas não há teste estatístico que confirme a correlação entre as duas doenças por província",
+    "subtitulo": "Comparação da distribuição provincial de pessoas em TARV e de casos de tuberculose notificados em Moçambique",
+    "resposta_directa": "Há sobreposição parcial: Zambézia é, em termos absolutos, a província com mais pessoas em TARV (1 262 713) e também com mais casos de TB notificados (73 951). No entanto, nos extremos inferiores as duas doenças divergem: Tete tem o menor volume de TARV (333 008) enquanto Niassa tem o menor volume de TB notificada (15 043). A tentativa de calcular uma correlação formal entre as duas séries falhou por um problema técnico de alinhamento dos dados, por isso esta sobreposição é descritiva, não estatisticamente confirmada.",
+    "numeros_chave": [
+      {
+        "calc_id": "s1_max",
+        "rotulo": "Maior volume de TARV: Zambézia",
+        "contexto": "Zambézia regista o maior número absoluto de pessoas em tratamento antirretroviral entre as 11 províncias.",
+        "valor": "1 262 713"
+      },
+      {
+        "calc_id": "s2_max",
+        "rotulo": "Maior volume de TB notificada: Zambézia",
+        "contexto": "A mesma província lidera também em casos de tuberculose notificados, coincidência que sugere sobreposição geográfica.",
+        "valor": "73 951"
+      },
+      {
+        "calc_id": "s1_min",
+        "rotulo": "Menor volume de TARV: Tete",
+        "contexto": "Tete tem o menor número de pessoas em TARV entre as províncias analisadas.",
+        "valor": "333 008"
+      },
+      {
+        "calc_id": "s2_min",
+        "rotulo": "Menor volume de TB notificada: Niassa",
+        "contexto": "Niassa, e não Tete, tem o menor número de casos de TB notificados: os extremos inferiores não coincidem.",
+        "valor": "15 043"
+      },
+      {
+        "calc_id": "s1_coeficiente_variacao",
+        "rotulo": "Dispersão do VIH/TARV entre províncias",
+        "contexto": "Coeficiente de variação de 44,4% mostra desigualdade moderada na distribuição provincial do TARV.",
+        "valor": "44,4"
+      },
+      {
+        "calc_id": "s2_coeficiente_variacao",
+        "rotulo": "Dispersão da TB entre províncias",
+        "contexto": "Coeficiente de variação de 51,3% mostra que a TB está distribuída de forma ainda mais desigual entre províncias do que o VIH.",
+        "valor": "51,3"
+      },
+      {
+        "calc_id": "s6_n",
+        "rotulo": "16 valores atípicos identificados",
+        "contexto": "Ao nível de todas as variáveis dos dois conjuntos de dados, 16 registos ficam fora do intervalo esperado, sinal de que algumas combinações província/indicador se destacam fortemente do resto.",
+        "valor": "16"
+      }
+    ],
+    "o_que_mostram": "No topo da distribuição, as duas doenças coincidem: Zambézia concentra tanto o maior número de pessoas em TARV como o maior número de casos de tuberculose notificados, o que é consistente com uma sobreposição geográfica no extremo superior. Mas essa coincidência não se repete no extremo inferior: Tete tem o menor volume de TARV, enquanto Niassa tem o menor volume de TB, o que enfraquece a ideia de uma sobreposição sistemática em toda a distribuição.\n\nA dispersão entre províncias é maior na tuberculose (coeficiente de variação de 51,3%) do que no VIH/TARV (44,4%), sugerindo que a carga de TB está mais concentrada em poucas províncias do que a carga de VIH em tratamento. Sem o teste de correlação formal, que não pôde ser executado, esta leitura fica limitada à comparação de extremos e de dispersão, não a uma medida estatística de associação entre as duas séries.",
+    "porque": "A explicação mais óbvia para Zambézia liderar em ambas as doenças não é uma ligação biológica directa, mas o tamanho da população: é uma das províncias mais populosas de Moçambique, com mais unidades sanitárias e mais casos registados de qualquer doença em termos absolutos. Existe também uma explicação clínica plausível, a co-infecção VIH/TB, em que pessoas com VIH têm maior risco de desenvolver tuberculose activa, mas os dados aqui usados (contagens absolutas por província, sem correlação validada) não permitem distinguir entre as duas hipóteses.",
+    "o_que_nao_diz": [
+      "O teste de correlação de Spearman entre carga de VIH e de TB por província não foi executado com sucesso (erro técnico de alinhamento dos dados), por isso não existe medida estatística formal de associação, apenas comparação descritiva de extremos.",
+      "Os números usados são contagens absolutas, não taxas por habitante: províncias mais populosas tendem a aparecer no topo em qualquer doença só por terem mais gente e mais unidades sanitárias, o que pode inflacionar a aparência de sobreposição.",
+      "O registo 'Nacional' foi excluído dos totais por província em ambos os conjuntos de dados, e os anos de cobertura diferem entre o VIH (2009 a 2022) e a TB (2015 a 2022), pelo que a comparação não é estritamente ano a ano.",
+      "Os valores atípicos detectados (16 registos) resultam de misturar variáveis com escalas muito diferentes (contagens e percentagens) numa só coluna, pelo que não isolam especificamente uma sobreposição geográfica entre VIH e TB."
+    ],
+    "como_chegamos": "Calculámos estatísticas descritivas (média, mediana, mínimo, máximo, coeficiente de variação) separadamente para a variável de pessoas em TARV e para a de casos de TB notificados, por província, e comparámos os extremos e a dispersão de cada distribuição. Tentámos complementar com uma correlação de Spearman entre as duas séries ao nível provincial, mas o passo falhou por desalinhamento técnico dos dados, pelo que a conclusão assenta apenas na comparação descritiva.",
+    "fontes": [
+      {
+        "instituicao": "MISAU DPC",
+        "documento": "Anuário Estatístico de Saúde (SISMA)",
+        "ano": 2022
+      },
+      {
+        "instituicao": "DHS/IDS",
+        "documento": "Inquérito Demográfico e de Saúde 2022-23",
+        "ano": 2022
+      },
+      {
+        "instituicao": "WHO",
+        "documento": "Global TB Report",
+        "ano": 2022
+      }
+    ]
+  },
+  "critica": {
+    "objeccoes": [],
+    "bloqueia_publicacao": false
+  },
+  "custo_usd": 0.129357,
+  "duracao_ms": 154396,
+  "confianca": {
+    "percentagem": 92,
+    "datasetsUsados": 2,
+    "ligacoesGeograficas": [
+      {
+        "dataset_id": 51,
+        "nivel": "admin1",
+        "taxa_correspondencia": 0.87
+      },
+      {
+        "dataset_id": 55,
+        "nivel": "admin1",
+        "taxa_correspondencia": 0.84
+      }
+    ],
+    "completudeMediaPct": 24,
+    "valoresDerivados": 0,
+    "passosViaCodigo": 0
+  }
+}

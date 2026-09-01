@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { Globe, Home, FolderOpen, Settings, Database, FileText, MapPinned, Menu, X, LogOut, BarChart3 } from 'lucide-react'
+import { Globe, Home, FolderOpen, Settings, Database, FileText, MapPinned, Menu, X, LogOut, BarChart3, MessageSquare, Brain, Globe2, Users, ScrollText, Lightbulb, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
@@ -45,61 +45,57 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
               </div>
             </Link>
           </div>
-          <div className="hidden md:flex items-center gap-3">
+          {/* flex-wrap: com 6 links + avatar + botão Admin, larguras intermédias (tablet/laptop
+              pequeno) não têm espaço para uma linha só — antes isso partia o texto de um link a
+              meio ("Mapas\nInteligentes"); agora o link inteiro desce para a linha seguinte. */}
+          <div className="hidden md:flex items-center gap-3 flex-wrap">
             <Link
               href="/"
-              className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition"
+              className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition whitespace-nowrap"
             >
               <Home className="w-4 h-4" />
               <span className="text-sm font-medium">Início</span>
             </Link>
             <Link
               href="/dados-espaciais"
-              className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition"
+              className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition whitespace-nowrap"
             >
               <FolderOpen className="w-4 h-4" />
               <span className="text-sm font-medium">Geoespaciais</span>
             </Link>
             <Link
               href="/dados-alfanumericos"
-              className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition"
+              className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition whitespace-nowrap"
             >
               <Database className="w-4 h-4" />
               <span className="text-sm font-medium">Alfanuméricos</span>
             </Link>
             <Link
               href="/relatorios"
-              className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition"
+              className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition whitespace-nowrap"
             >
               <FileText className="w-4 h-4" />
               <span className="text-sm font-medium">Relatórios</span>
             </Link>
             <Link
               href="/dashboards-alfanumericos"
-              className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition"
+              className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition whitespace-nowrap"
             >
               <BarChart3 className="w-4 h-4" />
               <span className="text-sm font-medium">Alfanuméricos</span>
             </Link>
             <Link
               href="/maps"
-              className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition"
+              className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition whitespace-nowrap"
             >
               <MapPinned className="w-4 h-4" />
-              <span className="text-sm font-medium">Mapas Inteligentes</span>
+              <span className="text-sm font-medium">Mapas</span>
             </Link>
             {user && (
               <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center text-white font-semibold ml-2">
                 {user.name?.[0] || user.email[0].toUpperCase()}
               </div>
             )}
-            <Link
-              href="/admin"
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition shadow-lg hover:shadow-xl"
-            >
-              <Settings className="w-4 h-4" />
-              <span className="font-medium">Admin</span>
-            </Link>
           </div>
           <div className="md:hidden border-t border-gray-100 pt-2">
             <div className="flex items-center justify-between gap-2">
@@ -163,6 +159,34 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
               <Link href="/admin" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50">
                 <Settings className="w-5 h-5" />
                 <span>Admin</span>
+              </Link>
+              <Link href="/admin?tab=requests" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50">
+                <MessageSquare className="w-5 h-5" />
+                <span>Solicitações</span>
+              </Link>
+              <Link href="/dashboard/ia-utilizacao" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50">
+                <Brain className="w-5 h-5" />
+                <span>Utilização de IA</span>
+              </Link>
+              <Link href="/admin/sugestoes-datasets" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50">
+                <Lightbulb className="w-5 h-5" />
+                <span>Sugestões de Datasets</span>
+              </Link>
+              <Link href="/admin/origem-utilizadores" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50">
+                <Globe2 className="w-5 h-5" />
+                <span>Origem dos Utilizadores</span>
+              </Link>
+              <Link href="/admin/utilizadores" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50">
+                <Users className="w-5 h-5" />
+                <span>Utilizadores</span>
+              </Link>
+              <Link href="/admin/lixeira" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50">
+                <Trash2 className="w-5 h-5" />
+                <span>Lixeira</span>
+              </Link>
+              <Link href="/admin/auditoria" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50">
+                <ScrollText className="w-5 h-5" />
+                <span>Auditoria</span>
               </Link>
               <Link href="/" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50">
                 <Home className="w-5 h-5" />

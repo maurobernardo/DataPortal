@@ -7,7 +7,11 @@ import { ProfileForm } from '@/components/ProfileForm'
 
 export const dynamic = 'force-dynamic'
 
-export default async function ProfilePage() {
+export default async function ProfilePage({
+  searchParams,
+}: {
+  searchParams?: { configurar2fa?: string }
+}) {
   const session = await getCurrentUser()
   if (!session) {
     redirect('/login?next=/perfil')
@@ -56,6 +60,8 @@ export default async function ProfilePage() {
           hasPassword={Boolean(user.password)}
           memberSince={memberSince}
           totpEnabled={Boolean(user.totp_enabled)}
+          pedidoEliminacaoEm={user.pedido_eliminacao_em ? new Date(user.pedido_eliminacao_em).toISOString() : null}
+          totpObrigatorio={user.role === 'admin' && !user.totp_enabled && searchParams?.configurar2fa === 'obrigatorio'}
         />
       </div>
     </div>

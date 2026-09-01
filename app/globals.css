@@ -10,10 +10,16 @@
   --brand-primary: #064E2C;
   --brand-primary-strong: #04361F;
   --brand-primary-soft: #E7F3EB;
+  /* Vermelho do próprio logótipo (amostrado do ícone circular em public/images/logo.png), usado
+     só no chatbot de ajuda para o distinguir visualmente do resto do portal (que é todo verde). */
+  --brand-red-logo: #B4001F;
+  --brand-red-logo-strong: #8A0018;
   --pd-ink-900: #0B1B14;
   --pd-ink-700: #1F2A24;
   --pd-ink-500: #4A5A52;
-  --pd-ink-300: #8B9A91;
+  /* Escurecido de #8B9A91 (contraste ~3.1:1 sobre branco, abaixo do mínimo AA de 4.5:1 para texto)
+     para #6B7A72 (~4.6:1) — usado em legendas e texto secundário em vários sítios do portal. */
+  --pd-ink-300: #6B7A72;
   --pd-ink-100: #D9DFDB;
   --pd-surface-0: #FFFFFF;
   --pd-surface-50: #F7F9F8;
@@ -65,6 +71,16 @@
   --ai-violet-50: #F4EFFC;
   --ai-glow: linear-gradient(135deg, #6B4FBB 0%, #1FA365 100%);
   --ai-glow-soft: linear-gradient(135deg, rgba(107,79,187,0.12) 0%, rgba(31,163,101,0.08) 100%);
+
+  /* Sistema de motion do portal — hierarquia de durações e easings partilhada por todos os
+     componentes com animação. Números escolhidos para o conteúdo ser sempre a prioridade: rápido
+     o suficiente para nunca atrasar a leitura, lento o suficiente para não piscar. */
+  --pd-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --pd-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --pd-dur-micro: 160ms;    /* hover, press, toggle */
+  --pd-dur-normal: 260ms;   /* dropdowns, popovers, filtros */
+  --pd-dur-enter: 480ms;    /* entrada de secções/cards */
+  --pd-dur-decorative: 900ms; /* movimento ambiente contínuo */
 }
 
 *,
@@ -118,6 +134,27 @@ body {
   }
 }
 
+/* FAQ: entrada animada de cada par de perguntas ao mudar de página — a troca da `key` no React
+   remonta este bloco, o que reinicia a animação sozinha, sem estado JS extra. */
+@keyframes faqPageEnter {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.faq-page-enter {
+  animation: faqPageEnter 0.4s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .faq-page-enter {
+    animation: none;
+  }
+}
+
 @keyframes fade-in {
   from {
     opacity: 0;
@@ -157,8 +194,26 @@ body {
   transform-origin: top left;
 }
 
+/* Números ao vivo no ecrã de espera da análise (calc_pronto via SSE): cada chip entra com um
+   pequeno "pop" para chamar a atenção de que algo real acabou de ser calculado, sem ser tão
+   chamativo que distraia de ler o valor. */
+@keyframes pd-live-calc-in {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.pd-live-calc-in {
+  animation: pd-live-calc-in 220ms ease-out;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .pd-popover-in {
+  .pd-popover-in,
+  .pd-live-calc-in {
     animation: none;
   }
 }
@@ -188,6 +243,20 @@ input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
   box-shadow: 0 0 0 3px var(--pd-green-100), 0 0 0 1px var(--pd-green-700);
+}
+
+/* Anel de foco de reserva, consistente com a marca, para qualquer elemento clicável que ainda não
+   tenha o seu próprio estilo de :focus-visible — sem isto, navegação por teclado cai no contorno
+   azul por omissão do navegador (inconsistente) ou, nalguns componentes, sem nenhum indicador
+   visível. Especificidade baixa de propósito: qualquer regra mais específica já existente (ex.:
+   .pd-hero-cert-badge:focus-visible) continua a ganhar. */
+a:focus-visible,
+button:focus-visible,
+[role="button"]:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--pd-green-700);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 @keyframes partners-scroll {
@@ -277,13 +346,83 @@ textarea:focus-visible {
 .reveal-on-scroll {
   opacity: 0;
   transform: translateY(22px) scale(0.985);
-  transition: opacity 520ms ease, transform 520ms ease;
+  transition: opacity var(--pd-dur-enter) var(--pd-ease-out), transform var(--pd-dur-enter) var(--pd-ease-out);
   transition-delay: var(--reveal-delay, 0ms);
 }
 
 .reveal-on-scroll.is-visible {
   opacity: 1;
   transform: translateY(0) scale(1);
+}
+
+/* Microinteracção padrão para botões/CTAs: leve elevação ao pairar, leve compressão ao clicar —
+   nunca bounce, nunca desloca o layout à volta (só transform, GPU-friendly). */
+.pd-press {
+  transition: transform var(--pd-dur-micro) var(--pd-ease-out), box-shadow var(--pd-dur-micro) var(--pd-ease-out);
+  will-change: transform;
+}
+.pd-press:hover { transform: translateY(-1px); }
+.pd-press:active { transform: translateY(0) scale(0.97); }
+
+/* Hover consistente para cards de catálogo (mapas, dashboards, relatórios, etc.): mesma elevação
+   e sombra em todo o portal, para o gesto de "isto é clicável" ser sempre o mesmo gesto. */
+.pd-card-lift {
+  transition: transform var(--pd-dur-normal) var(--pd-ease-out), box-shadow var(--pd-dur-normal) var(--pd-ease-out);
+}
+.pd-card-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 32px rgba(6,78,44,0.12);
+}
+
+/* Contraste/legibilidade nunca dependem de motion: apenas suaviza a chegada ao valor final. */
+.pd-countup { font-variant-numeric: tabular-nums; }
+
+/* Hero com fotografia de fundo, reutilizável em qualquer página de catálogo (home, serviços,
+   geoespaciais, alfanuméricos, mapas, relatórios): mesma técnica em todo o portal — imagem real
+   a toda a secção, esbatimento verde da marca à esquerda para o texto nunca depender do que a
+   foto mostra por baixo, transparente à direita. */
+.pd-photo-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+.pd-photo-hero-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  z-index: 0;
+}
+.pd-photo-hero-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(180deg, rgba(4,54,31,.12) 0%, rgba(4,54,31,.04) 40%, rgba(4,54,31,.3) 100%),
+    linear-gradient(100deg, rgba(4,54,31,.95) 0%, rgba(4,54,31,.9) 38%, rgba(6,78,44,.55) 62%, rgba(6,78,44,.16) 82%, rgba(6,78,44,0) 96%);
+}
+@media (max-width: 680px) {
+  .pd-photo-hero-scrim {
+    background:
+      linear-gradient(180deg, rgba(4,54,31,.18) 0%, rgba(4,54,31,.08) 30%, rgba(4,54,31,.4) 100%),
+      linear-gradient(180deg, rgba(4,54,31,.95) 0%, rgba(4,54,31,.9) 55%, rgba(4,54,31,.75) 100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .reveal-on-scroll {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .pd-press:hover, .pd-press:active {
+    transform: none !important;
+  }
 }
 
 /* Catálogo: drawer de filtros no mobile — sem barra de rolagem visível (o scroll mantém-se) */
@@ -385,13 +524,13 @@ textarea:focus-visible {
    ícones, espaço de sobra confirmado. Abaixo disso — incluindo larguras de portátil muito comuns
    como 1280/1366px — usa-se o modo compacto (rótulos curtos, sem ícones) das duas regras abaixo,
    nunca o modo completo espremido a cortar texto a meio. */
-@media (min-width: 1481px) {
+@media (min-width: 1401px) {
   .pd-nav-links {
     gap: 0.25rem;
     padding-right: 0.5rem;
   }
 }
-@media (min-width: 901px) and (max-width: 1480px) {
+@media (min-width: 901px) and (max-width: 1400px) {
   .pd-logo-text small {
     display: none;
   }
@@ -427,12 +566,15 @@ textarea:focus-visible {
   gap: 0.35rem;
   flex-shrink: 0;
 }
+.pd-nav-auth span {
+  display: none;
+}
 .pd-nav-auth-link,
 .pd-nav-auth-register {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.45rem 0.7rem;
+  padding: 0.45rem;
   border-radius: 8px;
   font-size: 0.8125rem;
   font-weight: 600;
@@ -458,14 +600,7 @@ textarea:focus-visible {
   background: var(--brand-primary-strong);
   border-color: var(--brand-primary-strong);
 }
-@media (max-width: 1280px) {
-  .pd-nav-auth span {
-    display: none;
-  }
-  .pd-nav-auth-link,
-  .pd-nav-auth-register {
-    padding: 0.45rem;
-  }
+@media (max-width: 1400px) {
   .pd-nav-user-meta {
     display: none;
   }
@@ -790,6 +925,106 @@ body {
   opacity: 0.92;
   color: #fff !important;
 }
+.pd-nav-ai-wrap {
+  position: relative;
+  display: inline-flex;
+  padding-bottom: 10px;
+  margin-bottom: -10px;
+}
+.pd-nav-ai-dropdown {
+  position: absolute;
+  top: calc(100% + 2px);
+  right: 0;
+  background: #fff;
+  border: 1px solid #E2E8E5;
+  border-radius: 12px;
+  box-shadow: 0 16px 32px rgba(11, 27, 20, 0.16), 0 2px 8px rgba(11, 27, 20, 0.06);
+  padding: 14px;
+  min-width: 260px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-6px);
+  transition: opacity 0.16s ease, transform 0.16s ease;
+  z-index: 60;
+}
+.pd-nav-ai-dropdown::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  right: 22px;
+  width: 12px;
+  height: 12px;
+  background: #fff;
+  border-left: 1px solid #E2E8E5;
+  border-top: 1px solid #E2E8E5;
+  transform: rotate(45deg);
+  border-radius: 2px 0 0 0;
+}
+.pd-nav-ai-wrap:hover .pd-nav-ai-dropdown,
+.pd-nav-ai-wrap:focus-within .pd-nav-ai-dropdown {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+.pd-nav-ai-dropdown-eyebrow {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--pd-ink-400, #8B9A91);
+  padding: 0 4px 10px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid #EEF2F0;
+}
+.pd-nav-ai-dropdown-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 8px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: inherit;
+}
+.pd-nav-ai-dropdown-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  background: var(--pd-green-50, #F1F8F4);
+  color: var(--pd-green-800, #064E2C);
+}
+.pd-nav-ai-dropdown-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.pd-nav-ai-dropdown-title {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--pd-ink-800, #0B1B14);
+}
+.pd-nav-ai-dropdown-desc {
+  font-size: 0.6875rem;
+  color: var(--pd-ink-400, #8B9A91);
+  white-space: nowrap;
+}
+.pd-nav-ai-dropdown-arrow {
+  margin-left: auto;
+  flex-shrink: 0;
+  color: var(--pd-ink-300, #B7C2BC);
+  transition: transform 0.15s ease, color 0.15s ease;
+}
+.pd-nav-ai-dropdown-link:hover {
+  background: var(--pd-green-50, #F1F8F4);
+}
+.pd-nav-ai-dropdown-link:hover .pd-nav-ai-dropdown-arrow {
+  transform: translateX(2px);
+  color: var(--pd-green-700, #0A6B3D);
+}
 .pd-nav-actions .pd-pill-new {
   font-size: 8px;
   padding: 1px 4px;
@@ -951,7 +1186,7 @@ body {
   .pd-mobile-menu.open { display: flex !important; }
 }
 
-.pd-contact-fab {
+.pd-chatbot-fab {
   position: fixed;
   z-index: 60;
   display: inline-flex;
@@ -960,55 +1195,212 @@ body {
   padding: 0.85rem 1.1rem;
   border: none;
   border-radius: 999px;
-  background: var(--brand-primary);
+  background: var(--brand-red-logo);
   color: #fff;
   font-family: inherit;
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 10px 24px rgba(6, 78, 44, 0.28);
+  box-shadow: 0 10px 24px rgba(180, 0, 31, 0.3);
   transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
   bottom: max(1.5rem, env(safe-area-inset-bottom));
   right: max(1.5rem, env(safe-area-inset-right));
 }
-.pd-contact-fab:hover {
-  background: var(--brand-primary-strong);
+.pd-chatbot-fab:hover {
+  background: var(--brand-red-logo-strong);
   transform: translateY(-1px);
-  box-shadow: 0 14px 28px rgba(6, 78, 44, 0.32);
+  box-shadow: 0 14px 28px rgba(180, 0, 31, 0.34);
 }
-.pd-contact-fab:focus-visible {
+.pd-chatbot-fab:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--brand-primary);
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--brand-red-logo);
+}
+
+.pd-chatbot-panel {
+  position: fixed;
+  z-index: 61;
+  bottom: max(6rem, calc(env(safe-area-inset-bottom) + 6rem));
+  right: max(1.5rem, env(safe-area-inset-right));
+  width: min(23rem, calc(100vw - 2rem));
+  height: min(32rem, calc(100vh - 12rem));
+  background: #fff;
+  border-radius: 1rem;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
+  border: 1px solid #E2E8E5;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.pd-chatbot-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1rem;
+  background: var(--brand-red-logo);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+.pd-chatbot-panel-close {
+  background: transparent;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 999px;
+  display: inline-flex;
+}
+.pd-chatbot-panel-close:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+.pd-chatbot-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  background: #F8FAFC;
+}
+.pd-chatbot-msg {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  padding: 0.6rem 0.85rem;
+  border-radius: 0.9rem;
+  max-width: 88%;
+  white-space: pre-wrap;
+}
+.pd-chatbot-msg-assistant {
+  background: #fff;
+  border: 1px solid #E2E8E5;
+  color: #1F2937;
+  align-self: flex-start;
+  border-bottom-left-radius: 0.25rem;
+}
+.pd-chatbot-msg-user {
+  background: var(--brand-red-logo);
+  color: #fff;
+  align-self: flex-end;
+  border-bottom-right-radius: 0.25rem;
+}
+.pd-chatbot-msg-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #6B7280;
+}
+.pd-chatbot-erro {
+  align-self: center;
+  font-size: 0.78rem;
+  color: #B91C1C;
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  border-radius: 0.6rem;
+  padding: 0.4rem 0.7rem;
+}
+.pd-chatbot-panel-form {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem;
+  border-top: 1px solid #E2E8E5;
+  background: #fff;
+}
+.pd-chatbot-panel-form input {
+  flex: 1;
+  border: 1px solid #E2E8E5;
+  border-radius: 999px;
+  padding: 0.55rem 0.9rem;
+  font-size: 0.85rem;
+  outline: none;
+}
+.pd-chatbot-panel-form input:focus-visible {
+  border-color: var(--brand-red-logo);
+  box-shadow: 0 0 0 2px rgba(180, 0, 31, 0.15);
+}
+.pd-chatbot-panel-form button {
+  background: var(--brand-red-logo);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  width: 2.2rem;
+  height: 2.2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.pd-chatbot-panel-form button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 @media (max-width: 640px) {
-  .pd-contact-fab span {
+  .pd-chatbot-fab span {
     display: none;
   }
-  .pd-contact-fab {
+  .pd-chatbot-fab {
     width: 3.5rem;
     height: 3.5rem;
     padding: 0;
     justify-content: center;
     border-radius: 999px;
+    bottom: max(1.5rem, env(safe-area-inset-bottom));
+  }
+  .pd-chatbot-panel {
+    bottom: max(5.5rem, calc(env(safe-area-inset-bottom) + 5.5rem));
+    right: 1rem;
+    left: 1rem;
+    width: auto;
   }
 }
 
 /* Hero */
 .pd-hero {
-  background: linear-gradient(180deg, #f8faf8 0%, #f2f7f3 100%);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   border-bottom: 1px solid var(--pd-ink-100);
   /* Menos espaço sob o cabeçalho: conteúdo começa mais cedo */
   padding: var(--pd-space-8) 0 var(--pd-space-12);
   font-family: var(--pd-font-sans);
+  min-height: 620px;
+  display: flex;
+  align-items: center;
+}
+/* Fotografia a toda a largura/altura do hero, não só atrás da coluna direita: é a diferença entre
+   "uma miniatura ao lado" e o hero sentir-se como uma cena real do território que os dados
+   descrevem. */
+.pd-hero-bg {
+  position: absolute;
+  inset: 0;
+  background-image: url('/images/fundo.webp');
+  background-size: cover;
+  background-position: center 38%;
+  z-index: 0;
+}
+/* Esbatimento horizontal: opaco (verde da marca) sob o texto à esquerda, para nunca depender do
+   que a foto mostra por baixo; transparente à direita, onde a fotografia respira atrás do cartão
+   de vidro. Um segundo wash vertical, mais forte a meio, mantém o rodapé (stats) sempre legível. */
+.pd-hero-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(180deg, rgba(4,54,31,.15) 0%, rgba(4,54,31,.05) 40%, rgba(4,54,31,.35) 100%),
+    linear-gradient(100deg, rgba(4,54,31,.96) 0%, rgba(4,54,31,.92) 34%, rgba(6,78,44,.62) 56%, rgba(6,78,44,.18) 74%, rgba(6,78,44,0) 88%);
 }
 .pd-hero-inner {
+  position: relative;
+  z-index: 2;
+  width: 100%;
   max-width: 1280px;
   margin: 0 auto;
   padding: 0 1rem;
   display: grid;
-  grid-template-columns: 1fr 480px;
+  grid-template-columns: minmax(0, 1fr) 480px;
   gap: var(--pd-space-12);
-  align-items: start;
+  align-items: center;
 }
 .pd-hero-eyebrow {
   display: inline-flex;
@@ -1018,48 +1410,451 @@ body {
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--pd-green-700);
-  background: var(--pd-green-50);
+  color: #EAF5EE;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.22);
   padding: var(--pd-space-2) var(--pd-space-3);
   border-radius: 100px;
+}
+
+.pd-hero-badges-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--pd-space-3);
   margin-bottom: var(--pd-space-4);
+}
+
+/* Selo de certificação INTIC — clicável, abre o certificado real em modal. Dourado/âmbar para se
+   distinguir do eyebrow verde ao lado e ler como "selo oficial", não como mais um chip decorativo. */
+.pd-hero-cert-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--pd-space-2);
+  font-size: var(--pd-text-xs);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #3A2E00;
+  background: #F5CE6B;
+  border: 1px solid rgba(255,255,255,0.5);
+  padding: var(--pd-space-2) var(--pd-space-3);
+  border-radius: 100px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.pd-hero-cert-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.24);
+}
+.pd-hero-cert-badge:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+/* Selo da abordagem ética de dados: mesmo tratamento "selo oficial" do INTIC ao lado (fundo
+   sólido, texto escuro, sombra), mas em violeta em vez de dourado, para os dois lerem como dois
+   selos de confiança igualmente destacados, e não um selo "a sério" e um link apagado ao lado. */
+.pd-hero-ethics-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--pd-space-2);
+  font-size: var(--pd-text-xs);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #2E1A5C;
+  background: #D4C4F9;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  padding: var(--pd-space-2) var(--pd-space-3);
+  border-radius: 100px;
+  text-decoration: none;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.pd-hero-ethics-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.24);
+}
+.pd-hero-ethics-badge:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.pd-cert-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--pd-space-4);
+  background: rgba(4,20,13,0.72);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.pd-cert-modal {
+  width: 100%;
+  max-width: 640px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.45);
+}
+.pd-cert-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--pd-space-3);
+  padding: var(--pd-space-3) var(--pd-space-4);
+  border-bottom: 1px solid var(--pd-ink-100, #E2E8E5);
+  background: var(--pd-surface-0, #fff);
+}
+.pd-cert-modal-head p {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--pd-space-2);
+  font-size: var(--pd-text-sm);
+  font-weight: 700;
+  color: var(--pd-green-800, #064E2C);
+}
+.pd-cert-modal-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 100px;
+  color: var(--pd-ink-500, #64748B);
+  transition: background 0.15s, color 0.15s;
+}
+.pd-cert-modal-close:hover {
+  background: var(--pd-surface-100, #F1F5F4);
+  color: var(--pd-ink-900, #0F172A);
+}
+.pd-cert-modal-body {
+  overflow: auto;
+  background: var(--pd-surface-50, #F8FAF8);
+  padding: var(--pd-space-3);
+}
+.pd-cert-modal-img {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  display: block;
+}
+
+/* Skeletons: mantêm a forma real do conteúdo enquanto carrega (uma barra de tabela, uma grelha de
+   mapa) em vez de um spinner genérico centrado — sente-se mais rápido porque já se vê o que vem
+   a seguir. Duas variantes: clara (fundos brancos) e escura (sobre paineis verde-escuro). */
+@keyframes pd-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.pd-skeleton {
+  background: linear-gradient(90deg, var(--pd-surface-100) 25%, var(--pd-surface-0) 37%, var(--pd-surface-100) 63%);
+  background-size: 400% 100%;
+  animation: pd-shimmer 1.6s ease-in-out infinite;
+  border-radius: 6px;
+}
+.pd-skeleton-dark {
+  background: linear-gradient(90deg, rgba(255,255,255,0.06) 25%, rgba(255,255,255,0.14) 37%, rgba(255,255,255,0.06) 63%);
+  background-size: 400% 100%;
+  animation: pd-shimmer 1.6s ease-in-out infinite;
+  border-radius: 6px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pd-skeleton, .pd-skeleton-dark { animation: none; }
+}
+
+/* Tabelas do admin (Utilizadores, Auditoria, Solicitações, Uso de IA): abaixo de 768px deixam de
+   ser tabela larga com scroll horizontal escondido (colunas cortadas, sem indicação de que há
+   mais) e passam a lista de cartões — thead escondido, cada linha vira um bloco, cada célula
+   ganha o rótulo da coluna à esquerda via `data-label`. Zero duplicação de markup: é a mesma
+   `<table>`, só muda como o CSS a desenha. */
+@media (max-width: 767px) {
+  .pd-responsive-table thead {
+    display: none;
+  }
+  .pd-responsive-table,
+  .pd-responsive-table tbody,
+  .pd-responsive-table tr,
+  .pd-responsive-table td {
+    display: block;
+    width: 100%;
+  }
+  .pd-responsive-table tr {
+    border: 1px solid #E2E8E5;
+    border-radius: 12px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    background: var(--pd-surface-0, #fff);
+  }
+  .pd-responsive-table tr:last-child {
+    margin-bottom: 0;
+  }
+  /* Rótulo em cima, valor por baixo (não lado a lado): funciona tanto para um valor curto (uma
+     data, um número) como para um longo (uma mensagem de várias linhas) sem ficar torto — texto
+     alinhado à direita ao lado de um rótulo é ilegível assim que passa de uma linha. */
+  .pd-responsive-table td {
+    padding: 6px 0 !important;
+    border: none !important;
+    text-align: left !important;
+    /* Neutraliza `truncate`/`max-w-*` do Tailwind: no telemóvel, texto longo quebra linha e
+       mostra-se por inteiro — não há hover num ecrã táctil para o `title` do "…" funcionar. */
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: unset !important;
+    max-width: none !important;
+  }
+  .pd-responsive-table td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--pd-ink-400, #64748B);
+    margin-bottom: 3px;
+  }
+  .pd-responsive-table td:empty::before {
+    content: none;
+  }
+}
+
+/* Vistos recentemente — partilhado por todas as páginas que usam RecentlyViewedRail (geo, alf,
+   mapas, relatórios). Antes só existia em geo-catalog.css: nas páginas que não a importavam
+   (relatórios, mapas) aparecia como texto solto empilhado, sem forma nenhuma de chip. */
+.geo-recently-viewed {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--pd-surface-50, #F7F9F8);
+  border: 1px solid var(--pd-ink-100, #E2E8E5);
+  flex-wrap: wrap;
+}
+
+.geo-recently-viewed-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--pd-green-700, #064E2C);
+  white-space: nowrap;
+}
+
+.geo-recently-viewed-list {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.geo-recently-viewed-chip {
+  display: inline-block;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 5px 12px;
+  border-radius: 100px;
+  font-size: 11.5px;
+  font-weight: 600;
+  background: var(--pd-surface-0, #fff);
+  color: var(--pd-ink-700, #334155);
+  border: 1px solid var(--pd-ink-100, #E2E8E5);
+  text-decoration: none;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.geo-recently-viewed-chip:hover {
+  border-color: var(--pd-green-700, #064E2C);
+  background: var(--pd-green-50, #F1F8F4);
+  color: var(--pd-green-900, #04361F);
+}
+
+/* Pesquisa global (Cmd/Ctrl+K) — disponível em qualquer página, monta uma só vez no layout raiz. */
+.pd-cmdk-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 12vh 16px 16px;
+  background: rgba(4,20,13,0.55);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+.pd-cmdk-panel {
+  width: 100%;
+  max-width: 560px;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.4);
+  border: 1px solid rgba(255,255,255,0.12);
+}
+.pd-cmdk-input-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--pd-ink-100, #E2E8E5);
+}
+.pd-cmdk-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  font-size: 15px;
+  color: var(--pd-ink-900, #0F172A);
+  background: transparent;
+}
+.pd-cmdk-input::placeholder {
+  color: var(--pd-ink-300, #94A3B8);
+}
+.pd-cmdk-esc {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--pd-ink-400, #64748B);
+  background: var(--pd-surface-100, #F1F5F4);
+  border: 1px solid var(--pd-ink-100, #E2E8E5);
+  border-radius: 6px;
+  padding: 2px 6px;
+}
+.pd-cmdk-results {
+  overflow-y: auto;
+  padding: 8px;
+}
+.pd-cmdk-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--pd-ink-400, #64748B);
+  padding: 6px 10px 4px;
+}
+.pd-cmdk-empty {
+  font-size: 13.5px;
+  color: var(--pd-ink-400, #64748B);
+  padding: 16px 10px;
+  text-align: center;
+}
+.pd-cmdk-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--pd-ink-700, #334155);
+  text-align: left;
+  transition: background 0.1s;
+}
+.pd-cmdk-item.active,
+.pd-cmdk-item:hover {
+  background: var(--pd-green-50, #F1F8F4);
+  color: var(--pd-green-800, #064E2C);
+}
+.pd-cmdk-footer {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--pd-ink-100, #E2E8E5);
+  font-size: 11px;
+  color: var(--pd-ink-400, #64748B);
+}
+.pd-cmdk-footer kbd {
+  font-size: 10px;
+  font-weight: 600;
+  background: var(--pd-surface-100, #F1F5F4);
+  border: 1px solid var(--pd-ink-100, #E2E8E5);
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin-right: 2px;
+}
+
+/* Botão "pesquisar" no cabeçalho que abre a pesquisa global. */
+.pd-nav-cmdk-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--pd-ink-500, #64748B);
+  background: var(--pd-surface-100, #F1F5F4);
+  border: 1px solid var(--pd-ink-100, #E2E8E5);
+  border-radius: 8px;
+  padding: 6px 10px;
+  transition: border-color 0.15s, color 0.15s;
+}
+.pd-nav-cmdk-btn:hover {
+  border-color: var(--pd-green-300, #A9D3B8);
+  color: var(--pd-green-800, #064E2C);
+}
+.pd-nav-cmdk-btn kbd {
+  font-size: 10px;
+  font-weight: 700;
+  background: #fff;
+  border: 1px solid var(--pd-ink-100, #E2E8E5);
+  border-radius: 4px;
+  padding: 1px 5px;
 }
 .pd-hero h1 {
   font-size: var(--pd-text-5xl);
   line-height: 1.05;
   letter-spacing: -0.02em;
-  color: var(--pd-ink-900);
+  color: #FFFFFF;
   font-weight: 700;
   margin-bottom: var(--pd-space-4);
+  text-wrap: balance;
 }
-.pd-hero h1 .accent { color: var(--pd-green-700); }
+.pd-hero h1 .accent { color: #7FD7A4; }
 .pd-hero-lede {
   font-size: var(--pd-text-lg);
-  color: var(--pd-ink-500);
+  color: rgba(255,255,255,0.82);
   max-width: 540px;
   margin-bottom: var(--pd-space-6);
   line-height: 1.55;
 }
 .pd-hero-search {
-  background: var(--pd-surface-0);
-  border: 1px solid var(--pd-ink-100);
+  background: rgba(255,255,255,0.14);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid rgba(255,255,255,0.32);
   border-radius: var(--pd-radius-lg);
   padding: var(--pd-space-2);
-  box-shadow: var(--pd-shadow-md);
+  box-shadow: 0 10px 30px rgba(4,20,12,0.25);
   display: flex;
   align-items: center;
   gap: var(--pd-space-2);
   margin-bottom: var(--pd-space-3);
   min-width: 0;
   max-width: 100%;
-  transition: box-shadow 0.15s;
+  transition: box-shadow 0.15s, background 0.15s;
 }
 .pd-hero-search:focus-within {
-  box-shadow: 0 0 0 3px var(--pd-green-100), 0 0 0 1px var(--pd-green-700);
+  background: rgba(255,255,255,0.2);
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.16), 0 0 0 1px rgba(255,255,255,0.5);
 }
 .pd-hero-search-icon {
   padding: 0 var(--pd-space-3);
-  color: var(--pd-ink-300);
+  color: rgba(255,255,255,0.75);
   font-size: 18px;
   flex-shrink: 0;
 }
@@ -1071,8 +1866,11 @@ body {
   font-size: var(--pd-text-base);
   font-family: var(--pd-font-sans);
   background: transparent;
-  color: var(--pd-ink-700);
+  color: #fff;
   min-width: 0;
+}
+.pd-hero-search input::placeholder {
+  color: rgba(255,255,255,0.62);
 }
 .pd-search-mode {
   background: var(--pd-green-50);
@@ -1114,16 +1912,16 @@ body {
 .pd-suggest-label {
   font-size: var(--pd-text-sm);
   font-weight: 500;
-  color: var(--pd-ink-500);
+  color: rgba(255,255,255,0.72);
   font-family: var(--pd-font-sans);
   margin-right: 0.125rem;
 }
 .pd-suggest-chip {
   display: inline-flex;
   align-items: center;
-  background: var(--pd-surface-0);
-  border: 1px solid var(--pd-ink-100);
-  color: var(--pd-ink-700);
+  background: rgba(255,255,255,0.10);
+  border: 1px solid rgba(255,255,255,0.24);
+  color: #F2F8F4;
   font-size: var(--pd-text-sm);
   line-height: 1.35;
   padding: 0.375rem 0.875rem;
@@ -1134,35 +1932,43 @@ body {
   transition: border-color 0.12s, color 0.12s, background 0.12s, box-shadow 0.12s;
 }
 .pd-suggest-chip:hover {
-  border-color: var(--pd-green-500);
-  color: var(--pd-green-700);
-  background: var(--pd-green-50);
-  box-shadow: 0 1px 2px rgba(6, 78, 44, 0.06);
+  border-color: rgba(255,255,255,0.5);
+  color: #FFFFFF;
+  background: rgba(255,255,255,0.18);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.12);
 }
 .pd-hero-stats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: var(--pd-space-6);
   padding-top: var(--pd-space-6);
-  border-top: 1px solid var(--pd-ink-100);
+  border-top: 1px solid rgba(255,255,255,0.2);
 }
 .pd-stat-num {
   font-size: var(--pd-text-2xl);
   font-weight: 700;
-  color: var(--pd-ink-900);
+  color: #FFFFFF;
   letter-spacing: -0.02em;
 }
 .pd-stat-label {
   font-size: var(--pd-text-xs);
-  color: var(--pd-ink-500);
+  color: rgba(255,255,255,0.68);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   margin-top: 2px;
 }
 @media (max-width: 900px) {
-  .pd-hero-inner { grid-template-columns: 1fr; }
+  .pd-hero { min-height: 0; }
+  .pd-hero-inner { grid-template-columns: minmax(0, 1fr); }
   .pd-hero-stats { grid-template-columns: repeat(2, 1fr); }
   .pd-hero h1 { font-size: var(--pd-text-3xl); }
+  /* Colunas empilhadas = texto ocupa a largura toda: o esbatimento deixa de poder ser só a
+     70% esquerdos, senão o fim de cada linha cai sobre foto sem contraste garantido. */
+  .pd-hero-scrim {
+    background:
+      linear-gradient(180deg, rgba(4,54,31,.2) 0%, rgba(4,54,31,.08) 30%, rgba(4,54,31,.4) 100%),
+      linear-gradient(180deg, rgba(4,54,31,.95) 0%, rgba(4,54,31,.9) 55%, rgba(4,54,31,.7) 100%);
+  }
 }
 /* Hero mobile-first: barra de pesquisa não transborda — empilha controlos */
 @media (max-width: 640px) {
@@ -1204,8 +2010,12 @@ body {
     box-sizing: border-box;
     padding: var(--pd-space-3);
     border-radius: var(--pd-radius-md);
-    border: 1px solid var(--pd-ink-100);
-    background: var(--pd-surface-50);
+    border: 1px solid rgba(255,255,255,0.32);
+    background: rgba(255,255,255,0.14);
+    color: #fff;
+  }
+  .pd-hero-search input::placeholder {
+    color: rgba(255,255,255,0.62);
   }
   .pd-search-mode {
     width: 100%;
@@ -1434,4 +2244,476 @@ body {
 .req-modal-success p {
   font-size: 13px;
   color: var(--pd-ink-700, #334155);
+}
+
+/* Miniatura estática por assunto do dataset (CategoryThumb) — vidro/duotone + ícone, sem pedidos
+   de rede por card. Partilhado por geo-catalog.css, alf e maps-catalog.css. */
+.cat-thumb {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.cat-thumb-pattern {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+
+.cat-thumb-kind {
+  position: absolute;
+  bottom: 14px;
+  right: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px 3px 6px;
+  border-radius: 100px;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(8px) saturate(160%);
+  -webkit-backdrop-filter: blur(8px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+}
+
+.cat-thumb-icon {
+  position: absolute;
+  left: 16px;
+  bottom: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* ==================== Documentos legais (Termos, Cookies, Privacidade) ====================
+   Layout de documento numerado com índice fixo: uma plataforma a caminho de avaliação do INTIC
+   precisa que estas páginas leiam como um documento de referência sério, não como mais um bloco
+   de cartões genéricos do resto do site. */
+.legal-doc {
+  background: var(--pd-surface-50);
+  min-height: 100vh;
+  padding-bottom: 64px;
+}
+
+.legal-doc-inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.legal-doc-hero {
+  background: var(--pd-green-700);
+  background-image: radial-gradient(120% 160% at 100% 0%, rgba(255, 255, 255, 0.06), transparent 60%);
+  color: white;
+  padding: 56px 0 40px;
+  margin-bottom: 40px;
+}
+
+.legal-doc-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #B8E6CC;
+  margin-bottom: 14px;
+}
+
+.legal-doc-title {
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  margin-bottom: 12px;
+}
+@media (min-width: 768px) {
+  .legal-doc-title { font-size: 42px; }
+}
+
+.legal-doc-summary {
+  font-size: 16px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.82);
+  max-width: 680px;
+  margin-bottom: 26px;
+}
+
+.legal-doc-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.legal-doc-meta span {
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  padding: 7px 14px;
+}
+.legal-doc-meta strong {
+  font-weight: 700;
+  color: white;
+  margin-right: 5px;
+}
+
+.legal-doc-hero-actions {
+  margin-top: 20px;
+}
+.legal-doc-print-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border-radius: 10px;
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.legal-doc-print-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.legal-doc-body {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 32px;
+  align-items: start;
+}
+@media (min-width: 960px) {
+  .legal-doc-body {
+    grid-template-columns: 260px 1fr;
+    gap: 48px;
+  }
+}
+
+.legal-doc-toc {
+  background: white;
+  border: 1px solid var(--pd-ink-100);
+  border-radius: 16px;
+  padding: 20px;
+}
+@media (min-width: 960px) {
+  .legal-doc-toc { position: sticky; top: 24px; }
+}
+
+.legal-doc-toc-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--pd-ink-500);
+  margin-bottom: 12px;
+}
+
+.legal-doc-toc ol {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.legal-doc-toc a {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 7px 8px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--pd-ink-700);
+  text-decoration: none;
+  transition: background 0.12s, color 0.12s;
+}
+.legal-doc-toc a:hover {
+  background: var(--pd-green-50);
+  color: var(--pd-green-700);
+}
+.legal-doc-toc-num {
+  font-family: var(--pd-font-mono, ui-monospace, monospace);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--pd-green-700);
+  opacity: 0.6;
+  min-width: 18px;
+}
+
+.legal-doc-toc-related {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--pd-ink-100);
+}
+.legal-doc-toc-related ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.legal-doc-toc-related a {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pd-green-700);
+  text-decoration: none;
+}
+.legal-doc-toc-related a:hover { text-decoration: underline; }
+
+.legal-doc-content {
+  min-width: 0;
+}
+
+.legal-doc-section {
+  background: white;
+  border: 1px solid var(--pd-ink-100);
+  border-radius: 16px;
+  padding: 28px;
+  margin-bottom: 16px;
+  scroll-margin-top: 24px;
+}
+
+.legal-doc-section h2 {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--pd-ink-900);
+  letter-spacing: -0.01em;
+  margin-bottom: 14px;
+}
+
+.legal-doc-section-num {
+  font-family: var(--pd-font-mono, ui-monospace, monospace);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--pd-green-700);
+}
+
+.legal-doc-section-body {
+  color: var(--pd-ink-700);
+  font-size: 14.5px;
+  line-height: 1.7;
+}
+.legal-doc-section-body p { margin-bottom: 12px; }
+.legal-doc-section-body p:last-child { margin-bottom: 0; }
+.legal-doc-section-body ul,
+.legal-doc-section-body ol {
+  margin: 4px 0 14px 4px;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.legal-doc-section-body ul { list-style: disc; }
+.legal-doc-section-body ol { list-style: decimal; }
+.legal-doc-section-body strong { color: var(--pd-ink-900); font-weight: 700; }
+.legal-doc-section-body a { color: var(--pd-green-700); font-weight: 600; text-decoration: underline; text-decoration-color: var(--pd-green-100); text-underline-offset: 2px; }
+.legal-doc-section-body a:hover { text-decoration-color: var(--pd-green-700); }
+
+.legal-doc-table-wrap { overflow-x: auto; margin-bottom: 14px; border: 1px solid var(--pd-ink-100); border-radius: 10px; }
+.legal-doc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+.legal-doc-table th {
+  text-align: left;
+  background: var(--pd-surface-50);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--pd-ink-500);
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--pd-ink-100);
+  white-space: nowrap;
+}
+.legal-doc-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--pd-surface-100, #F1F5F3);
+  vertical-align: top;
+}
+.legal-doc-table tr:last-child td { border-bottom: none; }
+
+.legal-doc-pdf-card {
+  display: flex;
+  gap: 14px;
+  background: var(--pd-green-50);
+  border: 1px solid var(--pd-green-100);
+  border-radius: 14px;
+  padding: 18px 20px;
+  margin-top: 16px;
+}
+.legal-doc-pdf-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: white;
+  color: var(--pd-green-700);
+  flex-shrink: 0;
+}
+.legal-doc-pdf-card-title {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--pd-ink-900);
+  margin-bottom: 4px;
+}
+.legal-doc-pdf-card-text {
+  font-size: 13px;
+  color: var(--pd-ink-700);
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+.legal-doc-pdf-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.legal-doc-pdf-card-actions a {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  border-radius: 9px;
+  padding: 8px 14px;
+}
+.legal-doc-pdf-card-actions a:first-child {
+  background: var(--pd-green-700);
+  color: white;
+}
+.legal-doc-pdf-card-actions a:first-child:hover {
+  background: var(--brand-primary-strong, #04361F);
+}
+.legal-doc-pdf-card-actions a:last-child {
+  background: white;
+  color: var(--pd-green-700);
+  border: 1px solid var(--pd-green-100);
+}
+.legal-doc-pdf-card-actions a:last-child:hover {
+  border-color: var(--pd-green-700);
+}
+
+.legal-doc-callout {
+  display: flex;
+  gap: 10px;
+  background: var(--pd-green-50);
+  border: 1px solid var(--pd-green-100);
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 13.5px;
+  color: var(--pd-green-900, var(--pd-green-700));
+  line-height: 1.6;
+  margin-bottom: 14px;
+}
+
+.legal-doc-contact-box {
+  display: flex;
+  gap: 16px;
+  background: var(--pd-green-700);
+  color: white;
+  border-radius: 16px;
+  padding: 26px 28px;
+  margin-top: 24px;
+}
+.legal-doc-contact-box-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.14);
+  flex-shrink: 0;
+}
+.legal-doc-contact-box-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.legal-doc-contact-box-text {
+  font-size: 13.5px;
+  color: rgba(255, 255, 255, 0.82);
+  line-height: 1.6;
+  margin-bottom: 14px;
+  max-width: 560px;
+}
+.legal-doc-contact-box-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.legal-doc-contact-box-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  color: rgba(255, 255, 255, 0.92);
+}
+.legal-doc-contact-box-list a {
+  color: white;
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 255, 255, 0.4);
+}
+.legal-doc-contact-box-list a:hover { text-decoration-color: white; }
+
+@media print {
+  .legal-doc-toc { display: none; }
+  .legal-doc-body { grid-template-columns: 1fr; }
+  .legal-doc-hero { background: white; color: black; }
+  .legal-doc-eyebrow, .legal-doc-summary, .legal-doc-meta span { color: black; }
+  .legal-doc-hero-actions { display: none; }
+}
+
+/* Truncagem de descrição em cartões de catálogo (FeaturedCatalogSection, RecomendacoesPersonalizadas):
+   classe explícita em vez do utilitário line-clamp do Tailwind, que neste projecto nem sempre
+   aplica o "display: -webkit-box" necessário — sem isso, -webkit-line-clamp fica sem efeito e o
+   texto corta a meio da palavra, sem reticências, em vez de mostrar um número fixo de linhas. */
+.pd-card-desc-clamp-4 {
+  display: -webkit-box !important;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  overflow: hidden;
+}
+.pd-card-desc-clamp-3 {
+  display: -webkit-box !important;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+.pd-card-desc-clamp-2 {
+  display: -webkit-box !important;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
 }

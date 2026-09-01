@@ -26,6 +26,8 @@ type ProfileFormProps = {
   hasPassword: boolean
   memberSince: string | null
   totpEnabled: boolean
+  pedidoEliminacaoEm: string | null
+  totpObrigatorio: boolean
 }
 
 export function ProfileForm({
@@ -35,6 +37,8 @@ export function ProfileForm({
   hasPassword,
   memberSince,
   totpEnabled,
+  pedidoEliminacaoEm: pedidoEliminacaoEmInicial,
+  totpObrigatorio,
 }: ProfileFormProps) {
   const [name, setName] = useState(initialName)
   const [nameSaving, setNameSaving] = useState(false)
@@ -142,6 +146,8 @@ export function ProfileForm({
   const [deleteConfirmText, setDeleteConfirmText] = useState('')
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState('')
+  const [pedidoEliminacaoEm, setPedidoEliminacaoEm] = useState(pedidoEliminacaoEmInicial)
+  const [aCancelarEliminacao, setACancelarEliminacao] = useState(false)
 
   async function handleExportData() {
     setExporting(true)
@@ -180,13 +186,26 @@ export function ProfileForm({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ currentPassword: deletePassword }),
       })
-      const { data, ok } = await parseApiResponse<{ error?: string }>(response)
-      if (!ok) throw new Error(data.error || 'Não foi possível eliminar a conta.')
-      window.location.href = '/'
+      const { data, ok } = await parseApiResponse<{ error?: string; pedidoEliminacaoEm?: string }>(response)
+      if (!ok) throw new Error(data.error || 'Não foi possível agendar a eliminação da conta.')
+      setPedidoEliminacaoEm(data.pedidoEliminacaoEm || new Date().toISOString())
+      setDeleteOpen(false)
+      setDeletePassword('')
+      setDeleteConfirmText('')
     } catch (err: any) {
       setDeleteError(err.message)
     } finally {
       setDeleting(false)
+    }
+  }
+
+  async function handleCancelarEliminacao() {
+    setACancelarEliminacao(true)
+    try {
+      const response = await fetch('/api/auth/cancel-delete-account', { method: 'POST' })
+      if (response.ok) setPedidoEliminacaoEm(null)
+    } finally {
+      setACancelarEliminacao(false)
     }
   }
 
@@ -313,6 +332,22 @@ export function ProfileForm({
 
   return (
     <div className="space-y-5">
+      {totpObrigatorio && (
+        <div className="rounded-2xl border-2 border-amber-300 bg-amber-50 p-5 md:p-6 flex items-start gap-3">
+          <span className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-amber-100 text-amber-700 shrink-0">
+            <Smartphone className="w-4.5 h-4.5" />
+          </span>
+          <div>
+            <h2 className="text-base font-bold text-amber-900">Configure a verificação em duas etapas para continuar</h2>
+            <p className="text-sm text-amber-800 mt-1">
+              Contas de administrador passaram a exigir 2FA, por terem acesso a acções sensíveis
+              (eliminar datasets, gerir outros administradores). Active-o na secção abaixo para
+              recuperar o acesso ao painel de administração.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* ── Informações pessoais ─────────────────────────────── */}
       <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5 md:p-6">
         <div className="flex items-center gap-2.5 mb-5">
@@ -780,12 +815,37 @@ export function ProfileForm({
           <div>
             <h2 className="text-base font-bold text-red-900">Zona de perigo</h2>
             <p className="text-xs text-red-700/80">
-              Eliminar a conta é permanente e remove as suas análises de IA guardadas.
+              {pedidoEliminacaoEm
+                ? 'A sua conta está agendada para eliminação definitiva.'
+                : 'Eliminar a conta agenda a remoção definitiva dos seus dados dentro de 30 dias.'}
             </p>
           </div>
         </div>
 
-        {!deleteOpen ? (
+        {pedidoEliminacaoEm ? (
+          <div className="space-y-3">
+            <p className="text-xs text-red-800 bg-white border-2 border-red-200 rounded-lg px-3 py-2.5">
+              Pedida em {new Date(pedidoEliminacaoEm).toLocaleString('pt-PT')}. Continua com acesso
+              normal à conta até lá; se mudar de ideias, cancele o pedido abaixo antes do prazo
+              terminar.
+            </p>
+            <button
+              type="button"
+              onClick={handleCancelarEliminacao}
+              disabled={aCancelarEliminacao}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#064E2C] text-white rounded-xl hover:bg-[#04361F] transition font-semibold text-sm disabled:opacity-50"
+            >
+              {aCancelarEliminacao ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  A cancelar...
+                </>
+              ) : (
+                'Cancelar pedido de eliminação'
+              )}
+            </button>
+          </div>
+        ) : !deleteOpen ? (
           <button
             type="button"
             onClick={() => setDeleteOpen(true)}
@@ -837,10 +897,10 @@ export function ProfileForm({
                 {deleting ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    A eliminar...
+                    A agendar...
                   </>
                 ) : (
-                  'Eliminar definitivamente'
+                  'Agendar eliminação'
                 )}
               </button>
               <button

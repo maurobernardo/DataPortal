@@ -31,6 +31,54 @@ export function columnLabel(col: string) {
   return col ? labelFromKey(col) : col
 }
 
+/**
+ * Reordena as colunas da amostra pondo no fim as que têm um único valor em todas as linhas
+ * mostradas.
+ *
+ * Muitos ficheiros do portal vêm em formato longo, com um bloco de colunas de identificação
+ * repetidas linha a linha ("Layer NO", "Layer Nome", "Variable Identificador", "Variable Nome
+ * EN"...). São as primeiras do ficheiro e são as primeiras que se vêem, mas na amostra dizem
+ * sempre a mesma coisa: quem abre a pré-visualização gasta a largura toda do ecrã a ler a mesma
+ * palavra repetida antes de chegar ao valor que procura.
+ *
+ * Nada é escondido nem alterado: só a ordem de leitura muda, a ordem relativa dentro de cada
+ * grupo mantém-se, e o ecrã diz que isto aconteceu. A regra olha apenas para a amostra, por isso
+ * uma coluna que varie no ficheiro inteiro mas não nestas linhas também desce, o que é o
+ * comportamento certo para uma pré-visualização: aqui, ela de facto não distingue nada.
+ */
+/** Chave interna de linha ou código de referência: "Record Identificador", "Variable
+ *  Identificador", "codigo", "id". Identifica, mas não descreve. */
+const NOME_DE_IDENTIFICADOR = /(^|[\s_-])(identificador|id|ids|c[oó]digo|code|codes|key)([\s_-]|$)/i
+
+export function ordenarColunasPorVariacao(
+  columns: string[],
+  rows: string[][]
+): { columns: string[]; constantes: string[]; identificadores: string[] } {
+  if (rows.length < 2) return { columns, constantes: [], identificadores: [] }
+
+  const constantes: string[] = []
+  const identificadores: string[] = []
+  const informativas: string[] = []
+
+  columns.forEach((col, i) => {
+    if (NOME_DE_IDENTIFICADOR.test(col)) {
+      identificadores.push(col)
+      return
+    }
+    const primeiro = rows[0]?.[i] ?? ''
+    const igual = rows.every((linha) => (linha[i] ?? '') === primeiro)
+    if (igual) constantes.push(col)
+    else informativas.push(col)
+  })
+
+  // Nada para promover: mantém-se a ordem do ficheiro, que é sempre a leitura mais fiel.
+  if (informativas.length === 0 || informativas.length === columns.length) {
+    return { columns, constantes: [], identificadores: [] }
+  }
+
+  return { columns: [...informativas, ...constantes, ...identificadores], constantes, identificadores }
+}
+
 export function typeLabelPt(t: 'str' | 'num' | 'date') {
   if (t === 'date') return 'Data'
   if (t === 'num') return 'Número'

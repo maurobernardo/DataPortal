@@ -2,22 +2,18 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Loader2 } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { getCachedPreview, setCachedPreview } from '@/lib/preview-cache'
 import { GeoInsightsCard } from '@/components/geo/GeoInsightsCard'
 import { RelatedDatasets } from '@/components/RelatedDatasets'
+import { GeoMapSkeleton } from '@/components/geo/GeoMapSkeleton'
 import type { GeoInsights } from '@/lib/geo-intelligence'
 
 const InteractiveGeoMapPreview = dynamic(
   () => import('@/components/geo/InteractiveGeoMapPreview'),
   {
     ssr: false,
-    loading: () => (
-      <div className="geo-map-placeholder absolute inset-0 z-10">
-        <Loader2 className="animate-spin text-white/60" />
-      </div>
-    ),
+    loading: () => <GeoMapSkeleton />,
   }
 )
 import type { GeoDataset } from '@/components/geo/types'
@@ -137,11 +133,7 @@ export function GeoMapDetailPanel({ dataset }: { dataset: GeoDataset | null }) {
           </Link>
         </div>
         <div className="geo-map-canvas">
-          {loading && (
-            <div className="geo-map-placeholder absolute inset-0 z-10">
-              <Loader2 className="animate-spin text-white/60" />
-            </div>
-          )}
+          {loading && <GeoMapSkeleton />}
           {!loading && preview?.geojson ? (
             <InteractiveGeoMapPreview
               key={dataset.id}

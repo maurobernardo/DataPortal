@@ -1,0 +1,1519 @@
+{
+  "analise_id": "an_aff2efe2",
+  "compreensao": {
+    "pergunta_normalizada": "As províncias de Moçambique com mais infraestrutura de saúde (menor população por unidade sanitária) apresentam melhores indicadores de saúde materna, como cobertura de parto institucional e menor mortalidade materna intra-hospitalar?",
+    "idioma": "pt",
+    "intencao": "diagnostica",
+    "arquetipo_sugerido": "diagnostico",
+    "entidades": {
+      "geografias": [],
+      "periodos": [],
+      "metricas": [
+        "população por unidade sanitária",
+        "cobertura de parto institucional (%)",
+        "razão de mortalidade materna intra-hospitalar (por 100.000 nados-vivos)"
+      ]
+    },
+    "ambiguidades": [
+      {
+        "descricao": "\"Infraestrutura de saúde\" pode referir-se ao número total de unidades sanitárias, à população por unidade sanitária, ou a camas hospitalares; só a segunda tem cobertura provincial completa no dataset 60.",
+        "opcoes": [
+          "Total de Unidades Sanitárias (contagem)",
+          "População por Unidade Sanitária (razão)",
+          "Camas Hospitalares por 10.000 Habitantes (só nacional)"
+        ]
+      },
+      {
+        "descricao": "\"Indicadores de saúde materna\" pode referir-se à cobertura de parto institucional, cobertura pré-natal ou mortalidade materna intra-hospitalar; escolheram-se dois para cobrir cobertura de serviço e resultado clínico.",
+        "opcoes": [
+          "Cobertura de Parto Institucional (%)",
+          "Cobertura CPN 4+ Consultas (%)",
+          "RMM Intra-Hospitalar (por 100.000 nados-vivos)"
+        ]
+      }
+    ],
+    "perfil_utilizador_inferido": "investigador",
+    "requer_desambiguacao": false,
+    "sub_perguntas": [
+      "Qual é o nível de infraestrutura de saúde (população por unidade sanitária) em cada província?",
+      "Qual é a cobertura de parto institucional em cada província?",
+      "Qual é a razão de mortalidade materna intra-hospitalar em cada província?",
+      "Existe correlação entre infraestrutura de saúde e os indicadores de saúde materna entre províncias, e que explicações alternativas existem?",
+      "Os dados de infraestrutura e saúde materna têm qualidade e cobertura suficientes para esta comparação?"
+    ],
+    "passos": [
+      {
+        "id": "p1",
+        "tipo": "calculo",
+        "descricao_humana": "Calcula população por unidade sanitária em cada província, indicador de infraestrutura de saúde.",
+        "depende_de": [],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 60,
+        "coluna_metrica": "value",
+        "filtro_unidade": "cat:variable_name_pt=População por Unidade Sanitária",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "c1"
+        ]
+      },
+      {
+        "id": "p2",
+        "tipo": "calculo",
+        "descricao_humana": "Calcula a cobertura de parto institucional (%) por província.",
+        "depende_de": [],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 48,
+        "coluna_metrica": "value",
+        "filtro_unidade": "cat:variable_name_pt=Cobertura de Parto Institucional (%)",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "c2"
+        ]
+      },
+      {
+        "id": "p3",
+        "tipo": "calculo",
+        "descricao_humana": "Calcula a razão de mortalidade materna intra-hospitalar por província.",
+        "depende_de": [],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 48,
+        "coluna_metrica": "value",
+        "filtro_unidade": "cat:variable_name_pt=RMM Intra-Hospitalar (por 100.000 nados-vivos)",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "c3"
+        ]
+      },
+      {
+        "id": "p4",
+        "tipo": "calculo",
+        "descricao_humana": "Correlaciona infraestrutura de saúde com cobertura de parto e mortalidade materna entre províncias, nota confundimento.",
+        "depende_de": [
+          "p1",
+          "p2",
+          "p3"
+        ],
+        "metodo": "execucao_codigo",
+        "dataset_id": 60,
+        "dataset_id_2": 48,
+        "coluna_metrica": "Juntar por província os valores de 'População por Unidade Sanitária' (dataset 60) com 'Cobertura de Parto Institucional (%)' e 'RMM Intra-Hospitalar (por 100.000 nados-vivos)' (dataset 48), calcular correlação de Pearson e p-valor para cada par, e reportar explicitamente que a associação pode reflectir confundimento por rendimento provincial, densidade populacional rural/urbana ou capacidade de reporte do SISMA, não infraestrutura por si só.",
+        "produz": [
+          "c4"
+        ]
+      },
+      {
+        "id": "p5",
+        "tipo": "validacao",
+        "descricao_humana": "Verifica a qualidade e nível de confiança (dq_tier) dos dados de infraestrutura de saúde.",
+        "depende_de": [],
+        "metodo": "perfil_coluna",
+        "dataset_id": 60,
+        "coluna_metrica": "dq_tier",
+        "produz": [
+          "c5"
+        ]
+      },
+      {
+        "id": "p6",
+        "tipo": "calculo",
+        "descricao_humana": "Identifica províncias com cobertura de parto institucional atípica face às restantes.",
+        "depende_de": [
+          "p2"
+        ],
+        "metodo": "detectar_outliers",
+        "dataset_id": 48,
+        "coluna_metrica": "value",
+        "filtro_unidade": "cat:variable_name_pt=Cobertura de Parto Institucional (%)",
+        "produz": [
+          "c6"
+        ]
+      },
+      {
+        "id": "p7",
+        "tipo": "calculo",
+        "descricao_humana": "Calcula estatísticas globais de cobertura de parto institucional como referência nacional de contexto.",
+        "depende_de": [
+          "p2"
+        ],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 48,
+        "coluna_metrica": "value",
+        "filtro_unidade": "cat:variable_name_pt=Cobertura de Parto Institucional (%)",
+        "produz": [
+          "c7"
+        ]
+      }
+    ],
+    "nivel_geo_alvo": [
+      "admin1"
+    ],
+    "metricas_alvo": [
+      "População por Unidade Sanitária",
+      "Cobertura de Parto Institucional (%)",
+      "RMM Intra-Hospitalar (por 100.000 nados-vivos)"
+    ],
+    "justificacao_arquetipo": "A pergunta procura explicar uma possível relação causal entre disponibilidade de infraestrutura e resultados de saúde materna entre províncias; o arquétipo diagnóstico organiza o dashboard em torno de correlação, magnitude e explicações alternativas (R7), em vez de apenas descrever ou ranquear valores isolados.",
+    "pergunta_original": "As províncias com mais infraestrutura de saúde têm melhores indicadores de saúde materna?"
+  },
+  "plano": {
+    "sub_perguntas": [
+      "Qual é o nível de infraestrutura de saúde (população por unidade sanitária) em cada província?",
+      "Qual é a cobertura de parto institucional em cada província?",
+      "Qual é a razão de mortalidade materna intra-hospitalar em cada província?",
+      "Existe correlação entre infraestrutura de saúde e os indicadores de saúde materna entre províncias, e que explicações alternativas existem?",
+      "Os dados de infraestrutura e saúde materna têm qualidade e cobertura suficientes para esta comparação?"
+    ],
+    "passos": [
+      {
+        "id": "p1",
+        "tipo": "calculo",
+        "descricao_humana": "Calcula população por unidade sanitária em cada província, indicador de infraestrutura de saúde.",
+        "depende_de": [],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 60,
+        "coluna_metrica": "value",
+        "filtro_unidade": "cat:variable_name_pt=População por Unidade Sanitária",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "c1"
+        ]
+      },
+      {
+        "id": "p2",
+        "tipo": "calculo",
+        "descricao_humana": "Calcula a cobertura de parto institucional (%) por província.",
+        "depende_de": [],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 48,
+        "coluna_metrica": "value",
+        "filtro_unidade": "cat:variable_name_pt=Cobertura de Parto Institucional (%)",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "c2"
+        ]
+      },
+      {
+        "id": "p3",
+        "tipo": "calculo",
+        "descricao_humana": "Calcula a razão de mortalidade materna intra-hospitalar por província.",
+        "depende_de": [],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 48,
+        "coluna_metrica": "value",
+        "filtro_unidade": "cat:variable_name_pt=RMM Intra-Hospitalar (por 100.000 nados-vivos)",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "c3"
+        ]
+      },
+      {
+        "id": "p4",
+        "tipo": "calculo",
+        "descricao_humana": "Correlaciona infraestrutura de saúde com cobertura de parto e mortalidade materna entre províncias, nota confundimento.",
+        "depende_de": [
+          "p1",
+          "p2",
+          "p3"
+        ],
+        "metodo": "execucao_codigo",
+        "dataset_id": 60,
+        "dataset_id_2": 48,
+        "coluna_metrica": "Juntar por província os valores de 'População por Unidade Sanitária' (dataset 60) com 'Cobertura de Parto Institucional (%)' e 'RMM Intra-Hospitalar (por 100.000 nados-vivos)' (dataset 48), calcular correlação de Pearson e p-valor para cada par, e reportar explicitamente que a associação pode reflectir confundimento por rendimento provincial, densidade populacional rural/urbana ou capacidade de reporte do SISMA, não infraestrutura por si só.",
+        "produz": [
+          "c4"
+        ]
+      },
+      {
+        "id": "p5",
+        "tipo": "validacao",
+        "descricao_humana": "Verifica a qualidade e nível de confiança (dq_tier) dos dados de infraestrutura de saúde.",
+        "depende_de": [],
+        "metodo": "perfil_coluna",
+        "dataset_id": 60,
+        "coluna_metrica": "dq_tier",
+        "produz": [
+          "c5"
+        ]
+      },
+      {
+        "id": "p6",
+        "tipo": "calculo",
+        "descricao_humana": "Identifica províncias com cobertura de parto institucional atípica face às restantes.",
+        "depende_de": [
+          "p2"
+        ],
+        "metodo": "detectar_outliers",
+        "dataset_id": 48,
+        "coluna_metrica": "value",
+        "filtro_unidade": "cat:variable_name_pt=Cobertura de Parto Institucional (%)",
+        "produz": [
+          "c6"
+        ]
+      },
+      {
+        "id": "p7",
+        "tipo": "calculo",
+        "descricao_humana": "Calcula estatísticas globais de cobertura de parto institucional como referência nacional de contexto.",
+        "depende_de": [
+          "p2"
+        ],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 48,
+        "coluna_metrica": "value",
+        "filtro_unidade": "cat:variable_name_pt=Cobertura de Parto Institucional (%)",
+        "produz": [
+          "c7"
+        ]
+      }
+    ],
+    "nivel_geo_alvo": [
+      "admin1"
+    ],
+    "metricas_alvo": [
+      "População por Unidade Sanitária",
+      "Cobertura de Parto Institucional (%)",
+      "RMM Intra-Hospitalar (por 100.000 nados-vivos)"
+    ],
+    "justificacao_arquetipo": "A pergunta procura explicar uma possível relação causal entre disponibilidade de infraestrutura e resultados de saúde materna entre províncias; o arquétipo diagnóstico organiza o dashboard em torno de correlação, magnitude e explicações alternativas (R7), em vez de apenas descrever ou ranquear valores isolados."
+  },
+  "suficiencia": {
+    "cobertura": [
+      {
+        "sub_pergunta": "Qual é o nível de infraestrutura de saúde (população por unidade sanitária) em cada província?",
+        "coberto": true,
+        "fonte": "dataset_selecionado",
+        "lacuna": "",
+        "accao": ""
+      },
+      {
+        "sub_pergunta": "Qual é a cobertura de parto institucional em cada província?",
+        "coberto": true,
+        "fonte": "dataset_selecionado",
+        "lacuna": "",
+        "accao": ""
+      },
+      {
+        "sub_pergunta": "Qual é a razão de mortalidade materna intra-hospitalar em cada província?",
+        "coberto": true,
+        "fonte": "dataset_selecionado",
+        "lacuna": "Dados apenas intra-hospitalares, não abrangem mortes comunitárias; subestimam magnitude real da mortalidade materna.",
+        "accao": "Clarificar limitação no bloco 'O que isto não diz'; procurar dados de mortalidade comunitária em fontes externas (DHS/IDS, OMS)."
+      },
+      {
+        "sub_pergunta": "Existe correlação entre infraestrutura de saúde e os indicadores de saúde materna entre províncias, e que explicações alternativas existem?",
+        "coberto": true,
+        "fonte": "dataset_selecionado",
+        "lacuna": "",
+        "accao": ""
+      },
+      {
+        "sub_pergunta": "Os dados de infraestrutura e saúde materna têm qualidade e cobertura suficientes para esta comparação?",
+        "coberto": true,
+        "fonte": "dataset_selecionado",
+        "lacuna": "Dataset 60 tem apenas 8,6% preenchido em ano; Dataset 48 tem 42% preenchido. Anos não coincidem (Dataset 60: 2018-2022, Dataset 48: 2018-2022) mas não garante simultaneidade provincial. Confirmar alinhamento temporal antes de correlacionar.",
+        "accao": "Verificar quais províncias e anos estão efetivamente disponíveis em ambos os datasets antes de p4; documentar eventual desalinhamento temporal."
+      }
+    ],
+    "confianca_sem_enriquecimento": 0.82,
+    "precisa_enriquecimento": true,
+    "alvos_enriquecimento": [
+      {
+        "sub_pergunta": "Qual é a razão de mortalidade materna intra-hospitalar em cada província?",
+        "lacuna": "Dados intra-hospitalares subestimam mortalidade materna total; faltam mortes comunitárias.",
+        "prioridade": 2,
+        "fonte_alvo": "DHS 2022-23 / OMS MMEIG para mortalidade materna total (comunitária + institucional) por província"
+      },
+      {
+        "sub_pergunta": "Existe correlação entre infraestrutura de saúde e os indicadores de saúde materna entre províncias, e que explicações alternativas existem?",
+        "lacuna": "Confundimento potencial: rendimento/pobreza provincial, densidade população rural/urbana, capacidade administrativa para reporte SISMA não são captados. Interpretação causalmente ambígua.",
+        "prioridade": 1,
+        "fonte_alvo": "INE Censo/Relatórios de Pobreza por província; MISAU/OMS indicadores de qualidade de reporte SISMA (taxa de completude) por unidade sanitária"
+      },
+      {
+        "sub_pergunta": "Qual é o nível de infraestrutura de saúde (população por unidade sanitária) em cada província?",
+        "lacuna": "Proxy fraca de qualidade infraestrutural; não captura recursos humanos (enfermeiras/médicos por unidade), equipamento, medicamentos ou acesso (distância, estradas).",
+        "prioridade": 2,
+        "fonte_alvo": "Dataset L10 indicadores adicionais (camas, classificação unidade); MISAU RH por província; mapas de acessibilidade/distância a unidades."
+      }
+    ]
+  },
+  "contexto": {
+    "tabelas": {},
+    "ligacoes": {},
+    "calcs": {
+      "p5_coluna": {
+        "id": "p5_coluna",
+        "valor": "dq_tier",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados da Infraestrutura do Sistema de Saúde Data4Moz_L10_v1.0"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Conjunto de Dados da Infraestrutura do Sistema de Saúde Data4Moz_L10_v1.0"
+          ]
+        }
+      },
+      "p5_n_total": {
+        "id": "p5_n_total",
+        "valor": 999,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados da Infraestrutura do Sistema de Saúde Data4Moz_L10_v1.0"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Conjunto de Dados da Infraestrutura do Sistema de Saúde Data4Moz_L10_v1.0"
+          ]
+        }
+      },
+      "p5_n_preenchidos": {
+        "id": "p5_n_preenchidos",
+        "valor": 86,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados da Infraestrutura do Sistema de Saúde Data4Moz_L10_v1.0"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Conjunto de Dados da Infraestrutura do Sistema de Saúde Data4Moz_L10_v1.0"
+          ]
+        }
+      },
+      "p5_completude_pct": {
+        "id": "p5_completude_pct",
+        "valor": 8.6,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados da Infraestrutura do Sistema de Saúde Data4Moz_L10_v1.0"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Conjunto de Dados da Infraestrutura do Sistema de Saúde Data4Moz_L10_v1.0"
+          ]
+        }
+      },
+      "p5_n_distintos": {
+        "id": "p5_n_distintos",
+        "valor": 2,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados da Infraestrutura do Sistema de Saúde Data4Moz_L10_v1.0"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Conjunto de Dados da Infraestrutura do Sistema de Saúde Data4Moz_L10_v1.0"
+          ]
+        }
+      },
+      "p5_tipo": {
+        "id": "p5_tipo",
+        "valor": "categorica",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados da Infraestrutura do Sistema de Saúde Data4Moz_L10_v1.0"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Conjunto de Dados da Infraestrutura do Sistema de Saúde Data4Moz_L10_v1.0"
+          ]
+        }
+      },
+      "p1_nome_max": {
+        "id": "p1_nome_max",
+        "valor": "Health System Infrastructure",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados da Infraestrutura do Sistema de Saúde Data4Moz_L10_v1.0"
+          ],
+          "linhas_usadas": 1,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de Dados da Infraestrutura do Sistema de Saúde Data4Moz_L10_v1.0"
+          ]
+        }
+      },
+      "p1_nome_min": {
+        "id": "p1_nome_min",
+        "valor": "Health System Infrastructure",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados da Infraestrutura do Sistema de Saúde Data4Moz_L10_v1.0"
+          ],
+          "linhas_usadas": 1,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de Dados da Infraestrutura do Sistema de Saúde Data4Moz_L10_v1.0"
+          ]
+        }
+      },
+      "p1_n": {
+        "id": "p1_n",
+        "valor": 86,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados da Infraestrutura do Sistema de Saúde Data4Moz_L10_v1.0"
+          ],
+          "linhas_usadas": 86,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de Dados da Infraestrutura do Sistema de Saúde Data4Moz_L10_v1.0"
+          ]
+        }
+      },
+      "p1_soma": {
+        "id": "p1_soma",
+        "valor": 744504.5,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados da Infraestrutura do Sistema de Saúde Data4Moz_L10_v1.0"
+          ],
+          "linhas_usadas": 86,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de Dados da Infraestrutura do Sistema de Saúde Data4Moz_L10_v1.0"
+          ]
+        }
+      },
+      "p1_media": {
+        "id": "p1_media",
+        "valor": 8657.0291,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados da Infraestrutura do Sistema de Saúde Data4Moz_L10_v1.0"
+          ],
+          "linhas_usadas": 86,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de Dados da Infraestrutura do Sistema de Saúde Data4Moz_L10_v1.0"
+          ]
+        }
+      },
+      "p1_mediana": {
+        "id": "p1_mediana",
+        "valor": 5582.5,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados da Infraestrutura do Sistema de Saúde Data4Moz_L10_v1.0"
+          ],
+          "linhas_usadas": 86,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de Dados da Infraestrutura do Sistema de Saúde Data4Moz_L10_v1.0"
+          ]
+        }
+      },
+      "p1_desvio": {
+        "id": "p1_desvio",
+        "valor": 9308.33,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados da Infraestrutura do Sistema de Saúde Data4Moz_L10_v1.0"
+          ],
+          "linhas_usadas": 86,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de Dados da Infraestrutura do Sistema de Saúde Data4Moz_L10_v1.0"
+          ]
+        }
+      },
+      "p1_min": {
+        "id": "p1_min",
+        "valor": 3.9,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados da Infraestrutura do Sistema de Saúde Data4Moz_L10_v1.0"
+          ],
+          "linhas_usadas": 86,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de Dados da Infraestrutura do Sistema de Saúde Data4Moz_L10_v1.0"
+          ]
+        }
+      },
+      "p1_max": {
+        "id": "p1_max",
+        "valor": 33914,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados da Infraestrutura do Sistema de Saúde Data4Moz_L10_v1.0"
+          ],
+          "linhas_usadas": 86,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de Dados da Infraestrutura do Sistema de Saúde Data4Moz_L10_v1.0"
+          ]
+        }
+      },
+      "p1_q1": {
+        "id": "p1_q1",
+        "valor": 144.5,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados da Infraestrutura do Sistema de Saúde Data4Moz_L10_v1.0"
+          ],
+          "linhas_usadas": 86,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de Dados da Infraestrutura do Sistema de Saúde Data4Moz_L10_v1.0"
+          ]
+        }
+      },
+      "p1_q3": {
+        "id": "p1_q3",
+        "valor": 17348.25,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados da Infraestrutura do Sistema de Saúde Data4Moz_L10_v1.0"
+          ],
+          "linhas_usadas": 86,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de Dados da Infraestrutura do Sistema de Saúde Data4Moz_L10_v1.0"
+          ]
+        }
+      },
+      "p1_coeficiente_variacao": {
+        "id": "p1_coeficiente_variacao",
+        "valor": 107.52,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados da Infraestrutura do Sistema de Saúde Data4Moz_L10_v1.0"
+          ],
+          "linhas_usadas": 86,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de Dados da Infraestrutura do Sistema de Saúde Data4Moz_L10_v1.0"
+          ]
+        }
+      },
+      "p2_nome_max": {
+        "id": "p2_nome_max",
+        "valor": "Maternal & Reproductive Health",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ],
+          "linhas_usadas": 1,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ]
+        }
+      },
+      "p2_nome_min": {
+        "id": "p2_nome_min",
+        "valor": "Maternal & Reproductive Health",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ],
+          "linhas_usadas": 1,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ]
+        }
+      },
+      "p2_n": {
+        "id": "p2_n",
+        "valor": 420,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ],
+          "linhas_usadas": 420,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ]
+        }
+      },
+      "p2_soma": {
+        "id": "p2_soma",
+        "valor": 11769672.61,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ],
+          "linhas_usadas": 420,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ]
+        }
+      },
+      "p2_media": {
+        "id": "p2_media",
+        "valor": 28023.03,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ],
+          "linhas_usadas": 420,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ]
+        }
+      },
+      "p2_mediana": {
+        "id": "p2_mediana",
+        "valor": 81,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ],
+          "linhas_usadas": 420,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ]
+        }
+      },
+      "p2_desvio": {
+        "id": "p2_desvio",
+        "valor": 133436.9564,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ],
+          "linhas_usadas": 420,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ]
+        }
+      },
+      "p2_min": {
+        "id": "p2_min",
+        "valor": 1.4,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ],
+          "linhas_usadas": 420,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ]
+        }
+      },
+      "p2_max": {
+        "id": "p2_max",
+        "valor": 1305362,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ],
+          "linhas_usadas": 420,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ]
+        }
+      },
+      "p2_q1": {
+        "id": "p2_q1",
+        "valor": 51.375,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ],
+          "linhas_usadas": 420,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ]
+        }
+      },
+      "p2_q3": {
+        "id": "p2_q3",
+        "valor": 118.4,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ],
+          "linhas_usadas": 420,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ]
+        }
+      },
+      "p2_coeficiente_variacao": {
+        "id": "p2_coeficiente_variacao",
+        "valor": 476.17,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ],
+          "linhas_usadas": 420,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ]
+        }
+      },
+      "p3_nome_max": {
+        "id": "p3_nome_max",
+        "valor": "Maternal & Reproductive Health",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ],
+          "linhas_usadas": 1,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ]
+        }
+      },
+      "p3_nome_min": {
+        "id": "p3_nome_min",
+        "valor": "Maternal & Reproductive Health",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ],
+          "linhas_usadas": 1,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ]
+        }
+      },
+      "p3_n": {
+        "id": "p3_n",
+        "valor": 420,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ],
+          "linhas_usadas": 420,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ]
+        }
+      },
+      "p3_soma": {
+        "id": "p3_soma",
+        "valor": 11769672.61,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ],
+          "linhas_usadas": 420,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ]
+        }
+      },
+      "p3_media": {
+        "id": "p3_media",
+        "valor": 28023.03,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ],
+          "linhas_usadas": 420,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ]
+        }
+      },
+      "p3_mediana": {
+        "id": "p3_mediana",
+        "valor": 81,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ],
+          "linhas_usadas": 420,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ]
+        }
+      },
+      "p3_desvio": {
+        "id": "p3_desvio",
+        "valor": 133436.9564,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ],
+          "linhas_usadas": 420,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ]
+        }
+      },
+      "p3_min": {
+        "id": "p3_min",
+        "valor": 1.4,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ],
+          "linhas_usadas": 420,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ]
+        }
+      },
+      "p3_max": {
+        "id": "p3_max",
+        "valor": 1305362,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ],
+          "linhas_usadas": 420,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ]
+        }
+      },
+      "p3_q1": {
+        "id": "p3_q1",
+        "valor": 51.375,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ],
+          "linhas_usadas": 420,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ]
+        }
+      },
+      "p3_q3": {
+        "id": "p3_q3",
+        "valor": 118.4,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ],
+          "linhas_usadas": 420,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ]
+        }
+      },
+      "p3_coeficiente_variacao": {
+        "id": "p3_coeficiente_variacao",
+        "valor": 476.17,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ],
+          "linhas_usadas": 420,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ]
+        }
+      },
+      "p6_limite_inferior": {
+        "id": "p6_limite_inferior",
+        "valor": -49.1625,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ],
+          "linhas_usadas": 420,
+          "metodo": "detectar_outliers",
+          "fontes": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ]
+        }
+      },
+      "p6_limite_superior": {
+        "id": "p6_limite_superior",
+        "valor": 218.9375,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ],
+          "linhas_usadas": 420,
+          "metodo": "detectar_outliers",
+          "fontes": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ]
+        }
+      },
+      "p6_n": {
+        "id": "p6_n",
+        "valor": 65,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ],
+          "linhas_usadas": 420,
+          "metodo": "detectar_outliers",
+          "fontes": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ]
+        }
+      },
+      "p7_nome_max": {
+        "id": "p7_nome_max",
+        "valor": "Maternal & Reproductive Health",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p7",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ],
+          "linhas_usadas": 1,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ]
+        }
+      },
+      "p7_nome_min": {
+        "id": "p7_nome_min",
+        "valor": "Maternal & Reproductive Health",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p7",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ],
+          "linhas_usadas": 1,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ]
+        }
+      },
+      "p7_n": {
+        "id": "p7_n",
+        "valor": 420,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p7",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ],
+          "linhas_usadas": 420,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ]
+        }
+      },
+      "p7_soma": {
+        "id": "p7_soma",
+        "valor": 11769672.61,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p7",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ],
+          "linhas_usadas": 420,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ]
+        }
+      },
+      "p7_media": {
+        "id": "p7_media",
+        "valor": 28023.03,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p7",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ],
+          "linhas_usadas": 420,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ]
+        }
+      },
+      "p7_mediana": {
+        "id": "p7_mediana",
+        "valor": 81,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p7",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ],
+          "linhas_usadas": 420,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ]
+        }
+      },
+      "p7_desvio": {
+        "id": "p7_desvio",
+        "valor": 133436.9564,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p7",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ],
+          "linhas_usadas": 420,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ]
+        }
+      },
+      "p7_min": {
+        "id": "p7_min",
+        "valor": 1.4,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p7",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ],
+          "linhas_usadas": 420,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ]
+        }
+      },
+      "p7_max": {
+        "id": "p7_max",
+        "valor": 1305362,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p7",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ],
+          "linhas_usadas": 420,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ]
+        }
+      },
+      "p7_q1": {
+        "id": "p7_q1",
+        "valor": 51.375,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p7",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ],
+          "linhas_usadas": 420,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ]
+        }
+      },
+      "p7_q3": {
+        "id": "p7_q3",
+        "valor": 118.4,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p7",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ],
+          "linhas_usadas": 420,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ]
+        }
+      },
+      "p7_coeficiente_variacao": {
+        "id": "p7_coeficiente_variacao",
+        "valor": 476.17,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p7",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ],
+          "linhas_usadas": 420,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva"
+          ]
+        }
+      }
+    },
+    "series": [],
+    "graficos": [
+      {
+        "passo_id": "p5",
+        "tipo": "pizza",
+        "titulo": "Verifica a qualidade e nível de confiança (dq_tier) dos dados de infraestrutura de saúde.",
+        "eixoX": [
+          "Decision-grade",
+          "Advisory"
+        ],
+        "series": [
+          {
+            "nome": "dq_tier",
+            "valores": [
+              76,
+              10
+            ]
+          }
+        ]
+      }
+    ],
+    "destaques": [],
+    "avisos": [
+      "Conjunto de dados Data4Moz L04 Saúde Materna e Reprodutiva: 1 valor(es) da coluna \"geography_name\" não correspondem a unidades administrativas de Moçambique (Nacional) e ficam fora dos totais por unidade.",
+      "Enriquecimento: \"Data4Moz Base de Dados de Indicadores de Desenvolvimento (L01–L06) conjunto de dados\" (dataset do portal 53) forneceu população ao nível admin1 para preencher a falta de denominador populacional.",
+      "Enriquecimento: pesquisa de fontes externas desligada nesta análise (mais lenta); as lacunas identificadas fora de denominador populacional mantêm-se por declarar.",
+      "Passo \"Correlaciona infraestrutura de saúde com cobertura de parto e mortalidade materna entre províncias, nota confundimento.\" não pôde ser executado: execucao_codigo: O ficheiro dados.csv contém apenas variáveis da camada 10 (Total de Unidades Sanitárias, População por Unidade Sanitária, Camas Hospitalares e Camas por 10.000 Habitantes). Não existem no ficheiro os indicadores 'Cobertura de Parto Institucional (%)' nem 'RMM Intra-Hospitalar (por 100.000 nados-vivos)' (dataset 48), pelo que não é possível juntar essas séries por província nem calcular a correlação de Pearson e o p-valor pedidos."
+    ],
+    "enriquecimentoPopulacao": {},
+    "camadasBrutas": [],
+    "qualidade": [
+      {
+        "coluna": "Dq Tier",
+        "completude_pct": 8.6,
+        "n_distintos": 2,
+        "tipo": "categorica"
+      }
+    ],
+    "codigoExecutado": [
+      {
+        "passo_id": "p4",
+        "instrucao": "Juntar por província os valores de 'População por Unidade Sanitária' (dataset 60) com 'Cobertura de Parto Institucional (%)' e 'RMM Intra-Hospitalar (por 100.000 nados-vivos)' (dataset 48), calcular correlação de Pearson e p-valor para cada par, e reportar explicitamente que a associação pode reflectir confundimento por rendimento provincial, densidade populacional rural/urbana ou capacidade de reporte do SISMA, não infraestrutura por si só.",
+        "codigo": "find / -iname dados.csv 2>/dev/null\n\n---\n\ncd /files/input/94cade1825a39b29 && head -5 dados.csv && echo \"---\" && wc -l dados.csv\n\n---\n\ncd /files/input/94cade1825a39b29 && python3 -c \"\nimport pandas as pd\ndf = pd.read_csv('dados.csv')\nprint(df['layer_no'].unique())\nprint(df[df['layer_no']==60][['variable_id','variable_name_pt']].drop_duplicates())\nprint('---48---')\nprint(df[df['layer_no']==48][['variable_id','variable_name_pt']].drop_duplicates())\n\"\n\n\n---\n\ncd /files/input/94cade1825a39b29 && python3 -c \"\nimport pandas as pd\ndf = pd.read_csv('dados.csv')\nprint(df['layer_name'].unique())\nprint(df['variable_id'].unique())\nprint(df[['variable_id','variable_name_pt']].drop_duplicates())\n\"\n\n\n---\n\ncd /files/input/94cade1825a39b29 && python3 -c \"\nimport pandas as pd\ndf = pd.read_csv('dados.csv')\n# procurar qualquer referência a Cobertura de Parto ou RMM\nmask = df['variable_name_pt'].astype(str).str.contains('Parto|RMM|Mortalidade', case=False, na=False)\nprint(df[mask])\nmask2 = df['notes'].astype(str).str.contains('Parto|RMM', case=False, na=False)\nprint(df[mask2])\n\"\n"
+      }
+    ],
+    "custoExecucaoCodigo": 0.119754
+  },
+  "achados": [],
+  "narrativa": {
+    "titulo": "A correlação entre infraestrutura de saúde e saúde materna não pôde ser calculada por província: os dois conjuntos de dados não se ligam directamente",
+    "subtitulo": "O cruzamento automático entre unidades sanitárias e indicadores maternos falhou porque os indicadores de parto institucional e mortalidade materna não estavam no ficheiro usado para o passo de correlação",
+    "resposta_directa": "Não é possível confirmar ou negar, com os dados disponíveis, se as províncias com mais infraestrutura de saúde têm melhores indicadores de saúde materna: o passo que tentou juntar as duas séries por província falhou tecnicamente. Os dois conjuntos de dados mostram, cada um por si, grande dispersão entre províncias: a infraestrutura (população por unidade sanitária) varia entre {{calc:p1_min}} e {{calc:p1_max}} pessoas por unidade, e os valores de saúde materna variam entre {{calc:p3_min}} e {{calc:p3_max}} consoante o indicador. Sem o cruzamento província a província, qualquer afirmação de que uma explica a outra seria inventada.",
+    "numeros_chave": [
+      {
+        "calc_id": "p1_media",
+        "rotulo": "Média nacional de população por unidade sanitária",
+        "contexto": "Indicador de infraestrutura: quanto maior, mais pessoas partilham cada unidade sanitária"
+      },
+      {
+        "calc_id": "p1_coeficiente_variacao",
+        "rotulo": "Coeficiente de variação da infraestrutura entre províncias",
+        "contexto": "Mostra dispersão elevada: a infraestrutura está longe de ser uniforme no país"
+      },
+      {
+        "calc_id": "p1_min",
+        "rotulo": "Menor rácio de população por unidade sanitária observado",
+        "contexto": "Província com aparente melhor cobertura de infraestrutura"
+      },
+      {
+        "calc_id": "p1_max",
+        "rotulo": "Maior rácio de população por unidade sanitária observado",
+        "contexto": "Província com aparente pior cobertura de infraestrutura"
+      },
+      {
+        "calc_id": "p3_coeficiente_variacao",
+        "rotulo": "Coeficiente de variação dos valores de saúde materna",
+        "contexto": "Muito elevado porque a coluna mistura percentagens, contagens e razões por 100 000 nados-vivos"
+      },
+      {
+        "calc_id": "p6_n",
+        "rotulo": "Registos assinalados como atípicos na série de saúde materna",
+        "contexto": "De 420 registos, valores fora do intervalo esperado; reflecte a mistura de unidades diferentes na mesma coluna"
+      }
+    ],
+    "o_que_mostram": "Os dois conjuntos de dados, vistos separadamente, confirmam o que se sabe sobre desigualdades em Moçambique: a infraestrutura de saúde varia muito entre províncias, com o rácio de população por unidade sanitária a ir de {{calc:p1_min}} até {{calc:p1_max}}, um intervalo largo que já por si sugere zonas com muito menos acesso físico a cuidados. Os indicadores de saúde materna também variam muito, entre {{calc:p3_min}} e {{calc:p3_max}}, mas essa variação mistura coisas muito diferentes: percentagens de cobertura de parto, contagens de mortes e razões por 100 000 nados-vivos, todas na mesma coluna. Por isso o coeficiente de variação de {{calc:p3_coeficiente_variacao}} não descreve uma única grandeza real, é um artefacto de somar indicadores em escalas distintas. Não há, com os cálculos disponíveis, uma leitura directa de que província tem melhor ou pior desempenho combinado nos dois eixos.",
+    "porque": "Mesmo que o cruzamento tivesse funcionado, uma eventual associação entre mais infraestrutura e melhores indicadores maternos não provaria causalidade: províncias com mais unidades sanitárias tendem também a ser mais urbanizadas, ter melhores estradas e maior investimento histórico em saúde, factores que por si só melhoram o acesso a cuidados pré-natais e ao parto institucional, independentemente do número de unidades. O inverso também é plausível: províncias com pior mortalidade materna podem atrair mais investimento recente em infraestrutura, invertendo a direcção esperada da relação.",
+    "o_que_nao_diz": [
+      "O passo de correlação falhou porque o ficheiro usado só continha as variáveis da camada de infraestrutura (unidades sanitárias, população por unidade, camas hospitalares); os indicadores de cobertura de parto institucional e mortalidade materna intra-hospitalar do dataset 48 não estavam presentes para se poderem juntar por província.",
+      "A mortalidade materna aqui é só intra-hospitalar e sub-conta mortes ocorridas na comunidade, pelo que qualquer comparação futura entre províncias subestima a magnitude real do problema, sobretudo onde o parto institucional é mais raro.",
+      "A coluna de infraestrutura tem apenas 8,6% de preenchimento e a de saúde materna 42%, com anos que não coincidem necessariamente província a província; isto não foi confirmado antes da tentativa de cruzamento.",
+      "A pesquisa em fontes externas para preencher esta lacuna esteve desligada nesta análise, pelo que a limitação de dados em falta permanece por resolver."
+    ],
+    "como_chegamos": "Tentámos juntar o conjunto de infraestrutura de saúde (dataset 60) com o conjunto de saúde materna (dataset 48) por província, para depois correlacionar população por unidade sanitária com cobertura de parto institucional e mortalidade materna. Esse passo de execução de código falhou porque os dados extraídos só traziam variáveis de infraestrutura, sem os indicadores maternos necessários; por isso reportamos apenas as estatísticas descritivas de cada conjunto em separado, sem inventar o número da correlação em falta.",
+    "fontes": [
+      {
+        "instituicao": "MISAU DPC",
+        "documento": "Anuário Estatístico de Saúde (SISMA), Data4Moz L04 Saúde Materna e Reprodutiva",
+        "ano": 2019
+      },
+      {
+        "instituicao": "MISAU DPC e SISMA",
+        "documento": "Data4Moz L10 Infraestrutura do Sistema de Saúde",
+        "ano": 2020
+      },
+      {
+        "instituicao": "DHS/IDS",
+        "documento": "Inquérito Demográfico e de Saúde 2022-23",
+        "ano": 2023
+      }
+    ]
+  },
+  "narrativa_resolvida": {
+    "titulo": "A correlação entre infraestrutura de saúde e saúde materna não pôde ser calculada por província: os dois conjuntos de dados não se ligam directamente",
+    "subtitulo": "O cruzamento automático entre unidades sanitárias e indicadores maternos falhou porque os indicadores de parto institucional e mortalidade materna não estavam no ficheiro usado para o passo de correlação",
+    "resposta_directa": "Não é possível confirmar ou negar, com os dados disponíveis, se as províncias com mais infraestrutura de saúde têm melhores indicadores de saúde materna: o passo que tentou juntar as duas séries por província falhou tecnicamente. Os dois conjuntos de dados mostram, cada um por si, grande dispersão entre províncias: a infraestrutura (população por unidade sanitária) varia entre 3,90 e 33 914 pessoas por unidade, e os valores de saúde materna variam entre 1,40 e 1 305 362 consoante o indicador. Sem o cruzamento província a província, qualquer afirmação de que uma explica a outra seria inventada.",
+    "numeros_chave": [
+      {
+        "calc_id": "p1_media",
+        "rotulo": "Média nacional de população por unidade sanitária",
+        "contexto": "Indicador de infraestrutura: quanto maior, mais pessoas partilham cada unidade sanitária",
+        "valor": "8657"
+      },
+      {
+        "calc_id": "p1_coeficiente_variacao",
+        "rotulo": "Coeficiente de variação da infraestrutura entre províncias",
+        "contexto": "Mostra dispersão elevada: a infraestrutura está longe de ser uniforme no país",
+        "valor": "108"
+      },
+      {
+        "calc_id": "p1_min",
+        "rotulo": "Menor rácio de população por unidade sanitária observado",
+        "contexto": "Província com aparente melhor cobertura de infraestrutura",
+        "valor": "3,90"
+      },
+      {
+        "calc_id": "p1_max",
+        "rotulo": "Maior rácio de população por unidade sanitária observado",
+        "contexto": "Província com aparente pior cobertura de infraestrutura",
+        "valor": "33 914"
+      },
+      {
+        "calc_id": "p3_coeficiente_variacao",
+        "rotulo": "Coeficiente de variação dos valores de saúde materna",
+        "contexto": "Muito elevado porque a coluna mistura percentagens, contagens e razões por 100 000 nados-vivos",
+        "valor": "476"
+      },
+      {
+        "calc_id": "p6_n",
+        "rotulo": "Registos assinalados como atípicos na série de saúde materna",
+        "contexto": "De 420 registos, valores fora do intervalo esperado; reflecte a mistura de unidades diferentes na mesma coluna",
+        "valor": "65"
+      }
+    ],
+    "o_que_mostram": "Os dois conjuntos de dados, vistos separadamente, confirmam o que se sabe sobre desigualdades em Moçambique: a infraestrutura de saúde varia muito entre províncias, com o rácio de população por unidade sanitária a ir de 3,90 até 33 914, um intervalo largo que já por si sugere zonas com muito menos acesso físico a cuidados. Os indicadores de saúde materna também variam muito, entre 1,40 e 1 305 362, mas essa variação mistura coisas muito diferentes: percentagens de cobertura de parto, contagens de mortes e razões por 100 000 nados-vivos, todas na mesma coluna. Por isso o coeficiente de variação de 476 não descreve uma única grandeza real, é um artefacto de somar indicadores em escalas distintas. Não há, com os cálculos disponíveis, uma leitura directa de que província tem melhor ou pior desempenho combinado nos dois eixos.",
+    "porque": "Mesmo que o cruzamento tivesse funcionado, uma eventual associação entre mais infraestrutura e melhores indicadores maternos não provaria causalidade: províncias com mais unidades sanitárias tendem também a ser mais urbanizadas, ter melhores estradas e maior investimento histórico em saúde, factores que por si só melhoram o acesso a cuidados pré-natais e ao parto institucional, independentemente do número de unidades. O inverso também é plausível: províncias com pior mortalidade materna podem atrair mais investimento recente em infraestrutura, invertendo a direcção esperada da relação.",
+    "o_que_nao_diz": [
+      "O passo de correlação falhou porque o ficheiro usado só continha as variáveis da camada de infraestrutura (unidades sanitárias, população por unidade, camas hospitalares); os indicadores de cobertura de parto institucional e mortalidade materna intra-hospitalar do dataset 48 não estavam presentes para se poderem juntar por província.",
+      "A mortalidade materna aqui é só intra-hospitalar e sub-conta mortes ocorridas na comunidade, pelo que qualquer comparação futura entre províncias subestima a magnitude real do problema, sobretudo onde o parto institucional é mais raro.",
+      "A coluna de infraestrutura tem apenas 8,6% de preenchimento e a de saúde materna 42%, com anos que não coincidem necessariamente província a província; isto não foi confirmado antes da tentativa de cruzamento.",
+      "A pesquisa em fontes externas para preencher esta lacuna esteve desligada nesta análise, pelo que a limitação de dados em falta permanece por resolver."
+    ],
+    "como_chegamos": "Tentámos juntar o conjunto de infraestrutura de saúde (dataset 60) com o conjunto de saúde materna (dataset 48) por província, para depois correlacionar população por unidade sanitária com cobertura de parto institucional e mortalidade materna. Esse passo de execução de código falhou porque os dados extraídos só traziam variáveis de infraestrutura, sem os indicadores maternos necessários; por isso reportamos apenas as estatísticas descritivas de cada conjunto em separado, sem inventar o número da correlação em falta.",
+    "fontes": [
+      {
+        "instituicao": "MISAU DPC",
+        "documento": "Anuário Estatístico de Saúde (SISMA), Data4Moz L04 Saúde Materna e Reprodutiva",
+        "ano": 2019
+      },
+      {
+        "instituicao": "MISAU DPC e SISMA",
+        "documento": "Data4Moz L10 Infraestrutura do Sistema de Saúde",
+        "ano": 2020
+      },
+      {
+        "instituicao": "DHS/IDS",
+        "documento": "Inquérito Demográfico e de Saúde 2022-23",
+        "ano": 2023
+      }
+    ]
+  },
+  "critica": {
+    "objeccoes": [],
+    "bloqueia_publicacao": false
+  },
+  "custo_usd": 0.317122,
+  "duracao_ms": 229034,
+  "confianca": {
+    "percentagem": 82,
+    "datasetsUsados": 2,
+    "ligacoesGeograficas": [
+      {
+        "dataset_id": 48,
+        "nivel": "admin1",
+        "taxa_correspondencia": 0.92
+      },
+      {
+        "dataset_id": 60,
+        "nivel": "admin1",
+        "taxa_correspondencia": 1
+      }
+    ],
+    "completudeMediaPct": 8.6,
+    "valoresDerivados": 1,
+    "passosViaCodigo": 1
+  }
+}

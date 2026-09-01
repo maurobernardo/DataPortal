@@ -8,4 +8,5 @@ export type PublicReport = {
   detailsText?: string | null
   filePath?: string | null
   fileSize?: string | null
+  sector?: string | null
 }

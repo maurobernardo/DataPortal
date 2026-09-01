@@ -3,6 +3,7 @@ import './ai-insights.css'
 
 import { countDatasets, findAllCategories } from '@/lib/db'
 import { AIInsightsHero } from '@/components/ai-insights/AIInsightsHero'
+import { AIHowToGuide } from '@/components/ai-insights/AIHowToGuide'
 import { AICapabilities } from '@/components/ai-insights/AICapabilities'
 import {
   AIPersonas,
@@ -40,6 +41,7 @@ export default async function AIInsightsPage() {
   return (
     <div className="ai-page font-body-stack overflow-x-hidden">
       <AIInsightsHero totalDatasets={Number(totalDatasets) || 0} totalCategories={totalCategories} />
+      <AIHowToGuide />
       <AICapabilities />
       <AIPersonas />
       <AITrust />

@@ -5,6 +5,11 @@ export type PortalSearchEntry = { label: string; href: string; kind?: string }
 /** Chips «Tente:» na home — vários módulos do portal */
 export const HERO_TRY_SUGGESTIONS: PortalSearchEntry[] = [
   {
+    label: 'perguntar aos dados por IA',
+    href: '/analise/nova',
+    kind: 'analise',
+  },
+  {
     label: 'aeroportos nacionais',
     href: `/dados-espaciais?search=${encodeURIComponent('aeroportos nacionais')}`,
     kind: 'geoespacial',

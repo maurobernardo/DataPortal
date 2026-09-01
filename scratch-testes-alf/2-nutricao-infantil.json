@@ -1,0 +1,1871 @@
+{
+  "analise_id": "an_799b3744",
+  "compreensao": {
+    "pergunta_normalizada": "Qual é a taxa de desnutrição infantil (atraso no crescimento, emaciação e baixo peso) em Moçambique, por província?",
+    "idioma": "pt",
+    "intencao": "descritiva",
+    "arquetipo_sugerido": "geoespacial",
+    "entidades": {
+      "geografias": [
+        {
+          "nome": "Moçambique",
+          "nivel": "nacional"
+        }
+      ],
+      "periodos": [],
+      "metricas": [
+        "Prevalência de Atraso no Crescimento (% <5)",
+        "Prevalência de Emaciação (% <5)",
+        "Baixo Peso para Idade (% <5)"
+      ]
+    },
+    "ambiguidades": [
+      {
+        "descricao": "\"Desnutrição infantil\" pode referir-se a três indicadores distintos com valores muito diferentes: atraso no crescimento (stunting), emaciação (wasting) ou baixo peso (underweight)",
+        "opcoes": [
+          "Prevalência de Atraso no Crescimento (% <5)",
+          "Prevalência de Emaciação (% <5)",
+          "Baixo Peso para Idade (% <5)"
+        ]
+      }
+    ],
+    "perfil_utilizador_inferido": "cidadao",
+    "requer_desambiguacao": true,
+    "sub_perguntas": [
+      "Qual a prevalência de atraso no crescimento (stunting) por província e a nível nacional?",
+      "Qual a prevalência de emaciação (wasting) por província?",
+      "Qual a prevalência de baixo peso (underweight) por província?",
+      "A prevalência de atraso no crescimento mostra tendência de subida ou descida ao longo dos anos disponíveis?",
+      "Quão concentrada/desigual é a prevalência de desnutrição entre províncias, e qual a qualidade dos dados disponíveis?"
+    ],
+    "passos": [
+      {
+        "id": "p1",
+        "tipo": "calculo",
+        "descricao_humana": "Calcula a prevalência de atraso no crescimento por província, nível mais fino disponível.",
+        "depende_de": [],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 47,
+        "coluna_metrica": "value",
+        "nivel_geo": "admin1",
+        "filtro_unidade": "cat:variable_name_pt=Prevalência de Atraso no Crescimento (% <5)",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "stunting_admin1"
+        ]
+      },
+      {
+        "id": "p2",
+        "tipo": "calculo",
+        "descricao_humana": "Calcula a prevalência de emaciação (wasting) por província.",
+        "depende_de": [],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 47,
+        "coluna_metrica": "value",
+        "nivel_geo": "admin1",
+        "filtro_unidade": "cat:variable_name_pt=Prevalência de Emaciação (% <5)",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "wasting_admin1"
+        ]
+      },
+      {
+        "id": "p3",
+        "tipo": "calculo",
+        "descricao_humana": "Calcula a prevalência de baixo peso (underweight) por província.",
+        "depende_de": [],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 47,
+        "coluna_metrica": "value",
+        "nivel_geo": "admin1",
+        "filtro_unidade": "cat:variable_name_pt=Baixo Peso para Idade (% <5)",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "underweight_admin1"
+        ]
+      },
+      {
+        "id": "p4",
+        "tipo": "calculo",
+        "descricao_humana": "Mede quão desigual é a prevalência de atraso no crescimento entre as províncias.",
+        "depende_de": [
+          "p1"
+        ],
+        "metodo": "concentracao",
+        "dataset_id": 47,
+        "coluna_metrica": "value",
+        "filtro_unidade": "cat:variable_name_pt=Prevalência de Atraso no Crescimento (% <5)",
+        "produz": [
+          "stunting_concentracao"
+        ]
+      },
+      {
+        "id": "p5",
+        "tipo": "calculo",
+        "descricao_humana": "Testa se a prevalência de atraso no crescimento sobe ou desce ao longo dos anos.",
+        "depende_de": [],
+        "metodo": "tendencia_mann_kendall",
+        "dataset_id": 47,
+        "coluna_metrica": "value",
+        "coluna_tempo": "year",
+        "filtro_unidade": "cat:variable_name_pt=Prevalência de Atraso no Crescimento (% <5)",
+        "produz": [
+          "stunting_tendencia"
+        ]
+      },
+      {
+        "id": "p6",
+        "tipo": "validacao",
+        "descricao_humana": "Verifica a qualidade e o nível de confiança (advisory/decision-grade) dos registos disponíveis.",
+        "depende_de": [],
+        "metodo": "perfil_coluna",
+        "dataset_id": 47,
+        "coluna_metrica": "dq_tier",
+        "produz": [
+          "qualidade_dados"
+        ]
+      }
+    ],
+    "nivel_geo_alvo": [
+      "admin1"
+    ],
+    "metricas_alvo": [
+      "Prevalência de Atraso no Crescimento (% <5)",
+      "Prevalência de Emaciação (% <5)",
+      "Baixo Peso para Idade (% <5)"
+    ],
+    "justificacao_arquetipo": "A pergunta exige descer ao nível administrativo mais fino disponível (admin1, único nível ligado no dataset) e comparar três indicadores de desnutrição entre províncias em mapas, pelo que o arquétipo geoespacial organiza melhor a apresentação do que um exploratório genérico.",
+    "pergunta_original": "Qual é a taxa de desnutrição infantil em Moçambique?"
+  },
+  "plano": {
+    "sub_perguntas": [
+      "Qual a prevalência de atraso no crescimento (stunting) por província e a nível nacional?",
+      "Qual a prevalência de emaciação (wasting) por província?",
+      "Qual a prevalência de baixo peso (underweight) por província?",
+      "A prevalência de atraso no crescimento mostra tendência de subida ou descida ao longo dos anos disponíveis?",
+      "Quão concentrada/desigual é a prevalência de desnutrição entre províncias, e qual a qualidade dos dados disponíveis?"
+    ],
+    "passos": [
+      {
+        "id": "p1",
+        "tipo": "calculo",
+        "descricao_humana": "Calcula a prevalência de atraso no crescimento por província, nível mais fino disponível.",
+        "depende_de": [],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 47,
+        "coluna_metrica": "value",
+        "nivel_geo": "admin1",
+        "filtro_unidade": "cat:variable_name_pt=Prevalência de Atraso no Crescimento (% <5)",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "stunting_admin1"
+        ]
+      },
+      {
+        "id": "p2",
+        "tipo": "calculo",
+        "descricao_humana": "Calcula a prevalência de emaciação (wasting) por província.",
+        "depende_de": [],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 47,
+        "coluna_metrica": "value",
+        "nivel_geo": "admin1",
+        "filtro_unidade": "cat:variable_name_pt=Prevalência de Emaciação (% <5)",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "wasting_admin1"
+        ]
+      },
+      {
+        "id": "p3",
+        "tipo": "calculo",
+        "descricao_humana": "Calcula a prevalência de baixo peso (underweight) por província.",
+        "depende_de": [],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 47,
+        "coluna_metrica": "value",
+        "nivel_geo": "admin1",
+        "filtro_unidade": "cat:variable_name_pt=Baixo Peso para Idade (% <5)",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "underweight_admin1"
+        ]
+      },
+      {
+        "id": "p4",
+        "tipo": "calculo",
+        "descricao_humana": "Mede quão desigual é a prevalência de atraso no crescimento entre as províncias.",
+        "depende_de": [
+          "p1"
+        ],
+        "metodo": "concentracao",
+        "dataset_id": 47,
+        "coluna_metrica": "value",
+        "filtro_unidade": "cat:variable_name_pt=Prevalência de Atraso no Crescimento (% <5)",
+        "produz": [
+          "stunting_concentracao"
+        ]
+      },
+      {
+        "id": "p5",
+        "tipo": "calculo",
+        "descricao_humana": "Testa se a prevalência de atraso no crescimento sobe ou desce ao longo dos anos.",
+        "depende_de": [],
+        "metodo": "tendencia_mann_kendall",
+        "dataset_id": 47,
+        "coluna_metrica": "value",
+        "coluna_tempo": "year",
+        "filtro_unidade": "cat:variable_name_pt=Prevalência de Atraso no Crescimento (% <5)",
+        "produz": [
+          "stunting_tendencia"
+        ]
+      },
+      {
+        "id": "p6",
+        "tipo": "validacao",
+        "descricao_humana": "Verifica a qualidade e o nível de confiança (advisory/decision-grade) dos registos disponíveis.",
+        "depende_de": [],
+        "metodo": "perfil_coluna",
+        "dataset_id": 47,
+        "coluna_metrica": "dq_tier",
+        "produz": [
+          "qualidade_dados"
+        ]
+      }
+    ],
+    "nivel_geo_alvo": [
+      "admin1"
+    ],
+    "metricas_alvo": [
+      "Prevalência de Atraso no Crescimento (% <5)",
+      "Prevalência de Emaciação (% <5)",
+      "Baixo Peso para Idade (% <5)"
+    ],
+    "justificacao_arquetipo": "A pergunta exige descer ao nível administrativo mais fino disponível (admin1, único nível ligado no dataset) e comparar três indicadores de desnutrição entre províncias em mapas, pelo que o arquétipo geoespacial organiza melhor a apresentação do que um exploratório genérico."
+  },
+  "suficiencia": {
+    "cobertura": [
+      {
+        "sub_pergunta": "Qual a prevalência de atraso no crescimento (stunting) por província e a nível nacional?",
+        "coberto": true,
+        "fonte": "dataset_selecionado"
+      },
+      {
+        "sub_pergunta": "Qual a prevalência de emaciação (wasting) por província?",
+        "coberto": true,
+        "fonte": "dataset_selecionado"
+      },
+      {
+        "sub_pergunta": "Qual a prevalência de baixo peso (underweight) por província?",
+        "coberto": true,
+        "fonte": "dataset_selecionado"
+      },
+      {
+        "sub_pergunta": "A prevalência de atraso no crescimento mostra tendência de subida ou descida ao longo dos anos disponíveis?",
+        "coberto": true,
+        "fonte": "dataset_selecionado",
+        "lacuna": "Série temporal limitada a 2011-2022 e com cobertura geográfica inconsistente entre anos; alguns anos têm dados provinciais, outros apenas nacional",
+        "accao": "Executar Mann-Kendall sobre a série disponível com ressalva explícita de que o padrão temporal é frágil"
+      },
+      {
+        "sub_pergunta": "Quão concentrada/desigual é a prevalência de desnutrição entre províncias, e qual a qualidade dos dados disponíveis?",
+        "coberto": true,
+        "fonte": "dataset_selecionado",
+        "lacuna": "75,6% dos registos são Advisory-tier, apenas 24,4% Decision-grade; a desigualdade é real mas sua confiabilidade para uso operacional é moderada",
+        "accao": "Separar por dq_tier na apresentação; alertar que 3 em cada 4 pontos têm recomendação-apenas, não decisão"
+      }
+    ],
+    "confianca_sem_enriquecimento": 0.82,
+    "precisa_enriquecimento": true,
+    "alvos_enriquecimento": [
+      {
+        "sub_pergunta": "Qual a prevalência de atraso no crescimento (stunting) por província e a nível nacional?",
+        "lacuna": "Dados Advisory-tier com cobertura geográfica fragmentária entre 2011 e 2022; faltam anos recentes (2023-2024) para responder ao presente",
+        "prioridade": 1,
+        "fonte_alvo": "MISAU DPC SISMA 2023-2024 ou pesquisa de campo DHS/IDS post-2023"
+      },
+      {
+        "sub_pergunta": "Qual a prevalência de emaciação (wasting) por província?",
+        "lacuna": "Mesmo padrão de fragmentação temporal e qualidade Advisory; emaciação é indicador de crise aguda, exige actualidade",
+        "prioridade": 2,
+        "fonte_alvo": "MISAU DPC 2024 ou levantamento SMART/FEWS em províncias de risco alto"
+      },
+      {
+        "sub_pergunta": "A prevalência de atraso no crescimento mostra tendência de subida ou descida ao longo dos anos disponíveis?",
+        "lacuna": "Série com gaps e cobertura irregular (nem todas províncias em todos os anos) compromete fidedignidade de tendência; seria necessário série completa e consistente ou imputação declarada",
+        "prioridade": 3,
+        "fonte_alvo": "Reconstituição de SISMA 2011-2024 com cobertura consistente, ou modelo de série temporal com metadados de imputação"
+      }
+    ]
+  },
+  "contexto": {
+    "tabelas": {},
+    "ligacoes": {},
+    "calcs": {
+      "p5_S": {
+        "id": "p5_S",
+        "valor": -2637,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ],
+          "linhas_usadas": 127,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ]
+        }
+      },
+      "p5_z": {
+        "id": "p5_z",
+        "valor": -5.4937,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ],
+          "linhas_usadas": 127,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ]
+        }
+      },
+      "p5_p": {
+        "id": "p5_p",
+        "valor": 0,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ],
+          "linhas_usadas": 127,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ]
+        }
+      },
+      "p5_declive_sen": {
+        "id": "p5_declive_sen",
+        "valor": -0.664815,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ],
+          "linhas_usadas": 127,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ]
+        }
+      },
+      "p5_direccao": {
+        "id": "p5_direccao",
+        "valor": "decrescente",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ],
+          "linhas_usadas": 127,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ]
+        }
+      },
+      "p5_n": {
+        "id": "p5_n",
+        "valor": 127,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ],
+          "linhas_usadas": 127,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ]
+        }
+      },
+      "p5_projecao_proximo_periodo": {
+        "id": "p5_projecao_proximo_periodo",
+        "valor": 66.1352,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ],
+          "linhas_usadas": 127,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ]
+        }
+      },
+      "p5_projecao_ic_inferior": {
+        "id": "p5_projecao_ic_inferior",
+        "valor": 65.7333,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ],
+          "linhas_usadas": 127,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ]
+        }
+      },
+      "p5_projecao_ic_superior": {
+        "id": "p5_projecao_ic_superior",
+        "valor": 66.4414,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ],
+          "linhas_usadas": 127,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ]
+        }
+      },
+      "p5_interpretacao": {
+        "id": "p5_interpretacao",
+        "valor": "Tendência decrescente estatisticamente significativa (p = 0), com variação típica de -0.66 por período. Projecção estatística para o próximo período: 66.14 (intervalo de confiança de 95%: 65.73 a 66.44) ; projecção estatística, não garantia.",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ],
+          "linhas_usadas": 127,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ]
+        }
+      },
+      "p6_coluna": {
+        "id": "p6_coluna",
+        "valor": "dq_tier",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ]
+        }
+      },
+      "p6_n_total": {
+        "id": "p6_n_total",
+        "valor": 999,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ]
+        }
+      },
+      "p6_n_preenchidos": {
+        "id": "p6_n_preenchidos",
+        "valor": 127,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ]
+        }
+      },
+      "p6_completude_pct": {
+        "id": "p6_completude_pct",
+        "valor": 12.7,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ]
+        }
+      },
+      "p6_n_distintos": {
+        "id": "p6_n_distintos",
+        "valor": 2,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ]
+        }
+      },
+      "p6_tipo": {
+        "id": "p6_tipo",
+        "valor": "categorica",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ]
+        }
+      },
+      "p4_gini": {
+        "id": "p4_gini",
+        "valor": 0.9108,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ],
+          "linhas_usadas": 127,
+          "metodo": "concentracao",
+          "fontes": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ]
+        }
+      },
+      "p4_hhi": {
+        "id": "p4_hhi",
+        "valor": 0.1384,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ],
+          "linhas_usadas": 127,
+          "metodo": "concentracao",
+          "fontes": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ]
+        }
+      },
+      "p4_quota_top3_pct": {
+        "id": "p4_quota_top3_pct",
+        "valor": 56,
+        "unidade": "",
+        "formato": "percentagem",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ],
+          "linhas_usadas": 127,
+          "metodo": "concentracao",
+          "fontes": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ]
+        }
+      },
+      "p4_n": {
+        "id": "p4_n",
+        "valor": 127,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ],
+          "linhas_usadas": 127,
+          "metodo": "concentracao",
+          "fontes": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ]
+        }
+      },
+      "p4_interpretacao": {
+        "id": "p4_interpretacao",
+        "valor": "Distribuição muito concentrada (Gini 0.91): poucas unidades detêm a maior parte do total.",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ],
+          "linhas_usadas": 127,
+          "metodo": "concentracao",
+          "fontes": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ]
+        }
+      },
+      "p1_nome_max": {
+        "id": "p1_nome_max",
+        "valor": "NAMPULA",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ]
+        }
+      },
+      "p1_nome_min": {
+        "id": "p1_nome_min",
+        "valor": "Maputo Cidade",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ]
+        }
+      },
+      "p1_n": {
+        "id": "p1_n",
+        "valor": 11,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ]
+        }
+      },
+      "p1_soma": {
+        "id": "p1_soma",
+        "valor": 409,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ]
+        }
+      },
+      "p1_media": {
+        "id": "p1_media",
+        "valor": 37.1818,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ]
+        }
+      },
+      "p1_mediana": {
+        "id": "p1_mediana",
+        "valor": 38.4,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ]
+        }
+      },
+      "p1_desvio": {
+        "id": "p1_desvio",
+        "valor": 9.9443,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ]
+        }
+      },
+      "p1_min": {
+        "id": "p1_min",
+        "valor": 17.6,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ]
+        }
+      },
+      "p1_max": {
+        "id": "p1_max",
+        "valor": 52,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ]
+        }
+      },
+      "p1_q1": {
+        "id": "p1_q1",
+        "valor": 30,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ]
+        }
+      },
+      "p1_q3": {
+        "id": "p1_q3",
+        "valor": 44,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ]
+        }
+      },
+      "p1_coeficiente_variacao": {
+        "id": "p1_coeficiente_variacao",
+        "valor": 26.75,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ]
+        }
+      },
+      "p2_nome_max": {
+        "id": "p2_nome_max",
+        "valor": "ZAMBEZIA",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ]
+        }
+      },
+      "p2_nome_min": {
+        "id": "p2_nome_min",
+        "valor": "Maputo Cidade",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ]
+        }
+      },
+      "p2_n": {
+        "id": "p2_n",
+        "valor": 11,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ]
+        }
+      },
+      "p2_soma": {
+        "id": "p2_soma",
+        "valor": 48.9,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ]
+        }
+      },
+      "p2_media": {
+        "id": "p2_media",
+        "valor": 4.4455,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ]
+        }
+      },
+      "p2_mediana": {
+        "id": "p2_mediana",
+        "valor": 4.2,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ]
+        }
+      },
+      "p2_desvio": {
+        "id": "p2_desvio",
+        "valor": 1.7149,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ]
+        }
+      },
+      "p2_min": {
+        "id": "p2_min",
+        "valor": 1.9,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ]
+        }
+      },
+      "p2_max": {
+        "id": "p2_max",
+        "valor": 7.4,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ]
+        }
+      },
+      "p2_q1": {
+        "id": "p2_q1",
+        "valor": 3.3,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ]
+        }
+      },
+      "p2_q3": {
+        "id": "p2_q3",
+        "valor": 5.5,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ]
+        }
+      },
+      "p2_coeficiente_variacao": {
+        "id": "p2_coeficiente_variacao",
+        "valor": 38.58,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ],
+          "linhas_usadas": 11,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil"
+          ]
+        }
+      }
+    },
+    "series": [
+      {
+        "passo_id": "p1",
+        "nivel": "admin1",
+        "unidades": [
+          {
+            "codigo": "03",
+            "nome": "NAMPULA",
+            "valor": 52
+          },
+          {
+            "codigo": "05",
+            "nome": "TETE",
+            "valor": 46.5
+          },
+          {
+            "codigo": "04",
+            "nome": "ZAMBEZIA",
+            "valor": 44.7
+          },
+          {
+            "codigo": "01",
+            "nome": "NIASSA",
+            "valor": 43.3
+          },
+          {
+            "codigo": "02",
+            "nome": "CABO DELGADO",
+            "valor": 41.5
+          },
+          {
+            "codigo": "06",
+            "nome": "MANICA",
+            "valor": 38.4
+          },
+          {
+            "codigo": "07",
+            "nome": "SOFALA",
+            "valor": 36.8
+          },
+          {
+            "codigo": "08",
+            "nome": "INHAMBANE",
+            "valor": 30.7
+          },
+          {
+            "codigo": "09",
+            "nome": "GAZA",
+            "valor": 29.3
+          },
+          {
+            "codigo": "10",
+            "nome": "MAPUTO",
+            "valor": 28.2
+          },
+          {
+            "codigo": "11",
+            "nome": "Maputo Cidade",
+            "valor": 17.6
+          }
+        ],
+        "metrica": "Prevalência de Atraso no Crescimento (% <5)",
+        "normalizacao": "nenhuma",
+        "dataset_id": 47
+      },
+      {
+        "passo_id": "p2",
+        "nivel": "admin1",
+        "unidades": [
+          {
+            "codigo": "04",
+            "nome": "ZAMBEZIA",
+            "valor": 7.4
+          },
+          {
+            "codigo": "03",
+            "nome": "NAMPULA",
+            "valor": 6.8
+          },
+          {
+            "codigo": "02",
+            "nome": "CABO DELGADO",
+            "valor": 5.9
+          },
+          {
+            "codigo": "05",
+            "nome": "TETE",
+            "valor": 5.1
+          },
+          {
+            "codigo": "01",
+            "nome": "NIASSA",
+            "valor": 4.4
+          },
+          {
+            "codigo": "06",
+            "nome": "MANICA",
+            "valor": 4.2
+          },
+          {
+            "codigo": "07",
+            "nome": "SOFALA",
+            "valor": 3.9
+          },
+          {
+            "codigo": "08",
+            "nome": "INHAMBANE",
+            "valor": 3.5
+          },
+          {
+            "codigo": "09",
+            "nome": "GAZA",
+            "valor": 3.1
+          },
+          {
+            "codigo": "10",
+            "nome": "MAPUTO",
+            "valor": 2.7
+          },
+          {
+            "codigo": "11",
+            "nome": "Maputo Cidade",
+            "valor": 1.9
+          }
+        ],
+        "metrica": "Prevalência de Emaciação (% <5)",
+        "normalizacao": "nenhuma",
+        "dataset_id": 47
+      }
+    ],
+    "graficos": [
+      {
+        "passo_id": "p5",
+        "tipo": "linha",
+        "titulo": "Testa se a prevalência de atraso no crescimento sobe ou desce ao longo dos anos.",
+        "eixoX": [
+          "2011",
+          "2011",
+          "2015",
+          "2015",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022",
+          "2022"
+        ],
+        "series": [
+          {
+            "nome": "Valor",
+            "valores": [
+              42.6,
+              15.6,
+              43.1,
+              14.9,
+              43.1,
+              5283,
+              15521,
+              13074,
+              26153,
+              8610,
+              6983,
+              9733,
+              1891,
+              3805,
+              2897,
+              2087,
+              96037,
+              84.2,
+              81.8,
+              75.3,
+              90.9,
+              88.7,
+              86.9,
+              77,
+              85.3,
+              86.8,
+              82.5,
+              81.7,
+              84.1,
+              78,
+              55,
+              58,
+              50,
+              56,
+              47,
+              59,
+              51,
+              74,
+              44,
+              35,
+              55,
+              7004,
+              13249,
+              14421,
+              22482,
+              9092,
+              7593,
+              9682,
+              1876,
+              3892,
+              4440,
+              2261,
+              95992,
+              88.7,
+              80.2,
+              83.1,
+              90.7,
+              91.6,
+              84,
+              79,
+              85.9,
+              92,
+              85.7,
+              75,
+              85.8,
+              71,
+              74,
+              59,
+              57,
+              60,
+              71,
+              55,
+              48,
+              69,
+              55,
+              44,
+              60,
+              43.3,
+              41.5,
+              52,
+              44.7,
+              46.5,
+              38.4,
+              36.8,
+              30.7,
+              29.3,
+              28.2,
+              17.6,
+              40.3,
+              40.3,
+              4.4,
+              5.9,
+              6.8,
+              7.4,
+              5.1,
+              4.2,
+              3.9,
+              3.5,
+              3.1,
+              2.7,
+              1.9,
+              5,
+              13.8,
+              52.1,
+              44.3,
+              49.8,
+              53.7,
+              55,
+              58.3,
+              61.4,
+              62.8,
+              67.9,
+              68.5,
+              75.2,
+              55.6,
+              66.2,
+              57.8,
+              64.3,
+              62.1,
+              68,
+              70.5,
+              71.2,
+              73.1,
+              77.4,
+              78.6,
+              84.3,
+              66.8,
+              null
+            ]
+          },
+          {
+            "nome": "Projecção (declive de Sen, não garantia)",
+            "valores": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              66.8,
+              66.1352
+            ]
+          }
+        ],
+        "categoria": "temporal"
+      },
+      {
+        "passo_id": "p6",
+        "tipo": "pizza",
+        "titulo": "Verifica a qualidade e o nível de confiança (advisory/decision-grade) dos registos disponíveis.",
+        "eixoX": [
+          "Advisory",
+          "Decision-grade"
+        ],
+        "series": [
+          {
+            "nome": "dq_tier",
+            "valores": [
+              96,
+              31
+            ]
+          }
+        ]
+      },
+      {
+        "passo_id": "p1_grafico_garantia",
+        "tipo": "barra",
+        "titulo": "Prevalência de Atraso no Crescimento (% <5): maiores unidades",
+        "eixoX": [
+          "NAMPULA",
+          "TETE",
+          "ZAMBEZIA",
+          "NIASSA",
+          "CABO DELGADO",
+          "MANICA",
+          "SOFALA",
+          "INHAMBANE",
+          "GAZA",
+          "MAPUTO",
+          "Maputo Cidade"
+        ],
+        "series": [
+          {
+            "nome": "Prevalência de Atraso no Crescimento (% <5)",
+            "valores": [
+              52,
+              46.5,
+              44.7,
+              43.3,
+              41.5,
+              38.4,
+              36.8,
+              30.7,
+              29.3,
+              28.2,
+              17.6
+            ]
+          }
+        ],
+        "categoria": "comparativo"
+      },
+      {
+        "passo_id": "p2_grafico_garantia",
+        "tipo": "barra",
+        "titulo": "Prevalência de Emaciação (% <5): maiores unidades",
+        "eixoX": [
+          "ZAMBEZIA",
+          "NAMPULA",
+          "CABO DELGADO",
+          "TETE",
+          "NIASSA",
+          "MANICA",
+          "SOFALA",
+          "INHAMBANE",
+          "GAZA",
+          "MAPUTO",
+          "Maputo Cidade"
+        ],
+        "series": [
+          {
+            "nome": "Prevalência de Emaciação (% <5)",
+            "valores": [
+              7.4,
+              6.8,
+              5.9,
+              5.1,
+              4.4,
+              4.2,
+              3.9,
+              3.5,
+              3.1,
+              2.7,
+              1.9
+            ]
+          }
+        ],
+        "categoria": "comparativo"
+      }
+    ],
+    "destaques": [],
+    "avisos": [
+      "Conjunto de dados Data4Moz L05 Saúde e Nutrição Infantil: 1 valor(es) da coluna \"geography_name\" não correspondem a unidades administrativas de Moçambique (Nacional) e ficam fora dos totais por unidade.",
+      "Enriquecimento: pesquisa de fontes externas desligada nesta análise (mais lenta); as lacunas identificadas fora de denominador populacional mantêm-se por declarar.",
+      "Passo \"Calcula a prevalência de baixo peso (underweight) por província.\" não pôde ser executado: Passo p3: nenhuma linha tem \"variable_name_pt\" = \"Baixo Peso para Idade (% <5)\""
+    ],
+    "enriquecimentoPopulacao": {},
+    "camadasBrutas": [],
+    "qualidade": [
+      {
+        "coluna": "Dq Tier",
+        "completude_pct": 12.7,
+        "n_distintos": 2,
+        "tipo": "categorica"
+      }
+    ],
+    "codigoExecutado": [],
+    "custoExecucaoCodigo": 0
+  },
+  "achados": [],
+  "narrativa": {
+    "titulo": "Atraso no crescimento afecta em média {{calc:p1_media}}% das crianças por província, chegando a {{calc:p1_max}}% em Nampula",
+    "subtitulo": "A emaciação (wasting) é bem mais rara, com média de {{calc:p2_media}}%, mas os dados de baixo peso (underweight) não existem neste conjunto para calcular uma taxa",
+    "resposta_directa": "Este conjunto de dados não tem um único número nacional pronto: o registo 'Nacional' foi excluído dos cálculos por província para não distorcer as estatísticas. Olhando para as {{calc:p1_n}} províncias, a prevalência média de atraso no crescimento (stunting) é {{calc:p1_media}}%, entre {{calc:p1_min}}% em Maputo Cidade e {{calc:p1_max}}% em Nampula. Para emaciação (wasting) a média é {{calc:p2_media}}%, entre {{calc:p2_min}}% e {{calc:p2_max}}%; não há dados de baixo peso (underweight) por província neste conjunto.",
+    "numeros_chave": [
+      {
+        "calc_id": "p1_media",
+        "rotulo": "Stunting médio entre províncias",
+        "contexto": "Média simples do atraso no crescimento nas 11 províncias, não ponderada pela população infantil de cada uma."
+      },
+      {
+        "calc_id": "p1_max",
+        "rotulo": "Nampula, valor mais alto de stunting",
+        "contexto": "A província com maior prevalência de atraso no crescimento entre crianças menores de 5 anos."
+      },
+      {
+        "calc_id": "p1_min",
+        "rotulo": "Maputo Cidade, valor mais baixo de stunting",
+        "contexto": "A província com menor prevalência de atraso no crescimento, tipicamente a área mais urbana do país."
+      },
+      {
+        "calc_id": "p2_media",
+        "rotulo": "Wasting médio entre províncias",
+        "contexto": "Média simples da emaciação aguda nas 11 províncias."
+      },
+      {
+        "calc_id": "p2_max",
+        "rotulo": "Zambézia, valor mais alto de wasting",
+        "contexto": "A província com maior prevalência de emaciação, forma aguda e mais grave de desnutrição."
+      },
+      {
+        "calc_id": "p1_coeficiente_variacao",
+        "rotulo": "Dispersão do stunting entre províncias",
+        "contexto": "Quanto maior este número, mais desigual é a situação nutricional entre províncias do país."
+      }
+    ],
+    "o_que_mostram": "O atraso no crescimento (stunting) varia muito entre províncias: de {{calc:p1_min}}% em Maputo Cidade a {{calc:p1_max}}% em Nampula, uma diferença de mais de duas vezes e meia. A província típica (mediana) está em {{calc:p1_mediana}}%, próxima da média de {{calc:p1_media}}%, o que sugere que não é um único caso extremo a puxar o valor: várias províncias do centro e norte têm valores elevados.\nA emaciação (wasting), forma mais aguda e menos crónica de desnutrição, é bem menos comum: a média provincial é {{calc:p2_media}}%, com o mínimo em {{calc:p2_min}}% e o máximo em {{calc:p2_max}}% na Zambézia. A diferença entre stunting e wasting mostra dois problemas distintos: um crónico e generalizado, outro agudo e mais localizado.",
+    "porque": "A desnutrição crónica está normalmente associada a pobreza persistente, insegurança alimentar sazonal e acesso limitado a água potável e saneamento, factores que tendem a coincidir nas mesmas províncias rurais do centro e norte. Mas esta associação geográfica não prova causa directa: províncias com mais stunting também têm maior ruralidade, populações mais dispersas e cobertura de saúde mais fraca, qualquer uma destas variáveis pode estar a confundir a leitura de que é apenas 'pobreza' a explicar a diferença.",
+    "o_que_nao_diz": [
+      "Não há dados de baixo peso (underweight) por província neste conjunto: o passo que tentou calculá-lo falhou porque não existe nenhuma linha com essa variável.",
+      "A coluna 'value' deste dataset mistura percentagens e contagens absolutas de 8 indicadores diferentes (stunting, wasting, casos de MAS, cobertura de vitamina A, entre outros); qualquer tendência temporal ou concentração calculada sobre toda a coluna junta não pode ser lida como uma tendência específica do stunting ou do wasting.",
+      "Os valores médios por província aqui apresentados são uma média simples das 11 províncias, não uma média nacional ponderada pela população infantil de cada uma, pelo que não substituem uma taxa nacional oficial.",
+      "A maioria dos registos deste conjunto tem qualidade classificada como 'Advisory' (indicativa), não 'Decision-grade' (mais fiável), o que limita o seu uso directo para decisões operacionais sem verificação cruzada com o Inquérito Demográfico e de Saúde."
+    ],
+    "como_chegamos": "Calculámos estatísticas descritivas (média, mediana, mínimo, máximo) separadamente para a prevalência de stunting e de wasting em cada uma das 11 províncias, excluindo o registo nacional agregado para não misturar níveis geográficos diferentes. Não combinámos os dois indicadores num único número porque medem formas distintas de desnutrição, em escalas e definições diferentes (R12).",
+    "fontes": [
+      {
+        "instituicao": "MISAU, Direcção de Planificação e Cooperação (DPC)",
+        "documento": "Data4Moz L05 Saúde e Nutrição Infantil",
+        "ano": 2022
+      },
+      {
+        "instituicao": "MISAU",
+        "documento": "Anuário Estatístico de Saúde (SISMA)",
+        "ano": 2022
+      },
+      {
+        "instituicao": "Instituto Nacional de Estatística / ICF",
+        "documento": "Inquérito Demográfico e de Saúde (IDS) 2022-23",
+        "ano": 2022
+      }
+    ]
+  },
+  "narrativa_resolvida": {
+    "titulo": "Atraso no crescimento afecta em média 37,2% das crianças por província, chegando a 52% em Nampula",
+    "subtitulo": "A emaciação (wasting) é bem mais rara, com média de 4,45%, mas os dados de baixo peso (underweight) não existem neste conjunto para calcular uma taxa",
+    "resposta_directa": "Este conjunto de dados não tem um único número nacional pronto: o registo 'Nacional' foi excluído dos cálculos por província para não distorcer as estatísticas. Olhando para as 11 províncias, a prevalência média de atraso no crescimento (stunting) é 37,2%, entre 17,6% em Maputo Cidade e 52% em Nampula. Para emaciação (wasting) a média é 4,45%, entre 1,90% e 7,40%; não há dados de baixo peso (underweight) por província neste conjunto.",
+    "numeros_chave": [
+      {
+        "calc_id": "p1_media",
+        "rotulo": "Stunting médio entre províncias",
+        "contexto": "Média simples do atraso no crescimento nas 11 províncias, não ponderada pela população infantil de cada uma.",
+        "valor": "37,2"
+      },
+      {
+        "calc_id": "p1_max",
+        "rotulo": "Nampula, valor mais alto de stunting",
+        "contexto": "A província com maior prevalência de atraso no crescimento entre crianças menores de 5 anos.",
+        "valor": "52"
+      },
+      {
+        "calc_id": "p1_min",
+        "rotulo": "Maputo Cidade, valor mais baixo de stunting",
+        "contexto": "A província com menor prevalência de atraso no crescimento, tipicamente a área mais urbana do país.",
+        "valor": "17,6"
+      },
+      {
+        "calc_id": "p2_media",
+        "rotulo": "Wasting médio entre províncias",
+        "contexto": "Média simples da emaciação aguda nas 11 províncias.",
+        "valor": "4,45"
+      },
+      {
+        "calc_id": "p2_max",
+        "rotulo": "Zambézia, valor mais alto de wasting",
+        "contexto": "A província com maior prevalência de emaciação, forma aguda e mais grave de desnutrição.",
+        "valor": "7,40"
+      },
+      {
+        "calc_id": "p1_coeficiente_variacao",
+        "rotulo": "Dispersão do stunting entre províncias",
+        "contexto": "Quanto maior este número, mais desigual é a situação nutricional entre províncias do país.",
+        "valor": "26,8"
+      }
+    ],
+    "o_que_mostram": "O atraso no crescimento (stunting) varia muito entre províncias: de 17,6% em Maputo Cidade a 52% em Nampula, uma diferença de mais de duas vezes e meia. A província típica (mediana) está em 38,4%, próxima da média de 37,2%, o que sugere que não é um único caso extremo a puxar o valor: várias províncias do centro e norte têm valores elevados.\nA emaciação (wasting), forma mais aguda e menos crónica de desnutrição, é bem menos comum: a média provincial é 4,45%, com o mínimo em 1,90% e o máximo em 7,40% na Zambézia. A diferença entre stunting e wasting mostra dois problemas distintos: um crónico e generalizado, outro agudo e mais localizado.",
+    "porque": "A desnutrição crónica está normalmente associada a pobreza persistente, insegurança alimentar sazonal e acesso limitado a água potável e saneamento, factores que tendem a coincidir nas mesmas províncias rurais do centro e norte. Mas esta associação geográfica não prova causa directa: províncias com mais stunting também têm maior ruralidade, populações mais dispersas e cobertura de saúde mais fraca, qualquer uma destas variáveis pode estar a confundir a leitura de que é apenas 'pobreza' a explicar a diferença.",
+    "o_que_nao_diz": [
+      "Não há dados de baixo peso (underweight) por província neste conjunto: o passo que tentou calculá-lo falhou porque não existe nenhuma linha com essa variável.",
+      "A coluna 'value' deste dataset mistura percentagens e contagens absolutas de 8 indicadores diferentes (stunting, wasting, casos de MAS, cobertura de vitamina A, entre outros); qualquer tendência temporal ou concentração calculada sobre toda a coluna junta não pode ser lida como uma tendência específica do stunting ou do wasting.",
+      "Os valores médios por província aqui apresentados são uma média simples das 11 províncias, não uma média nacional ponderada pela população infantil de cada uma, pelo que não substituem uma taxa nacional oficial.",
+      "A maioria dos registos deste conjunto tem qualidade classificada como 'Advisory' (indicativa), não 'Decision-grade' (mais fiável), o que limita o seu uso directo para decisões operacionais sem verificação cruzada com o Inquérito Demográfico e de Saúde."
+    ],
+    "como_chegamos": "Calculámos estatísticas descritivas (média, mediana, mínimo, máximo) separadamente para a prevalência de stunting e de wasting em cada uma das 11 províncias, excluindo o registo nacional agregado para não misturar níveis geográficos diferentes. Não combinámos os dois indicadores num único número porque medem formas distintas de desnutrição, em escalas e definições diferentes (R12).",
+    "fontes": [
+      {
+        "instituicao": "MISAU, Direcção de Planificação e Cooperação (DPC)",
+        "documento": "Data4Moz L05 Saúde e Nutrição Infantil",
+        "ano": 2022
+      },
+      {
+        "instituicao": "MISAU",
+        "documento": "Anuário Estatístico de Saúde (SISMA)",
+        "ano": 2022
+      },
+      {
+        "instituicao": "Instituto Nacional de Estatística / ICF",
+        "documento": "Inquérito Demográfico e de Saúde (IDS) 2022-23",
+        "ano": 2022
+      }
+    ]
+  },
+  "critica": {
+    "objeccoes": [],
+    "bloqueia_publicacao": false
+  },
+  "custo_usd": 0.143807,
+  "duracao_ms": 175314,
+  "confianca": {
+    "percentagem": 82,
+    "datasetsUsados": 1,
+    "ligacoesGeograficas": [
+      {
+        "dataset_id": 47,
+        "nivel": "admin1",
+        "taxa_correspondencia": 0.87
+      }
+    ],
+    "completudeMediaPct": 12.7,
+    "valoresDerivados": 0,
+    "passosViaCodigo": 0
+  }
+}

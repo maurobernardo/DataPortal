@@ -226,7 +226,14 @@ export const REGISTO_METODOS: Record<string, DescricaoMetodo> = {
       'Junta DOIS datasets seleccionados (ex.: um geoespacial e um alfanumérico) pela unidade ' +
       'administrativa comum a que cada um já está ligado. Requer dataset_id (primeiro), ' +
       'dataset_id_2 (segundo), coluna_metrica (do primeiro) e coluna_metrica_2 (do segundo); ' +
-      'nivel_geo é opcional. Produz mapas comparáveis e um gráfico de dispersão entre as duas ' +
+      'nivel_geo é opcional. Quando um dos datasets está em formato longo (uma coluna de valores ' +
+      'partilhada por vários indicadores, ex.: "value" com produção de milho, de arroz e áreas ' +
+      'cultivadas), é OBRIGATÓRIO restringir cada lado ao indicador certo por filtro_unidade, ' +
+      'senão a junção soma indicadores diferentes e o resultado não significa nada: usa ' +
+      '"cat:coluna=valor" para o primeiro dataset e "cat2:coluna=valor" para o segundo, separados ' +
+      'por ";" (ex.: "cat:variable_name_pt=Produção de milho (toneladas);cat2:variable_name_pt=' +
+      'Casos de TB Notificados"). Se só um dos lados precisar de filtro, escreve só esse. ' +
+      'Produz mapas comparáveis e um gráfico de dispersão entre as duas ' +
       'métricas, e uma tabela combinada que passos seguintes podem referenciar por dataset_id. ' +
       'É o único método que lê de dois datasets ao mesmo tempo: todos os outros lêem sempre de UM ' +
       'só (o indicado em dataset_id, ou o primeiro seleccionado se omitido).',
@@ -254,6 +261,63 @@ export const REGISTO_METODOS: Record<string, DescricaoMetodo> = {
     parametros: ['coluna_grupo: string', 'nivel_geo: string'],
     fn: () => {
       throw new Error('distribuicao_categoria_geo é tratado directamente pelo executor, nunca invocado por invocarMetodo')
+    },
+  },
+  mapas_por_periodo: {
+    nome: 'mapas_por_periodo',
+    familia: 'temporal',
+    descricao:
+      'O mesmo indicador em VÁRIOS momentos, para desenhar mapas pequenos lado a lado, todos na ' +
+      'mesma escala. É o método para "como se espalhou ao longo dos anos", "mostra a evolução ' +
+      'ano a ano no mapa", "em que anos mudou o padrão". Diferente de variacao_geografica, que dá ' +
+      'um só mapa com a diferença entre o princípio e o fim e apaga o percurso pelo meio. Requer ' +
+      'coluna_tempo e nivel_geo; coluna_metrica quando há valor a somar.',
+    nao_usar_quando:
+      'A pergunta só quer saber o saldo entre dois momentos (usa variacao_geografica), ou a ' +
+      'coluna de tempo tem menos de dois períodos distintos.',
+    parametros: ['coluna_tempo: string', 'nivel_geo: string', 'coluna_metrica?: string'],
+    fn: () => {
+      throw new Error('mapas_por_periodo é tratado directamente pelo executor, nunca invocado por invocarMetodo')
+    },
+  },
+  variacao_geografica: {
+    nome: 'variacao_geografica',
+    familia: 'comparativa',
+    descricao:
+      'Variação de uma métrica entre o PRIMEIRO e o ÚLTIMO período, calculada para CADA unidade ' +
+      'geográfica, e desenhada num mapa de mudança com escala centrada no zero. É o método certo ' +
+      'para "como evoluiu X por província", "que distritos subiram e quais desceram", "onde ' +
+      'melhorou e onde piorou". Requer coluna_tempo (a coluna do ano ou período) e nivel_geo; ' +
+      'coluna_metrica quando há um valor a somar, e vazia para contar registos. Quando a métrica ' +
+      'já é uma percentagem, a variação sai em pontos percentuais; nos restantes casos, em ' +
+      'percentagem, para que províncias grandes e pequenas se comparem.',
+    nao_usar_quando:
+      'A pergunta é sobre um só momento (usa resumo_estatistico com nivel_geo), ou sobre a ' +
+      'trajectória nacional ano a ano sem separar por unidade (usa tendencia_mann_kendall ou ' +
+      'media_movel), ou a coluna de tempo tem um só período distinto.',
+    parametros: ['coluna_tempo: string', 'nivel_geo: string', 'coluna_metrica?: string'],
+    fn: () => {
+      throw new Error('variacao_geografica é tratado directamente pelo executor, nunca invocado por invocarMetodo')
+    },
+  },
+  listar_registos: {
+    nome: 'listar_registos',
+    familia: 'estrutural',
+    descricao:
+      'Devolve os NOMES dos registos, um a um, em vez de os contar. É o método obrigatório quando ' +
+      'a pergunta pede "quais são", "quais", "que X existem", "lista", "nomes" ou "diz-me quais": ' +
+      'todos os outros métodos agregam, e uma pergunta que pede a lista fica por responder se ' +
+      'receber só um total. Requer coluna_grupo (a coluna que tem os nomes, ex.: "Nome", ' +
+      '"Designacao", "Escola"). Aceita filtro_unidade para restringir a uma província, distrito ou ' +
+      'posto administrativo. Usa-o EM CONJUNTO com resumo_estatistico quando a pergunta pede as ' +
+      'duas coisas ("quantas X e quais são"): um passo dá o número, este dá os nomes.',
+    nao_usar_quando:
+      'A pergunta só pede uma contagem, uma soma ou uma comparação, sem pedir os nomes. Ou a ' +
+      'coluna de nomes não existe no dataset (nesse caso a lista não é possível e é preferível ' +
+      'dizê-lo do que listar códigos).',
+    parametros: ['coluna_grupo: string (a coluna dos nomes)', 'filtro_unidade?: string', 'nivel_geo?: string'],
+    fn: () => {
+      throw new Error('listar_registos é tratado directamente pelo executor, nunca invocado por invocarMetodo')
     },
   },
   execucao_codigo: {

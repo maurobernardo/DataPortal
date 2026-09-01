@@ -115,15 +115,16 @@ export function CategoryForm() {
       const response = await fetch(`/api/categories/${id}`, {
         method: 'DELETE',
       })
+      const dados = await response.json().catch(() => null)
 
-      if (!response.ok) throw new Error('Erro ao excluir categoria')
+      if (!response.ok) throw new Error(dados?.error || 'Erro ao excluir categoria')
 
       router.refresh()
       loadCategories()
       showFeedback('Categoria excluída com sucesso!', 'success')
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting category:', error)
-      showFeedback('Erro ao excluir categoria', 'error')
+      showFeedback(error?.message || 'Erro ao excluir categoria', 'error')
     }
   }
 

@@ -1,16 +1,20 @@
 'use client'
 
 import { useState } from 'react'
-import { Download, Loader2, Map as MapIcon, X } from 'lucide-react'
+import { Download, Loader2, Map as MapIcon, Scale, X } from 'lucide-react'
 
 export function BatchActionBar({
   selectedIds,
   onClear,
   onCompare,
+  compareLabel = 'Comparar no mapa',
 }: {
   selectedIds: number[]
   onClear: () => void
   onCompare?: () => void
+  /** "Comparar no mapa" só faz sentido para camadas geoespaciais (GeoCompareMap); datasets
+   *  alfanuméricos comparam metadados numa tabela, não num mapa. */
+  compareLabel?: string
 }) {
   const [downloading, setDownloading] = useState(false)
 
@@ -57,8 +61,12 @@ export function BatchActionBar({
             disabled={selectedIds.length < 2 || selectedIds.length > 3}
             title={selectedIds.length < 2 ? 'Selecione pelo menos 2 camadas' : selectedIds.length > 3 ? 'Máximo de 3 camadas' : ''}
           >
-            <MapIcon className="size-4" aria-hidden />
-            Comparar no mapa
+            {compareLabel === 'Comparar no mapa' ? (
+              <MapIcon className="size-4" aria-hidden />
+            ) : (
+              <Scale className="size-4" aria-hidden />
+            )}
+            {compareLabel}
           </button>
         )}
         <button

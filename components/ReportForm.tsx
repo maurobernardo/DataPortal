@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { FileText, Save, X, Edit, Trash2, Loader2, Plus, CheckCircle2, XCircle, Upload } from 'lucide-react'
+import { FileText, Save, X, Edit, Trash2, Loader2, Plus, CheckCircle2, XCircle, Upload, ExternalLink, ScanSearch, ScaleIcon } from 'lucide-react'
+import { PainelVerificacao } from './reports/PainelVerificacao'
 
 interface Report {
   id: number
@@ -14,6 +15,7 @@ interface Report {
   filePath: string | null
   fileSize: string | null
   detailsText: string | null
+  sector: string | null
 }
 
 export function ReportForm() {
@@ -31,11 +33,21 @@ export function ReportForm() {
     author: '',
     partners: '',
     detailsText: '',
+    sector: '',
   })
   const [yearMode, setYearMode] = useState<'single' | 'range'>('single')
   const [periodStart, setPeriodStart] = useState<string>(String(new Date().getFullYear()))
   const [periodEnd, setPeriodEnd] = useState<string>('')
   const [editingId, setEditingId] = useState<number | null>(null)
+  // O ficheiro do relatório: nenhum dos existentes tinha um, porque .pdf nunca esteve na lista de
+  // extensões aceites por /api/upload (corrigido). Fica à parte de `formData` porque só se altera
+  // ao carregar um ficheiro novo, nunca ao escrever nos outros campos.
+  const [filePath, setFilePath] = useState<string | null>(null)
+  const [fileSize, setFileSize] = useState<string | null>(null)
+  const [aCarregarFicheiro, setACarregarFicheiro] = useState(false)
+  const [erroFicheiro, setErroFicheiro] = useState<string | null>(null)
+  const [aProcessar, setAProcessar] = useState<number | null>(null)
+  const [verificacaoAbertaId, setVerificacaoAbertaId] = useState<number | null>(null)
 
   function showFeedback(message: string, type: 'success' | 'error') {
     setToastMessage(message)
@@ -79,6 +91,8 @@ export function ReportForm() {
           yearMode === 'single'
             ? formData.year.trim()
             : `${periodStart.trim()}-${periodEnd.trim()}`,
+        filePath,
+        fileSize,
       }
 
       const response = await fetch(url, {
@@ -99,11 +113,14 @@ export function ReportForm() {
         author: '',
         partners: '',
         detailsText: '',
+        sector: '',
       })
       setYearMode('single')
       setPeriodStart(String(new Date().getFullYear()))
       setPeriodEnd('')
       setEditingId(null)
+      setFilePath(null)
+      setFileSize(null)
     } catch (error) {
       console.error('Error saving report:', error)
       showFeedback('Erro ao salvar relatório', 'error')
@@ -133,9 +150,55 @@ export function ReportForm() {
       author: report.author || '',
       partners: report.partners || '',
       detailsText: report.detailsText || '',
+      sector: report.sector || '',
     })
     setEditingId(report.id)
+    setFilePath(report.filePath || null)
+    setFileSize(report.fileSize || null)
+    setErroFicheiro(null)
     window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  async function handleUploadFicheiro(ficheiro: File) {
+    setACarregarFicheiro(true)
+    setErroFicheiro(null)
+    try {
+      const dados = new FormData()
+      dados.append('file', ficheiro)
+      const response = await fetch('/api/upload', { method: 'POST', body: dados })
+      const d = await response.json()
+      if (!response.ok) throw new Error(d?.error || 'Falha ao carregar o ficheiro')
+      setFilePath(d.filePath)
+      setFileSize(d.fileSize)
+    } catch (error: any) {
+      setErroFicheiro(error?.message || 'Falha ao carregar o ficheiro')
+    } finally {
+      setACarregarFicheiro(false)
+    }
+  }
+
+  /**
+   * Lê o PDF e gera a leitura estruturada (resumo, achados, recomendações, cada um com a página).
+   * Só aparece para um relatório já guardado com ficheiro: processar é uma chamada real ao
+   * modelo, por isso corre a pedido explícito, nunca automaticamente ao guardar o registo.
+   */
+  async function handleProcessar(id: number) {
+    setAProcessar(id)
+    try {
+      const response = await fetch(`/api/admin/reports/${id}/processar`, { method: 'POST' })
+      const d = await response.json()
+      if (!response.ok) throw new Error(d?.erro || 'Falha ao processar')
+      showFeedback(
+        d.estado === 'digitalizado'
+          ? 'Este PDF parece ser uma digitalização sem texto legível.'
+          : `Processado: ${d.totalPaginas ?? '?'} páginas lidas.`,
+        d.estado === 'pronto' ? 'success' : 'error'
+      )
+    } catch (error: any) {
+      showFeedback(error?.message || 'Falha ao processar o relatório', 'error')
+    } finally {
+      setAProcessar(null)
+    }
   }
 
   async function handleDelete(id: number) {
@@ -325,6 +388,21 @@ export function ReportForm() {
               />
             </div>
 
+            <div className="animate-fade-in" style={{ animationDelay: '0.45s' }}>
+              <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                <FileText className="w-4 h-4 text-green-600" />
+                Sector
+              </label>
+              <input
+                type="text"
+                value={formData.sector}
+                onChange={(e) => setFormData({ ...formData, sector: e.target.value })}
+                placeholder="Ex: Saúde, Agricultura, Educação"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-300 bg-white hover:border-gray-300"
+              />
+              <p className="text-xs text-gray-400 mt-1">Usado para filtrar relatórios por sector em /relatorios.</p>
+            </div>
+
             <div className="animate-fade-in" style={{ animationDelay: '0.5s' }}>
               <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
                 <FileText className="w-4 h-4 text-green-600" />
@@ -351,6 +429,40 @@ export function ReportForm() {
                 rows={5}
                 className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-300 bg-white hover:border-gray-300"
               />
+            </div>
+
+            <div className="animate-fade-in" style={{ animationDelay: '0.58s' }}>
+              <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                <Upload className="w-4 h-4 text-green-600" />
+                Ficheiro do relatório (PDF)
+              </label>
+              <div className="border-2 border-dashed border-gray-200 rounded-xl p-4 hover:border-green-300 transition-colors">
+                <label className="flex items-center gap-2 text-sm font-semibold text-green-700 cursor-pointer w-fit">
+                  {aCarregarFicheiro ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Upload className="w-4 h-4" />
+                  )}
+                  {aCarregarFicheiro ? 'A carregar...' : filePath ? 'Substituir ficheiro' : 'Carregar PDF'}
+                  <input
+                    type="file"
+                    accept="application/pdf"
+                    className="hidden"
+                    disabled={aCarregarFicheiro}
+                    onChange={(e) => e.target.files?.[0] && handleUploadFicheiro(e.target.files[0])}
+                  />
+                </label>
+                {filePath && (
+                  <p className="mt-2 text-xs text-gray-500 flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
+                    {filePath.split('/').pop()} {fileSize ? `(${fileSize})` : ''}
+                  </p>
+                )}
+                {erroFicheiro && <p className="mt-2 text-xs text-red-600">{erroFicheiro}</p>}
+              </div>
+              <p className="text-xs text-gray-400 mt-1">
+                Com um ficheiro carregado, o botão "Processar" na lista ao lado lê o PDF e gera um resumo estruturado com achados e recomendações.
+              </p>
             </div>
 
             <div className="flex gap-3 pt-4 animate-fade-in" style={{ animationDelay: '0.6s' }}>
@@ -383,10 +495,14 @@ export function ReportForm() {
                       author: '',
                       partners: '',
                       detailsText: '',
+                      sector: '',
                     })
                     setYearMode('single')
                     setPeriodStart(String(new Date().getFullYear()))
                     setPeriodEnd('')
+                    setFilePath(null)
+                    setFileSize(null)
+                    setErroFicheiro(null)
                   }}
                   className="flex items-center gap-2 px-6 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-all duration-300 font-semibold"
                 >
@@ -462,7 +578,39 @@ export function ReportForm() {
                         )}
                       </div>
                     </div>
-                    <div className="flex gap-2 flex-shrink-0">
+                    <div className="flex flex-wrap gap-2 flex-shrink-0 justify-end">
+                      {report.filePath && (
+                        <>
+                          <a
+                            href={report.filePath}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex items-center gap-1 px-3 py-2 bg-white text-green-700 border border-green-200 text-sm rounded-lg hover:bg-green-50 transition-all duration-300 shadow-sm"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            <span>Abrir</span>
+                          </a>
+                          <button
+                            onClick={() => handleProcessar(report.id)}
+                            disabled={aProcessar === report.id}
+                            className="flex items-center gap-1 px-3 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition-all duration-300 hover:scale-105 shadow-md disabled:opacity-60 disabled:hover:scale-100"
+                          >
+                            {aProcessar === report.id ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <ScanSearch className="w-3 h-3" />
+                            )}
+                            <span>{aProcessar === report.id ? 'A processar...' : 'Processar'}</span>
+                          </button>
+                          <button
+                            onClick={() => setVerificacaoAbertaId((prev) => (prev === report.id ? null : report.id))}
+                            className="flex items-center gap-1 px-3 py-2 bg-amber-500 text-white text-sm rounded-lg hover:bg-amber-600 transition-all duration-300 hover:scale-105 shadow-md"
+                          >
+                            <ScaleIcon className="w-3 h-3" />
+                            <span>Verificar</span>
+                          </button>
+                        </>
+                      )}
                       <button
                         onClick={() => handleEdit(report)}
                         className="flex items-center gap-1 px-3 py-2 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 transition-all duration-300 hover:scale-105 shadow-md"
@@ -479,6 +627,11 @@ export function ReportForm() {
                       </button>
                     </div>
                   </div>
+                  {verificacaoAbertaId === report.id && (
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                      <PainelVerificacao reportId={report.id} />
+                    </div>
+                  )}
                 </div>
               ))
             )}

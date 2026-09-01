@@ -22,13 +22,13 @@ const PERSONAS = [
   {
     tag: 'Estudante · Investigador académico',
     title: 'Explorar dados sem fricção técnica',
-    desc: 'Faça perguntas de seguimento sobre o mesmo dataset e guarde as análises úteis no seu dashboard pessoal para consultar depois.',
+    desc: 'Use as perguntas sugeridas no fim de cada análise para continuar a explorar os mesmos datasets, e guarde as análises úteis no seu dashboard pessoal para consultar depois.',
   },
 ]
 
 export function AIPersonas() {
   return (
-    <section className="font-body-stack py-16 md:py-24 bg-gradient-to-b from-[#f8faf8] to-[#f2f7f3] border-b border-[#E2E8E5]">
+    <section className="font-body-stack py-9 md:py-12 bg-[#f8faf8] border-b border-[#E2E8E5]">
       <div className="ai-section-inner">
         <div className="max-w-3xl mb-12 md:mb-14">
           <div className="inline-flex items-center gap-2 rounded-full bg-[#F1F8F4] border border-[#CFE3D6] px-4 py-1.5 mb-6">
@@ -76,12 +76,12 @@ const TRUST_ITEMS = [
   { icon: '⚷', title: 'Fontes sempre citadas', desc: 'Cada resposta referencia o dataset, a fonte e o ano, anexados pelo servidor e nunca gerados pelo modelo.' },
   { icon: '⚖', title: 'Estimativas, não certezas', desc: 'Previsões são sempre identificadas como estimativa da IA, com nível de confiança, nunca como modelo estatístico validado.' },
   { icon: '⌥', title: 'Chave de API protegida', desc: 'O acesso ao modelo de IA é feito apenas pelo servidor, a chave nunca é exposta ao navegador.' },
-  { icon: '⚙', title: 'Acesso autenticado e limitado', desc: 'Apenas utilizadores com sessão iniciada, com limite de 20 consultas por dia, para um uso responsável.' },
+  { icon: '⚙', title: 'Acesso autenticado e limitado', desc: 'Apenas utilizadores com sessão iniciada, com limite de 10 análises por hora, para um uso responsável e sustentável do serviço.' },
 ]
 
 export function AITrust() {
   return (
-    <section className="font-body-stack py-16 md:py-24 bg-gradient-to-b from-[#f8faf8] to-[#f2f7f3] border-t border-[#E2E8E5]">
+    <section className="font-body-stack py-9 md:py-12 bg-[#f8faf8] border-t border-[#E2E8E5]">
       <div className="ai-section-inner">
         <div className="max-w-3xl mb-12 md:mb-14">
           <div className="inline-flex items-center gap-2 rounded-full bg-[#F1F8F4] border border-[#CFE3D6] px-4 py-1.5 mb-6">
@@ -123,7 +123,7 @@ export function AITrust() {
 ───────────────────────────────────────────── */
 export function AIFinalCTA() {
   return (
-    <section className="font-body-stack relative overflow-hidden text-center text-white py-16 md:py-24 bg-gradient-to-br from-[#064E2C] to-[#04361F]">
+    <section className="font-body-stack relative overflow-hidden text-center text-white py-9 md:py-12 bg-[#064E2C]">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.08),transparent_55%)]" />
       <div className="ai-section-inner relative max-w-[720px] mx-auto px-4">
         <h2 className="text-3xl sm:text-4xl lg:text-[48px] font-extrabold tracking-tight leading-tight mb-5">

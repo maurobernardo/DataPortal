@@ -1,0 +1,1469 @@
+{
+  "analise_id": "an_3f6c8676",
+  "compreensao": {
+    "pergunta_normalizada": "Qual é a relação entre o número de chegadas de turistas e as receitas do turismo em Moçambique?",
+    "idioma": "pt",
+    "intencao": "diagnostica",
+    "arquetipo_sugerido": "diagnostico",
+    "entidades": {
+      "geografias": [],
+      "periodos": [
+        {
+          "expressao": "série completa disponível (2000-2025, cobertura irregular)"
+        }
+      ],
+      "metricas": [
+        "international_tourist_arrivals_total",
+        "international_tourism_receipts"
+      ]
+    },
+    "ambiguidades": [],
+    "perfil_utilizador_inferido": "investigador",
+    "requer_desambiguacao": false,
+    "sub_perguntas": [
+      "Qual é a tendência do número de chegadas de turistas em Moçambique ao longo do tempo?",
+      "Qual é a tendência das receitas do turismo em Moçambique ao longo do tempo?",
+      "As duas séries têm qualidade e cobertura suficientes para uma comparação fiável?",
+      "Existe correlação estatística entre chegadas e receitas, e que explicações alternativas devem ser consideradas?"
+    ],
+    "passos": [
+      {
+        "id": "p1",
+        "tipo": "validacao",
+        "descricao_humana": "Verifica completude da série de chegadas de turistas (apenas 2,5% dos anos preenchidos).",
+        "depende_de": [],
+        "metodo": "perfil_coluna",
+        "dataset_id": 58,
+        "coluna_metrica": "value",
+        "produz": [
+          "p1_completude_chegadas"
+        ]
+      },
+      {
+        "id": "p2",
+        "tipo": "calculo",
+        "descricao_humana": "Calcula estatísticas descritivas do número de chegadas internacionais de turistas.",
+        "depende_de": [
+          "p1"
+        ],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 58,
+        "coluna_metrica": "value",
+        "produz": [
+          "p2_stats_chegadas"
+        ]
+      },
+      {
+        "id": "p3",
+        "tipo": "calculo",
+        "descricao_humana": "Calcula estatísticas descritivas das receitas internacionais do turismo, isolando esse indicador.",
+        "depende_de": [
+          "p1"
+        ],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 59,
+        "coluna_metrica": "value",
+        "filtro_unidade": "cat:indicator=international_tourism_receipts",
+        "produz": [
+          "p3_stats_receitas"
+        ]
+      },
+      {
+        "id": "p4",
+        "tipo": "calculo",
+        "descricao_humana": "Testa tendência ao longo do tempo no número de chegadas de turistas.",
+        "depende_de": [
+          "p2"
+        ],
+        "metodo": "tendencia_mann_kendall",
+        "dataset_id": 58,
+        "coluna_metrica": "value",
+        "coluna_tempo": "year",
+        "produz": [
+          "p4_tendencia_chegadas"
+        ]
+      },
+      {
+        "id": "p5",
+        "tipo": "calculo",
+        "descricao_humana": "Testa tendência ao longo do tempo nas receitas do turismo.",
+        "depende_de": [
+          "p3"
+        ],
+        "metodo": "tendencia_mann_kendall",
+        "dataset_id": 59,
+        "coluna_metrica": "value",
+        "coluna_tempo": "year",
+        "filtro_unidade": "cat:indicator=international_tourism_receipts",
+        "produz": [
+          "p5_tendencia_receitas"
+        ]
+      },
+      {
+        "id": "p6",
+        "tipo": "calculo",
+        "descricao_humana": "Junta as duas séries por ano e calcula a correlação entre chegadas e receitas do turismo.",
+        "depende_de": [
+          "p2",
+          "p3"
+        ],
+        "metodo": "execucao_codigo",
+        "dataset_id": 58,
+        "dataset_id_2": 59,
+        "coluna_metrica": "Juntar por ano a série de chegadas de turistas (dataset 58, coluna value) com a série de receitas do turismo (dataset 59, filtrando indicator=international_tourism_receipts, coluna value); calcular correlação de Pearson e de Spearman entre as duas séries para os anos com dados em ambas, reportando o número de anos sobrepostos e os coeficientes com p-valor.",
+        "produz": [
+          "p6_correlacao_chegadas_receitas",
+          "p6_n_anos_sobrepostos"
+        ]
+      }
+    ],
+    "nivel_geo_alvo": [],
+    "metricas_alvo": [
+      "international_tourist_arrivals_total",
+      "international_tourism_receipts"
+    ],
+    "justificacao_arquetipo": "A pergunta pede explicitamente a relação entre duas variáveis (chegadas e receitas), o que exige testar associação estatística e nomear explicações alternativas (R7), típico do arquétipo diagnóstico; não há componente geográfica subnacional em nenhum dos dois datasets (ambos só têm 'Mozambique' como geografia), pelo que não se aplicam passos geoestatísticos nem R4.",
+    "pergunta_original": "Qual é a relação entre o número de turistas e as receitas do turismo?"
+  },
+  "plano": {
+    "sub_perguntas": [
+      "Qual é a tendência do número de chegadas de turistas em Moçambique ao longo do tempo?",
+      "Qual é a tendência das receitas do turismo em Moçambique ao longo do tempo?",
+      "As duas séries têm qualidade e cobertura suficientes para uma comparação fiável?",
+      "Existe correlação estatística entre chegadas e receitas, e que explicações alternativas devem ser consideradas?"
+    ],
+    "passos": [
+      {
+        "id": "p1",
+        "tipo": "validacao",
+        "descricao_humana": "Verifica completude da série de chegadas de turistas (apenas 2,5% dos anos preenchidos).",
+        "depende_de": [],
+        "metodo": "perfil_coluna",
+        "dataset_id": 58,
+        "coluna_metrica": "value",
+        "produz": [
+          "p1_completude_chegadas"
+        ]
+      },
+      {
+        "id": "p2",
+        "tipo": "calculo",
+        "descricao_humana": "Calcula estatísticas descritivas do número de chegadas internacionais de turistas.",
+        "depende_de": [
+          "p1"
+        ],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 58,
+        "coluna_metrica": "value",
+        "produz": [
+          "p2_stats_chegadas"
+        ]
+      },
+      {
+        "id": "p3",
+        "tipo": "calculo",
+        "descricao_humana": "Calcula estatísticas descritivas das receitas internacionais do turismo, isolando esse indicador.",
+        "depende_de": [
+          "p1"
+        ],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 59,
+        "coluna_metrica": "value",
+        "filtro_unidade": "cat:indicator=international_tourism_receipts",
+        "produz": [
+          "p3_stats_receitas"
+        ]
+      },
+      {
+        "id": "p4",
+        "tipo": "calculo",
+        "descricao_humana": "Testa tendência ao longo do tempo no número de chegadas de turistas.",
+        "depende_de": [
+          "p2"
+        ],
+        "metodo": "tendencia_mann_kendall",
+        "dataset_id": 58,
+        "coluna_metrica": "value",
+        "coluna_tempo": "year",
+        "produz": [
+          "p4_tendencia_chegadas"
+        ]
+      },
+      {
+        "id": "p5",
+        "tipo": "calculo",
+        "descricao_humana": "Testa tendência ao longo do tempo nas receitas do turismo.",
+        "depende_de": [
+          "p3"
+        ],
+        "metodo": "tendencia_mann_kendall",
+        "dataset_id": 59,
+        "coluna_metrica": "value",
+        "coluna_tempo": "year",
+        "filtro_unidade": "cat:indicator=international_tourism_receipts",
+        "produz": [
+          "p5_tendencia_receitas"
+        ]
+      },
+      {
+        "id": "p6",
+        "tipo": "calculo",
+        "descricao_humana": "Junta as duas séries por ano e calcula a correlação entre chegadas e receitas do turismo.",
+        "depende_de": [
+          "p2",
+          "p3"
+        ],
+        "metodo": "execucao_codigo",
+        "dataset_id": 58,
+        "dataset_id_2": 59,
+        "coluna_metrica": "Juntar por ano a série de chegadas de turistas (dataset 58, coluna value) com a série de receitas do turismo (dataset 59, filtrando indicator=international_tourism_receipts, coluna value); calcular correlação de Pearson e de Spearman entre as duas séries para os anos com dados em ambas, reportando o número de anos sobrepostos e os coeficientes com p-valor.",
+        "produz": [
+          "p6_correlacao_chegadas_receitas",
+          "p6_n_anos_sobrepostos"
+        ]
+      }
+    ],
+    "nivel_geo_alvo": [],
+    "metricas_alvo": [
+      "international_tourist_arrivals_total",
+      "international_tourism_receipts"
+    ],
+    "justificacao_arquetipo": "A pergunta pede explicitamente a relação entre duas variáveis (chegadas e receitas), o que exige testar associação estatística e nomear explicações alternativas (R7), típico do arquétipo diagnóstico; não há componente geográfica subnacional em nenhum dos dois datasets (ambos só têm 'Mozambique' como geografia), pelo que não se aplicam passos geoestatísticos nem R4."
+  },
+  "suficiencia": {
+    "cobertura": [
+      {
+        "sub_pergunta": "Qual é a tendência do número de chegadas de turistas em Moçambique ao longo do tempo?",
+        "coberto": true,
+        "fonte": "dataset_selecionado"
+      },
+      {
+        "sub_pergunta": "Qual é a tendência das receitas do turismo em Moçambique ao longo do tempo?",
+        "coberto": true,
+        "fonte": "dataset_selecionado"
+      },
+      {
+        "sub_pergunta": "As duas séries têm qualidade e cobertura suficientes para uma comparação fiável?",
+        "coberto": false,
+        "fonte": "nenhuma",
+        "lacuna": "Série de chegadas tem apenas 2,5% de preenchimento (24 anos em 999 linhas); série de receitas tem 9,5% de preenchimento. Sobreposição temporal desconhecida antes de executar p6.",
+        "accao": "Executar p6 para mapear anos comuns e declarar a percentagem de cobertura temporal sobre o período 2000-2025."
+      },
+      {
+        "sub_pergunta": "Existe correlação estatística entre chegadas e receitas, e que explicações alternativas devem ser consideradas?",
+        "coberto": true,
+        "fonte": "dataset_selecionado"
+      }
+    ],
+    "confianca_sem_enriquecimento": 0.75,
+    "precisa_enriquecimento": true,
+    "alvos_enriquecimento": [
+      {
+        "sub_pergunta": "As duas séries têm qualidade e cobertura suficientes para uma comparação fiável?",
+        "lacuna": "Completude temporal insuficiente: desconhecem-se os períodos com dados válidos em ambas as séries simultaneamente.",
+        "prioridade": 1,
+        "fonte_alvo": "Executar p6 imediatamente para revelar os anos de sobreposição e calcular a percentagem de cobertura do período 2001-2025."
+      },
+      {
+        "sub_pergunta": "Explicações alternativas da relação chegadas-receitas para além da associação simples.",
+        "lacuna": "Faltam variáveis de confundimento potenciais (taxas de câmbio do dólar, preço médio por noite, mudanças de composição de mercados-origem, efeito de eventos externos como pandemia ou instabilidade política).",
+        "prioridade": 2,
+        "fonte_alvo": "Banco de Moçambique (séries de câmbio, investimento turístico); Organização Mundial do Turismo (composição de mercados-origem, receita média por chegada a nível regional); dados de eventos (datas de conflito, restrições COVID)."
+      }
+    ]
+  },
+  "contexto": {
+    "tabelas": {},
+    "ligacoes": {},
+    "calcs": {
+      "p1_coluna": {
+        "id": "p1_coluna",
+        "valor": "value",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ]
+        }
+      },
+      "p1_n_total": {
+        "id": "p1_n_total",
+        "valor": 999,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ]
+        }
+      },
+      "p1_n_preenchidos": {
+        "id": "p1_n_preenchidos",
+        "valor": 19,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ]
+        }
+      },
+      "p1_completude_pct": {
+        "id": "p1_completude_pct",
+        "valor": 1.9,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ]
+        }
+      },
+      "p1_n_distintos": {
+        "id": "p1_n_distintos",
+        "valor": 19,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ]
+        }
+      },
+      "p1_tipo": {
+        "id": "p1_tipo",
+        "valor": "numerica",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ],
+          "linhas_usadas": 999,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ]
+        }
+      },
+      "p4_S": {
+        "id": "p4_S",
+        "valor": 111,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ],
+          "linhas_usadas": 19,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ]
+        }
+      },
+      "p4_z": {
+        "id": "p4_z",
+        "valor": 3.8484,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ],
+          "linhas_usadas": 19,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ]
+        }
+      },
+      "p4_p": {
+        "id": "p4_p",
+        "valor": 0.000119,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ],
+          "linhas_usadas": 19,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ]
+        }
+      },
+      "p4_declive_sen": {
+        "id": "p4_declive_sen",
+        "valor": 103615.384615,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ],
+          "linhas_usadas": 19,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ]
+        }
+      },
+      "p4_direccao": {
+        "id": "p4_direccao",
+        "valor": "crescente",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ],
+          "linhas_usadas": 19,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ]
+        }
+      },
+      "p4_n": {
+        "id": "p4_n",
+        "valor": 19,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ],
+          "linhas_usadas": 19,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ]
+        }
+      },
+      "p4_projecao_proximo_periodo": {
+        "id": "p4_projecao_proximo_periodo",
+        "valor": 2136615.3846,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ],
+          "linhas_usadas": 19,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ]
+        }
+      },
+      "p4_projecao_ic_inferior": {
+        "id": "p4_projecao_ic_inferior",
+        "valor": 2095000,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ],
+          "linhas_usadas": 19,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ]
+        }
+      },
+      "p4_projecao_ic_superior": {
+        "id": "p4_projecao_ic_superior",
+        "valor": 2176100,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ],
+          "linhas_usadas": 19,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ]
+        }
+      },
+      "p4_interpretacao": {
+        "id": "p4_interpretacao",
+        "valor": "Tendência crescente estatisticamente significativa (p = 0.0001), com variação típica de 103615.38 por período. Projecção estatística para o próximo período: 2136615.38 (intervalo de confiança de 95%: 2095000 a 2176100) ; projecção estatística, não garantia.",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ],
+          "linhas_usadas": 19,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ]
+        }
+      },
+      "p5_S": {
+        "id": "p5_S",
+        "valor": -502,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique_v1"
+          ],
+          "linhas_usadas": 90,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique_v1"
+          ]
+        }
+      },
+      "p5_z": {
+        "id": "p5_z",
+        "valor": -1.7462,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique_v1"
+          ],
+          "linhas_usadas": 90,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique_v1"
+          ]
+        }
+      },
+      "p5_p": {
+        "id": "p5_p",
+        "valor": 0.080781,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique_v1"
+          ],
+          "linhas_usadas": 90,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique_v1"
+          ]
+        }
+      },
+      "p5_declive_sen": {
+        "id": "p5_declive_sen",
+        "valor": -0.083527,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique_v1"
+          ],
+          "linhas_usadas": 90,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique_v1"
+          ]
+        }
+      },
+      "p5_direccao": {
+        "id": "p5_direccao",
+        "valor": "sem tendência",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique_v1"
+          ],
+          "linhas_usadas": 90,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique_v1"
+          ]
+        }
+      },
+      "p5_n": {
+        "id": "p5_n",
+        "valor": 90,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique_v1"
+          ],
+          "linhas_usadas": 90,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique_v1"
+          ]
+        }
+      },
+      "p5_interpretacao": {
+        "id": "p5_interpretacao",
+        "valor": "Não há evidência de tendência: as variações observadas são compatíveis com flutuação aleatória (p = 0.0808).",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique_v1"
+          ],
+          "linhas_usadas": 90,
+          "metodo": "tendencia_mann_kendall",
+          "fontes": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique_v1"
+          ]
+        }
+      },
+      "p2_n": {
+        "id": "p2_n",
+        "valor": 19,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ],
+          "linhas_usadas": 19,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ]
+        }
+      },
+      "p2_soma": {
+        "id": "p2_soma",
+        "valor": 28784000,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ],
+          "linhas_usadas": 19,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ]
+        }
+      },
+      "p2_media": {
+        "id": "p2_media",
+        "valor": 1514947.3684,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ],
+          "linhas_usadas": 19,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ]
+        }
+      },
+      "p2_mediana": {
+        "id": "p2_mediana",
+        "valor": 1634000,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ],
+          "linhas_usadas": 19,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ]
+        }
+      },
+      "p2_desvio": {
+        "id": "p2_desvio",
+        "valor": 609236.7241,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ],
+          "linhas_usadas": 19,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ]
+        }
+      },
+      "p2_min": {
+        "id": "p2_min",
+        "valor": 404000,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ],
+          "linhas_usadas": 19,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ]
+        }
+      },
+      "p2_max": {
+        "id": "p2_max",
+        "valor": 2870000,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ],
+          "linhas_usadas": 19,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ]
+        }
+      },
+      "p2_q1": {
+        "id": "p2_q1",
+        "valor": 1024500,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ],
+          "linhas_usadas": 19,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ]
+        }
+      },
+      "p2_q3": {
+        "id": "p2_q3",
+        "valor": 1903000,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ],
+          "linhas_usadas": 19,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ]
+        }
+      },
+      "p2_coeficiente_variacao": {
+        "id": "p2_coeficiente_variacao",
+        "valor": 40.22,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ],
+          "linhas_usadas": 19,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de Dados de Chegadas de Turistas em Moçambique_v1"
+          ]
+        }
+      },
+      "p3_n": {
+        "id": "p3_n",
+        "valor": 90,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique_v1"
+          ],
+          "linhas_usadas": 90,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique_v1"
+          ]
+        }
+      },
+      "p3_soma": {
+        "id": "p3_soma",
+        "valor": 7703002262.7714,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique_v1"
+          ],
+          "linhas_usadas": 90,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique_v1"
+          ]
+        }
+      },
+      "p3_media": {
+        "id": "p3_media",
+        "valor": 85588914.0308,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique_v1"
+          ],
+          "linhas_usadas": 90,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique_v1"
+          ]
+        }
+      },
+      "p3_mediana": {
+        "id": "p3_mediana",
+        "valor": 139.7901,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique_v1"
+          ],
+          "linhas_usadas": 90,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique_v1"
+          ]
+        }
+      },
+      "p3_desvio": {
+        "id": "p3_desvio",
+        "valor": 108135755.3748,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique_v1"
+          ],
+          "linhas_usadas": 90,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique_v1"
+          ]
+        }
+      },
+      "p3_min": {
+        "id": "p3_min",
+        "valor": 1.0115,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique_v1"
+          ],
+          "linhas_usadas": 90,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique_v1"
+          ]
+        }
+      },
+      "p3_max": {
+        "id": "p3_max",
+        "valor": 331000000,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique_v1"
+          ],
+          "linhas_usadas": 90,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique_v1"
+          ]
+        }
+      },
+      "p3_q1": {
+        "id": "p3_q1",
+        "valor": 5.3098,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique_v1"
+          ],
+          "linhas_usadas": 90,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique_v1"
+          ]
+        }
+      },
+      "p3_q3": {
+        "id": "p3_q3",
+        "valor": 169250000,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique_v1"
+          ],
+          "linhas_usadas": 90,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique_v1"
+          ]
+        }
+      },
+      "p3_coeficiente_variacao": {
+        "id": "p3_coeficiente_variacao",
+        "valor": 126.34,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique_v1"
+          ],
+          "linhas_usadas": 90,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Conjunto de Dados das Receitas do Turismo de Moçambique_v1"
+          ]
+        }
+      }
+    },
+    "series": [],
+    "graficos": [
+      {
+        "passo_id": "p4",
+        "tipo": "linha",
+        "titulo": "Testa tendência ao longo do tempo no número de chegadas de turistas.",
+        "eixoX": [
+          "2001",
+          "2002",
+          "2003",
+          "2004",
+          "2005",
+          "2006",
+          "2007",
+          "2008",
+          "2009",
+          "2010",
+          "2011",
+          "2012",
+          "2013",
+          "2014",
+          "2015",
+          "2016",
+          "2017",
+          "2018",
+          "2019",
+          "2020"
+        ],
+        "series": [
+          {
+            "nome": "Valor",
+            "valores": [
+              404000,
+              943000,
+              726000,
+              711000,
+              954000,
+              1095000,
+              1259000,
+              1439000,
+              1711000,
+              1836000,
+              2013000,
+              2206000,
+              1970000,
+              1751000,
+              1634000,
+              1715000,
+              1514000,
+              2870000,
+              2033000,
+              null
+            ]
+          },
+          {
+            "nome": "Projecção (declive de Sen, não garantia)",
+            "valores": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              2033000,
+              2136615.3846
+            ]
+          }
+        ],
+        "categoria": "temporal"
+      },
+      {
+        "passo_id": "p5",
+        "tipo": "linha",
+        "titulo": "Testa tendência ao longo do tempo nas receitas do turismo.",
+        "eixoX": [
+          "2000",
+          "2001",
+          "2002",
+          "2002",
+          "2002",
+          "2003",
+          "2003",
+          "2003",
+          "2004",
+          "2004",
+          "2004",
+          "2005",
+          "2005",
+          "2005",
+          "2005",
+          "2005",
+          "2006",
+          "2006",
+          "2006",
+          "2006",
+          "2006",
+          "2007",
+          "2007",
+          "2007",
+          "2007",
+          "2007",
+          "2008",
+          "2008",
+          "2008",
+          "2008",
+          "2008",
+          "2009",
+          "2009",
+          "2009",
+          "2009",
+          "2009",
+          "2010",
+          "2010",
+          "2010",
+          "2010",
+          "2010",
+          "2011",
+          "2011",
+          "2011",
+          "2011",
+          "2011",
+          "2012",
+          "2012",
+          "2012",
+          "2012",
+          "2012",
+          "2013",
+          "2013",
+          "2013",
+          "2013",
+          "2013",
+          "2014",
+          "2014",
+          "2014",
+          "2014",
+          "2014",
+          "2015",
+          "2015",
+          "2015",
+          "2015",
+          "2015",
+          "2016",
+          "2016",
+          "2016",
+          "2016",
+          "2016",
+          "2017",
+          "2017",
+          "2017",
+          "2017",
+          "2017",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2018",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2019",
+          "2020",
+          "2020",
+          "2020",
+          "2020"
+        ],
+        "series": [
+          {
+            "nome": "Valor",
+            "valores": [
+              122000000,
+              132000000,
+              65000000,
+              115000000,
+              68.9289501590668,
+              106000000,
+              141000000,
+              146.0055096418733,
+              96000000,
+              140000000,
+              135.0210970464135,
+              138000000,
+              6.61164841899536,
+              187000000,
+              6.46857435495173,
+              144.65408805031447,
+              145000000,
+              5.22189294428279,
+              196000000,
+              5.76730433781291,
+              132.4200913242009,
+              182000000,
+              6.33958896819362,
+              209000000,
+              5.69845507138935,
+              144.55917394757745,
+              213000000,
+              6.63849125289591,
+              241000000,
+              5.22917645130104,
+              148.01945795691452,
+              217000000,
+              7.86558535327128,
+              247000000,
+              5.53031221312163,
+              126.82641729982467,
+              135000000,
+              5.23631450152084,
+              247000000,
+              5.22621416224497,
+              73.52941176470588,
+              171000000,
+              4.90777474041301,
+              264000000,
+              3.46537907861535,
+              84.9478390461997,
+              224000000,
+              4.81964164395901,
+              247000000,
+              1.9917988604442,
+              101.5412511332729,
+              228000000,
+              4.7817718609597,
+              313000000,
+              2.52749633779479,
+              115.73604060913705,
+              225000000,
+              4.84784929563624,
+              331000000,
+              2.8512914298599,
+              128.49800114220446,
+              202000000,
+              4.8840738691601,
+              322000000,
+              3.04187559881143,
+              123.62301101591187,
+              114000000,
+              3.02492700040369,
+              290000000,
+              3.69513409686847,
+              66.47230320699708,
+              164000000,
+              3.03010932563729,
+              237000000,
+              2.94418745280321,
+              108.3223249669749,
+              331000000,
+              4.85639949737129,
+              135000000,
+              1.18278748105744,
+              115.33101045296168,
+              324000000,
+              5.66652398610687,
+              99000000,
+              1.01152994956997,
+              159.37038858829317,
+              113000000,
+              2.51037793162729,
+              95000000,
+              1.09052635257041
+            ]
+          }
+        ],
+        "categoria": "temporal"
+      }
+    ],
+    "destaques": [],
+    "avisos": [
+      "Enriquecimento: pesquisa de fontes externas desligada nesta análise (mais lenta); as lacunas identificadas fora de denominador populacional mantêm-se por declarar.",
+      "Passo \"Junta as duas séries por ano e calcula a correlação entre chegadas e receitas do turismo.\" não pôde ser executado: execucao_codigo: O dados.csv contém apenas a série de chegadas de turistas (indicator=international_tourist_arrivals_total, fonte S001); não existe nenhuma linha com indicator=international_tourism_receipts nem qualquer estrutura de 'dataset 58/59' referida na instrução, pelo que não há segunda série para calcular a correlação Pearson/Spearman."
+    ],
+    "enriquecimentoPopulacao": {},
+    "camadasBrutas": [],
+    "qualidade": [
+      {
+        "coluna": "Value",
+        "completude_pct": 1.9,
+        "n_distintos": 19,
+        "tipo": "numerica"
+      }
+    ],
+    "codigoExecutado": [
+      {
+        "passo_id": "p6",
+        "instrucao": "Juntar por ano a série de chegadas de turistas (dataset 58, coluna value) com a série de receitas do turismo (dataset 59, filtrando indicator=international_tourism_receipts, coluna value); calcular correlação de Pearson e de Spearman entre as duas séries para os anos com dados em ambas, reportando o número de anos sobrepostos e os coeficientes com p-valor.",
+        "codigo": "find / -iname dados.csv 2>/dev/null\n\n---\n\ncd /files/input/0c98d6c56388ee04 && head -5 dados.csv && echo \"---\" && wc -l dados.csv\n\n---\n\ncd /files/input/0c98d6c56388ee04 && python3 -c \"\nimport pandas as pd\ndf = pd.read_csv('dados.csv')\nprint(df.columns.tolist())\nprint(df['indicator'].unique())\nprint(df['source_id'].unique())\n\"\n\n\n---\n\ncd /files/input/0c98d6c56388ee04 && grep -n \"^year\" dados.csv | head -20\necho \"---\"\nawk -F',' '{print NF}' dados.csv | sort | uniq -c\necho \"---\"\ngrep -n \"receipts\" dados.csv | head -5\n\n\n---\n\ncd /files/input/0c98d6c56388ee04 && awk -F',' 'NF==12' dados.csv | head -20\n\n---\n\ncd /files/input/0c98d6c56388ee04 && python3 -c \"\nimport pandas as pd\ndf = pd.read_csv('dados.csv')\nprint(df.shape)\nprint(df.isna().sum())\nprint(df.tail(20))\n\"\n\n\n---\n\ncd /files/input/0c98d6c56388ee04 && python3 -c \"\nimport pandas as pd\ndf = pd.read_csv('dados.csv')\ndf = df.dropna(subset=['year'])\nprint(df.shape)\nprint(df['year'].min(), df['year'].max())\nprint(df['indicator'].unique())\n\"\n"
+      }
+    ],
+    "custoExecucaoCodigo": 0.182982
+  },
+  "achados": [],
+  "narrativa": {
+    "titulo": "A relação entre chegadas e receitas turísticas não pode ser calculada com estes dados: apenas as chegadas mostram tendência clara",
+    "subtitulo": "As chegadas de turistas cresceram de forma estatisticamente significativa, mas a série de \"receitas\" disponível mistura cinco indicadores financeiros diferentes e não permite isolar uma correlação fiável",
+    "resposta_directa": "Não foi possível calcular a correlação entre número de chegadas e receitas do turismo: a tentativa de juntar as duas séries por ano falhou porque a coluna de valor do dataset de receitas mistura cinco indicadores distintos (receitas, despesas, receita média por chegada, receitas em % das exportações, despesas em % das importações) em unidades incomensuráveis. O que se sabe com confiança é que as chegadas de turistas têm uma tendência crescente estatisticamente significativa ({{calc:p4_interpretacao}}), enquanto o conjunto misto de indicadores financeiros não mostra tendência significativa ({{calc:p5_interpretacao}}), o que não é comparável ao primeiro por medir coisas diferentes.",
+    "numeros_chave": [
+      {
+        "calc_id": "p4_declive_sen",
+        "rotulo": "Crescimento típico de chegadas por período",
+        "contexto": "Segundo o declive de Sen, as chegadas internacionais aumentam tipicamente este número de visitantes por ano, num período com apenas 19 anos com dado disponível."
+      },
+      {
+        "calc_id": "p4_p",
+        "rotulo": "Significância da tendência de chegadas",
+        "contexto": "Valor-p do teste de Mann-Kendall; abaixo de 0,05 confirma que o crescimento das chegadas não é acaso."
+      },
+      {
+        "calc_id": "p2_min",
+        "rotulo": "Mínimo de chegadas no período",
+        "contexto": "Ano mais fraco da série de chegadas com dado disponível."
+      },
+      {
+        "calc_id": "p2_max",
+        "rotulo": "Máximo de chegadas no período",
+        "contexto": "Ano mais forte da série de chegadas com dado disponível."
+      },
+      {
+        "calc_id": "p5_p",
+        "rotulo": "Significância da tendência do conjunto de indicadores financeiros",
+        "contexto": "Valor-p acima de 0,05: as variações neste conjunto misto são compatíveis com flutuação aleatória, mas o conjunto junta indicadores com unidades diferentes."
+      },
+      {
+        "calc_id": "p3_coeficiente_variacao",
+        "rotulo": "Dispersão do conjunto de indicadores financeiros",
+        "contexto": "Coeficiente de variação muito elevado, esperado quando se misturam valores em dólares correntes com percentagens e médias por chegada na mesma coluna."
+      },
+      {
+        "calc_id": "p4_projecao_proximo_periodo",
+        "rotulo": "Projecção estatística de chegadas para o próximo período",
+        "contexto": "Extrapolação com base na tendência de Sen, com intervalo de confiança de 95%; não é garantia."
+      }
+    ],
+    "o_que_mostram": "A série de chegadas de turistas, com apenas 19 anos com valor preenchido entre 2001 e 2025, varia entre {{calc:p2_min}} e {{calc:p2_max}} visitantes, com média de {{calc:p2_media}} e mediana de {{calc:p2_mediana}}. O teste de Mann-Kendall confirma uma tendência de subida consistente e estatisticamente significativa ao longo do período, sem inverter de direcção de forma relevante.\n\nA coluna de \"valor\" do dataset de receitas junta, na mesma variável, cinco indicadores de natureza diferente: receitas em dólares correntes, despesas em dólares correntes, receita média por chegada, receitas como percentagem das exportações totais e despesas como percentagem das importações totais. Por isso a média de {{calc:p3_media}} e o desvio de {{calc:p3_desvio}} não descrevem ",
+    "porque": "o que descrevem é uma mistura sem sentido económico único, e o teste de tendência sobre esse conjunto não detecta um padrão significativo; isto não quer dizer que as receitas turísticas em si não estejam a crescer, só que esta coluna, tal como está estruturada, não permite afirmá-lo.",
+    "o_que_nao_diz": [
+      "Não foi possível calcular a correlação estatística directa entre chegadas e receitas: o passo que tentava juntar as duas séries por ano falhou porque não existe, nos dados fornecidos ao código, uma linha com o indicador de receitas isolado para casar ano a ano com as chegadas.",
+      "A coluna \"value\" do dataset de receitas mistura cinco indicadores com unidades incomensuráveis (dólares correntes, dólares por chegada, percentagem de exportações, percentagem de importações); qualquer estatística agregada sobre essa coluna, incluindo a tendência p5 e o resumo p3, não representa \"as receitas do turismo\" isoladas.",
+      "A série de chegadas tem apenas 2,5% de células preenchidas (19 valores em 999 linhas) e a de receitas 9,5%; a sobreposição real de anos com dado em ambas as séries não foi confirmada, o que já impediria uma correlação robusta mesmo sem o problema de mistura de unidades.",
+      "O enriquecimento com fontes externas (por exemplo INE ou Banco de Moçambique, referidos nas próprias notas do dataset como necessários para reconciliação) estava desligado nesta análise, pelo que esta lacuna não foi resolvida fora do portal."
+    ],
+    "como_chegamos": "Perfilámos as duas colunas de valor, calculámos estatísticas descritivas e testámos a tendência de cada série ao longo do tempo com o teste de Mann-Kendall (que não exige linearidade nem normalidade, adequado a séries oficiais curtas). Tentámos depois juntar as duas séries por ano para calcular uma correlação directa, mas essa execução falhou por a estrutura dos dados de receitas não isolar um indicador único comparável ano a ano com as chegadas.",
+    "fontes": [
+      {
+        "instituicao": "World Bank",
+        "documento": "World Development Indicators, ST.INT.ARVL (chegadas de turistas internacionais)",
+        "ano": 2026
+      },
+      {
+        "instituicao": "World Bank",
+        "documento": "World Development Indicators, ST.INT.RCPT.CD, ST.INT.XPND.CD, ST.INT.RCPT.XP.ZS, ST.INT.XPND.MP.ZS (receitas e despesas de turismo)",
+        "ano": 2025
+      },
+      {
+        "instituicao": "UN Tourism",
+        "documento": "Fonte subjacente aos valores oficiais do WDI, referida nas notas do dataset"
+      }
+    ]
+  },
+  "narrativa_resolvida": {
+    "titulo": "A relação entre chegadas e receitas turísticas não pode ser calculada com estes dados: apenas as chegadas mostram tendência clara",
+    "subtitulo": "As chegadas de turistas cresceram de forma estatisticamente significativa, mas a série de \"receitas\" disponível mistura cinco indicadores financeiros diferentes e não permite isolar uma correlação fiável",
+    "resposta_directa": "Não foi possível calcular a correlação entre número de chegadas e receitas do turismo: a tentativa de juntar as duas séries por ano falhou porque a coluna de valor do dataset de receitas mistura cinco indicadores distintos (receitas, despesas, receita média por chegada, receitas em % das exportações, despesas em % das importações) em unidades incomensuráveis. O que se sabe com confiança é que as chegadas de turistas têm uma tendência crescente estatisticamente significativa (Tendência crescente estatisticamente significativa (p = 0.0001), com variação típica de 103615.38 por período. Projecção estatística para o próximo período: 2136615.38 (intervalo de confiança de 95%: 2095000 a 2176100) ; projecção estatística, não garantia.), enquanto o conjunto misto de indicadores financeiros não mostra tendência significativa (Não há evidência de tendência: as variações observadas são compatíveis com flutuação aleatória (p = 0.0808).), o que não é comparável ao primeiro por medir coisas diferentes.",
+    "numeros_chave": [
+      {
+        "calc_id": "p4_declive_sen",
+        "rotulo": "Crescimento típico de chegadas por período",
+        "contexto": "Segundo o declive de Sen, as chegadas internacionais aumentam tipicamente este número de visitantes por ano, num período com apenas 19 anos com dado disponível.",
+        "valor": "103 615"
+      },
+      {
+        "calc_id": "p4_p",
+        "rotulo": "Significância da tendência de chegadas",
+        "contexto": "Valor-p do teste de Mann-Kendall; abaixo de 0,05 confirma que o crescimento das chegadas não é acaso.",
+        "valor": "0,00"
+      },
+      {
+        "calc_id": "p2_min",
+        "rotulo": "Mínimo de chegadas no período",
+        "contexto": "Ano mais fraco da série de chegadas com dado disponível.",
+        "valor": "404 000"
+      },
+      {
+        "calc_id": "p2_max",
+        "rotulo": "Máximo de chegadas no período",
+        "contexto": "Ano mais forte da série de chegadas com dado disponível.",
+        "valor": "2 870 000"
+      },
+      {
+        "calc_id": "p5_p",
+        "rotulo": "Significância da tendência do conjunto de indicadores financeiros",
+        "contexto": "Valor-p acima de 0,05: as variações neste conjunto misto são compatíveis com flutuação aleatória, mas o conjunto junta indicadores com unidades diferentes.",
+        "valor": "0,08"
+      },
+      {
+        "calc_id": "p3_coeficiente_variacao",
+        "rotulo": "Dispersão do conjunto de indicadores financeiros",
+        "contexto": "Coeficiente de variação muito elevado, esperado quando se misturam valores em dólares correntes com percentagens e médias por chegada na mesma coluna.",
+        "valor": "126"
+      },
+      {
+        "calc_id": "p4_projecao_proximo_periodo",
+        "rotulo": "Projecção estatística de chegadas para o próximo período",
+        "contexto": "Extrapolação com base na tendência de Sen, com intervalo de confiança de 95%; não é garantia.",
+        "valor": "2 136 615"
+      }
+    ],
+    "o_que_mostram": "A série de chegadas de turistas, com apenas 19 anos com valor preenchido entre 2001 e 2025, varia entre 404 000 e 2 870 000 visitantes, com média de 1 514 947 e mediana de 1 634 000. O teste de Mann-Kendall confirma uma tendência de subida consistente e estatisticamente significativa ao longo do período, sem inverter de direcção de forma relevante.\n\nA coluna de \"valor\" do dataset de receitas junta, na mesma variável, cinco indicadores de natureza diferente: receitas em dólares correntes, despesas em dólares correntes, receita média por chegada, receitas como percentagem das exportações totais e despesas como percentagem das importações totais. Por isso a média de 85 588 914 e o desvio de 108 135 755 não descrevem ",
+    "porque": "o que descrevem é uma mistura sem sentido económico único, e o teste de tendência sobre esse conjunto não detecta um padrão significativo; isto não quer dizer que as receitas turísticas em si não estejam a crescer, só que esta coluna, tal como está estruturada, não permite afirmá-lo.",
+    "o_que_nao_diz": [
+      "Não foi possível calcular a correlação estatística directa entre chegadas e receitas: o passo que tentava juntar as duas séries por ano falhou porque não existe, nos dados fornecidos ao código, uma linha com o indicador de receitas isolado para casar ano a ano com as chegadas.",
+      "A coluna \"value\" do dataset de receitas mistura cinco indicadores com unidades incomensuráveis (dólares correntes, dólares por chegada, percentagem de exportações, percentagem de importações); qualquer estatística agregada sobre essa coluna, incluindo a tendência p5 e o resumo p3, não representa \"as receitas do turismo\" isoladas.",
+      "A série de chegadas tem apenas 2,5% de células preenchidas (19 valores em 999 linhas) e a de receitas 9,5%; a sobreposição real de anos com dado em ambas as séries não foi confirmada, o que já impediria uma correlação robusta mesmo sem o problema de mistura de unidades.",
+      "O enriquecimento com fontes externas (por exemplo INE ou Banco de Moçambique, referidos nas próprias notas do dataset como necessários para reconciliação) estava desligado nesta análise, pelo que esta lacuna não foi resolvida fora do portal."
+    ],
+    "como_chegamos": "Perfilámos as duas colunas de valor, calculámos estatísticas descritivas e testámos a tendência de cada série ao longo do tempo com o teste de Mann-Kendall (que não exige linearidade nem normalidade, adequado a séries oficiais curtas). Tentámos depois juntar as duas séries por ano para calcular uma correlação directa, mas essa execução falhou por a estrutura dos dados de receitas não isolar um indicador único comparável ano a ano com as chegadas.",
+    "fontes": [
+      {
+        "instituicao": "World Bank",
+        "documento": "World Development Indicators, ST.INT.ARVL (chegadas de turistas internacionais)",
+        "ano": 2026
+      },
+      {
+        "instituicao": "World Bank",
+        "documento": "World Development Indicators, ST.INT.RCPT.CD, ST.INT.XPND.CD, ST.INT.RCPT.XP.ZS, ST.INT.XPND.MP.ZS (receitas e despesas de turismo)",
+        "ano": 2025
+      },
+      {
+        "instituicao": "UN Tourism",
+        "documento": "Fonte subjacente aos valores oficiais do WDI, referida nas notas do dataset"
+      }
+    ]
+  },
+  "critica": {
+    "objeccoes": [],
+    "bloqueia_publicacao": false
+  },
+  "custo_usd": 0.302006,
+  "duracao_ms": 179553,
+  "confianca": {
+    "percentagem": 75,
+    "datasetsUsados": 2,
+    "ligacoesGeograficas": [],
+    "completudeMediaPct": 1.9,
+    "valoresDerivados": 1,
+    "passosViaCodigo": 1
+  }
+}

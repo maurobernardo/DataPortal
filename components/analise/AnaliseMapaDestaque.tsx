@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import type { Map as LeafletMap } from 'leaflet'
+import { MapPin } from 'lucide-react'
 
 type Destaque = {
   passo_id: string
@@ -15,8 +16,8 @@ type Destaque = {
 const CAMADAS = {
   rua: {
     rotulo: 'Rua',
-    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-    atribuicao: '&copy; OpenStreetMap, &copy; CARTO',
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    atribuicao: '&copy; OpenStreetMap',
   },
   satelite: {
     rotulo: 'Satélite',
@@ -53,7 +54,8 @@ export function AnaliseMapaDestaque({ destaque }: { destaque: Destaque }) {
       }
       const cfg = CAMADAS[camada]
       if (camadaRef.current) mapRef.current.removeLayer(camadaRef.current)
-      camadaRef.current = L.tileLayer(cfg.url, { attribution: cfg.atribuicao, maxZoom: 19 }).addTo(mapRef.current)
+      // crossOrigin: sem isto, a exportação para PDF (html2canvas) captura o mapa em branco.
+      camadaRef.current = L.tileLayer(cfg.url, { attribution: cfg.atribuicao, maxZoom: 19, crossOrigin: true }).addTo(mapRef.current)
 
       mapRef.current.eachLayer((c) => {
         if ((c as any).feature) mapRef.current!.removeLayer(c)
@@ -96,31 +98,35 @@ export function AnaliseMapaDestaque({ destaque }: { destaque: Destaque }) {
   if (!destaque.geometry) return null
 
   return (
-    <div className="rounded-[14px] border border-[#E2E8E5] bg-white p-5">
-      <div className="flex items-start justify-between gap-3 mb-3">
-        <div>
-          <h2 className="text-base font-bold text-[var(--pd-ink-900)]">{destaque.titulo}</h2>
-          <p className="text-[13px] text-gray-500">
-            <span className="font-bold text-[#B91C1C]">{destaque.nome}</span> · {formatarValor(destaque.valor)}{' '}
-            {destaque.metrica}
-          </p>
-        </div>
-        <div className="inline-flex rounded-lg border border-[#E2E8E5] p-0.5 shrink-0">
+    <div className="pdx-panel">
+      <div className="pdx-panel-head">
+        <span className="pdx-panel-icone" aria-hidden>
+          <MapPin className="size-3.5" />
+        </span>
+        <h2>{destaque.titulo}</h2>
+        <div className="pdx-abas ml-auto shrink-0" role="tablist" aria-label="Mapa base">
           {(Object.keys(CAMADAS) as (keyof typeof CAMADAS)[]).map((k) => (
             <button
               key={k}
               type="button"
+              role="tab"
+              aria-selected={camada === k}
               onClick={() => setCamada(k)}
-              className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#064E2C] ${
-                camada === k ? 'bg-[#064E2C] text-white' : 'text-[var(--pd-ink-700)] hover:bg-gray-50'
-              }`}
             >
               {CAMADAS[k].rotulo}
             </button>
           ))}
         </div>
       </div>
-      <div ref={containerRef} className="w-full h-[340px] rounded-xl overflow-hidden" />
+      <div className="pdx-panel-body">
+        <p className="text-[13px] mb-3" style={{ color: 'var(--ink-soft)' }}>
+          <span className="font-bold" style={{ color: 'var(--forest-800)' }}>
+            {destaque.nome}
+          </span>{' '}
+          · <span className="pdx-num">{formatarValor(destaque.valor)}</span> {destaque.metrica}
+        </p>
+        <div ref={containerRef} className="pdx-mapa w-full h-[340px]" />
+      </div>
     </div>
   )
 }

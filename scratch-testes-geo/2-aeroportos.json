@@ -1,0 +1,2031 @@
+{
+  "analise_id": "an_a0aab74d",
+  "compreensao": {
+    "pergunta_normalizada": "Onde estão localizados os aeroportos nacionais de Moçambique?",
+    "idioma": "pt",
+    "intencao": "geoespacial",
+    "arquetipo_sugerido": "geoespacial",
+    "entidades": {
+      "geografias": [
+        {
+          "nome": "Moçambique",
+          "nivel": "admin0"
+        }
+      ],
+      "periodos": [],
+      "metricas": [
+        "número de aeroportos",
+        "tipo de infraestrutura aeroportuária"
+      ]
+    },
+    "ambiguidades": [],
+    "perfil_utilizador_inferido": "cidadao",
+    "requer_desambiguacao": false,
+    "sub_perguntas": [
+      "Quais são os tipos de infraestrutura aeroportuária existentes em Moçambique (aeródromo, heliporto, pista, etc.)?",
+      "Quantos aeroportos existem em cada província?",
+      "Quantos aeroportos existem em cada posto administrativo, o nível mais fino disponível?",
+      "Que tipos de aeroporto predominam em cada província?",
+      "Os registos têm completude e fonte suficientes para confiar na localização indicada?"
+    ],
+    "passos": [
+      {
+        "id": "p1",
+        "tipo": "consulta",
+        "descricao_humana": "Perfila os tipos de infraestrutura aeroportuária (aeródromo, heliporto, pista) existentes.",
+        "depende_de": [],
+        "metodo": "perfil_coluna",
+        "dataset_id": 5,
+        "coluna_metrica": "aeroway",
+        "produz": [
+          "dist_tipo_aeroporto"
+        ]
+      },
+      {
+        "id": "p2",
+        "tipo": "consulta",
+        "descricao_humana": "Conta o número de aeroportos por província, nível administrativo mais amplo.",
+        "depende_de": [],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 5,
+        "coluna_metrica": "osm_id",
+        "nivel_geo": "admin1",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "contagem_admin1"
+        ]
+      },
+      {
+        "id": "p3",
+        "tipo": "consulta",
+        "descricao_humana": "Conta o número de aeroportos por posto administrativo, nível mais fino disponível.",
+        "depende_de": [],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 5,
+        "coluna_metrica": "osm_id",
+        "nivel_geo": "admin3",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "contagem_admin3"
+        ]
+      },
+      {
+        "id": "p4",
+        "tipo": "consulta",
+        "descricao_humana": "Cruza o tipo de infraestrutura aeroportuária com a província onde se localiza.",
+        "depende_de": [],
+        "metodo": "distribuicao_categoria_geo",
+        "dataset_id": 5,
+        "coluna_grupo": "aeroway",
+        "nivel_geo": "admin1",
+        "produz": [
+          "tipo_por_provincia"
+        ]
+      },
+      {
+        "id": "p5",
+        "tipo": "calculo",
+        "descricao_humana": "Mede se os aeroportos estão concentrados em poucas províncias ou dispersos pelo país.",
+        "depende_de": [
+          "p2"
+        ],
+        "metodo": "concentracao",
+        "dataset_id": 5,
+        "coluna_metrica": "osm_id",
+        "produz": [
+          "concentracao_geografica"
+        ]
+      },
+      {
+        "id": "p6",
+        "tipo": "validacao",
+        "descricao_humana": "Avalia completude e fonte dos registos para confirmar fiabilidade da localização.",
+        "depende_de": [],
+        "metodo": "perfil_coluna",
+        "dataset_id": 5,
+        "coluna_metrica": "source",
+        "produz": [
+          "qualidade_fonte"
+        ]
+      }
+    ],
+    "nivel_geo_alvo": [
+      "admin1",
+      "admin3"
+    ],
+    "metricas_alvo": [
+      "número de aeroportos",
+      "tipo de aeroporto"
+    ],
+    "justificacao_arquetipo": "A pergunta pede a distribuição espacial de pontos (aeroportos); o arquétipo geoespacial responde com mapas e contagens por unidade administrativa, descendo até ao posto administrativo, o nível mais fino com ligação geográfica detectada (R4).",
+    "pergunta_original": "Onde estão localizados os aeroportos nacionais de Moçambique?"
+  },
+  "plano": {
+    "sub_perguntas": [
+      "Quais são os tipos de infraestrutura aeroportuária existentes em Moçambique (aeródromo, heliporto, pista, etc.)?",
+      "Quantos aeroportos existem em cada província?",
+      "Quantos aeroportos existem em cada posto administrativo, o nível mais fino disponível?",
+      "Que tipos de aeroporto predominam em cada província?",
+      "Os registos têm completude e fonte suficientes para confiar na localização indicada?"
+    ],
+    "passos": [
+      {
+        "id": "p1",
+        "tipo": "consulta",
+        "descricao_humana": "Perfila os tipos de infraestrutura aeroportuária (aeródromo, heliporto, pista) existentes.",
+        "depende_de": [],
+        "metodo": "perfil_coluna",
+        "dataset_id": 5,
+        "coluna_metrica": "aeroway",
+        "produz": [
+          "dist_tipo_aeroporto"
+        ]
+      },
+      {
+        "id": "p2",
+        "tipo": "consulta",
+        "descricao_humana": "Conta o número de aeroportos por província, nível administrativo mais amplo.",
+        "depende_de": [],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 5,
+        "coluna_metrica": "osm_id",
+        "nivel_geo": "admin1",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "contagem_admin1"
+        ]
+      },
+      {
+        "id": "p3",
+        "tipo": "consulta",
+        "descricao_humana": "Conta o número de aeroportos por posto administrativo, nível mais fino disponível.",
+        "depende_de": [],
+        "metodo": "resumo_estatistico",
+        "dataset_id": 5,
+        "coluna_metrica": "osm_id",
+        "nivel_geo": "admin3",
+        "normalizacao": "nenhuma",
+        "produz": [
+          "contagem_admin3"
+        ]
+      },
+      {
+        "id": "p4",
+        "tipo": "consulta",
+        "descricao_humana": "Cruza o tipo de infraestrutura aeroportuária com a província onde se localiza.",
+        "depende_de": [],
+        "metodo": "distribuicao_categoria_geo",
+        "dataset_id": 5,
+        "coluna_grupo": "aeroway",
+        "nivel_geo": "admin1",
+        "produz": [
+          "tipo_por_provincia"
+        ]
+      },
+      {
+        "id": "p5",
+        "tipo": "calculo",
+        "descricao_humana": "Mede se os aeroportos estão concentrados em poucas províncias ou dispersos pelo país.",
+        "depende_de": [
+          "p2"
+        ],
+        "metodo": "concentracao",
+        "dataset_id": 5,
+        "coluna_metrica": "osm_id",
+        "produz": [
+          "concentracao_geografica"
+        ]
+      },
+      {
+        "id": "p6",
+        "tipo": "validacao",
+        "descricao_humana": "Avalia completude e fonte dos registos para confirmar fiabilidade da localização.",
+        "depende_de": [],
+        "metodo": "perfil_coluna",
+        "dataset_id": 5,
+        "coluna_metrica": "source",
+        "produz": [
+          "qualidade_fonte"
+        ]
+      }
+    ],
+    "nivel_geo_alvo": [
+      "admin1",
+      "admin3"
+    ],
+    "metricas_alvo": [
+      "número de aeroportos",
+      "tipo de aeroporto"
+    ],
+    "justificacao_arquetipo": "A pergunta pede a distribuição espacial de pontos (aeroportos); o arquétipo geoespacial responde com mapas e contagens por unidade administrativa, descendo até ao posto administrativo, o nível mais fino com ligação geográfica detectada (R4)."
+  },
+  "suficiencia": {
+    "cobertura": [
+      {
+        "sub_pergunta": "Quais são os tipos de infraestrutura aeroportuária existentes em Moçambique (aeródromo, heliporto, pista, etc.)?",
+        "coberto": true,
+        "fonte": "dataset_selecionado"
+      },
+      {
+        "sub_pergunta": "Quantos aeroportos existem em cada província?",
+        "coberto": true,
+        "fonte": "dataset_selecionado"
+      },
+      {
+        "sub_pergunta": "Quantos aeroportos existem em cada posto administrativo, o nível mais fino disponível?",
+        "coberto": true,
+        "fonte": "dataset_selecionado"
+      },
+      {
+        "sub_pergunta": "Que tipos de aeroporto predominam em cada província?",
+        "coberto": true,
+        "fonte": "dataset_selecionado"
+      },
+      {
+        "sub_pergunta": "Os registos têm completude e fonte suficientes para confiar na localização indicada?",
+        "coberto": true,
+        "fonte": "dataset_selecionado"
+      }
+    ],
+    "confianca_sem_enriquecimento": 1,
+    "precisa_enriquecimento": false,
+    "alvos_enriquecimento": []
+  },
+  "contexto": {
+    "tabelas": {},
+    "ligacoes": {},
+    "calcs": {
+      "p1_coluna": {
+        "id": "p1_coluna",
+        "valor": "aeroway",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Aeroportos Nacionais"
+          ],
+          "linhas_usadas": 64,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Aeroportos Nacionais"
+          ]
+        }
+      },
+      "p1_n_total": {
+        "id": "p1_n_total",
+        "valor": 64,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Aeroportos Nacionais"
+          ],
+          "linhas_usadas": 64,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Aeroportos Nacionais"
+          ]
+        }
+      },
+      "p1_n_preenchidos": {
+        "id": "p1_n_preenchidos",
+        "valor": 64,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Aeroportos Nacionais"
+          ],
+          "linhas_usadas": 64,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Aeroportos Nacionais"
+          ]
+        }
+      },
+      "p1_completude_pct": {
+        "id": "p1_completude_pct",
+        "valor": 100,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Aeroportos Nacionais"
+          ],
+          "linhas_usadas": 64,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Aeroportos Nacionais"
+          ]
+        }
+      },
+      "p1_n_distintos": {
+        "id": "p1_n_distintos",
+        "valor": 5,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Aeroportos Nacionais"
+          ],
+          "linhas_usadas": 64,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Aeroportos Nacionais"
+          ]
+        }
+      },
+      "p1_tipo": {
+        "id": "p1_tipo",
+        "valor": "categorica",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p1",
+        "proveniencia": {
+          "datasets": [
+            "Aeroportos Nacionais"
+          ],
+          "linhas_usadas": 64,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Aeroportos Nacionais"
+          ]
+        }
+      },
+      "p6_coluna": {
+        "id": "p6_coluna",
+        "valor": "source",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Aeroportos Nacionais"
+          ],
+          "linhas_usadas": 64,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Aeroportos Nacionais"
+          ]
+        }
+      },
+      "p6_n_total": {
+        "id": "p6_n_total",
+        "valor": 64,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Aeroportos Nacionais"
+          ],
+          "linhas_usadas": 64,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Aeroportos Nacionais"
+          ]
+        }
+      },
+      "p6_n_preenchidos": {
+        "id": "p6_n_preenchidos",
+        "valor": 18,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Aeroportos Nacionais"
+          ],
+          "linhas_usadas": 64,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Aeroportos Nacionais"
+          ]
+        }
+      },
+      "p6_completude_pct": {
+        "id": "p6_completude_pct",
+        "valor": 28.1,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Aeroportos Nacionais"
+          ],
+          "linhas_usadas": 64,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Aeroportos Nacionais"
+          ]
+        }
+      },
+      "p6_n_distintos": {
+        "id": "p6_n_distintos",
+        "valor": 3,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Aeroportos Nacionais"
+          ],
+          "linhas_usadas": 64,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Aeroportos Nacionais"
+          ]
+        }
+      },
+      "p6_tipo": {
+        "id": "p6_tipo",
+        "valor": "categorica",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p6",
+        "proveniencia": {
+          "datasets": [
+            "Aeroportos Nacionais"
+          ],
+          "linhas_usadas": 64,
+          "metodo": "perfil_coluna",
+          "fontes": [
+            "Aeroportos Nacionais"
+          ]
+        }
+      },
+      "p4_aerodrome_unidades": {
+        "id": "p4_aerodrome_unidades",
+        "valor": "TETE",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Aeroportos Nacionais"
+          ],
+          "linhas_usadas": 1,
+          "metodo": "distribuicao_categoria_geo",
+          "fontes": [
+            "Aeroportos Nacionais"
+          ]
+        }
+      },
+      "p4_aerodrome_n_unidades": {
+        "id": "p4_aerodrome_n_unidades",
+        "valor": 1,
+        "unidade": "províncias",
+        "formato": "inteiro",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Aeroportos Nacionais"
+          ],
+          "linhas_usadas": 1,
+          "metodo": "distribuicao_categoria_geo",
+          "fontes": [
+            "Aeroportos Nacionais"
+          ]
+        }
+      },
+      "p4_aerodrome_total": {
+        "id": "p4_aerodrome_total",
+        "valor": 1,
+        "unidade": "",
+        "formato": "inteiro",
+        "passo_id": "p4",
+        "proveniencia": {
+          "datasets": [
+            "Aeroportos Nacionais"
+          ],
+          "linhas_usadas": 1,
+          "metodo": "distribuicao_categoria_geo",
+          "fontes": [
+            "Aeroportos Nacionais"
+          ]
+        }
+      },
+      "p5_gini": {
+        "id": "p5_gini",
+        "valor": 0.3075,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Aeroportos Nacionais"
+          ],
+          "linhas_usadas": 64,
+          "metodo": "concentracao",
+          "fontes": [
+            "Aeroportos Nacionais"
+          ]
+        }
+      },
+      "p5_hhi": {
+        "id": "p5_hhi",
+        "valor": 0.0206,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Aeroportos Nacionais"
+          ],
+          "linhas_usadas": 64,
+          "metodo": "concentracao",
+          "fontes": [
+            "Aeroportos Nacionais"
+          ]
+        }
+      },
+      "p5_quota_top3_pct": {
+        "id": "p5_quota_top3_pct",
+        "valor": 11.7,
+        "unidade": "",
+        "formato": "percentagem",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Aeroportos Nacionais"
+          ],
+          "linhas_usadas": 64,
+          "metodo": "concentracao",
+          "fontes": [
+            "Aeroportos Nacionais"
+          ]
+        }
+      },
+      "p5_n": {
+        "id": "p5_n",
+        "valor": 64,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Aeroportos Nacionais"
+          ],
+          "linhas_usadas": 64,
+          "metodo": "concentracao",
+          "fontes": [
+            "Aeroportos Nacionais"
+          ]
+        }
+      },
+      "p5_interpretacao": {
+        "id": "p5_interpretacao",
+        "valor": "Distribuição moderadamente concentrada (Gini 0.31).",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p5",
+        "proveniencia": {
+          "datasets": [
+            "Aeroportos Nacionais"
+          ],
+          "linhas_usadas": 64,
+          "metodo": "concentracao",
+          "fontes": [
+            "Aeroportos Nacionais"
+          ]
+        }
+      },
+      "p2_nome_max": {
+        "id": "p2_nome_max",
+        "valor": "TETE",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Aeroportos Nacionais"
+          ],
+          "linhas_usadas": 1,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Aeroportos Nacionais"
+          ]
+        }
+      },
+      "p2_n": {
+        "id": "p2_n",
+        "valor": 1,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Aeroportos Nacionais"
+          ],
+          "linhas_usadas": 1,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Aeroportos Nacionais"
+          ]
+        }
+      },
+      "p2_soma": {
+        "id": "p2_soma",
+        "valor": 9683941750,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Aeroportos Nacionais"
+          ],
+          "linhas_usadas": 1,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Aeroportos Nacionais"
+          ]
+        }
+      },
+      "p2_media": {
+        "id": "p2_media",
+        "valor": 9683941750,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Aeroportos Nacionais"
+          ],
+          "linhas_usadas": 1,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Aeroportos Nacionais"
+          ]
+        }
+      },
+      "p2_mediana": {
+        "id": "p2_mediana",
+        "valor": 9683941750,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Aeroportos Nacionais"
+          ],
+          "linhas_usadas": 1,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Aeroportos Nacionais"
+          ]
+        }
+      },
+      "p2_min": {
+        "id": "p2_min",
+        "valor": 9683941750,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Aeroportos Nacionais"
+          ],
+          "linhas_usadas": 1,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Aeroportos Nacionais"
+          ]
+        }
+      },
+      "p2_max": {
+        "id": "p2_max",
+        "valor": 9683941750,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Aeroportos Nacionais"
+          ],
+          "linhas_usadas": 1,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Aeroportos Nacionais"
+          ]
+        }
+      },
+      "p2_q1": {
+        "id": "p2_q1",
+        "valor": 9683941750,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Aeroportos Nacionais"
+          ],
+          "linhas_usadas": 1,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Aeroportos Nacionais"
+          ]
+        }
+      },
+      "p2_q3": {
+        "id": "p2_q3",
+        "valor": 9683941750,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p2",
+        "proveniencia": {
+          "datasets": [
+            "Aeroportos Nacionais"
+          ],
+          "linhas_usadas": 1,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Aeroportos Nacionais"
+          ]
+        }
+      },
+      "p3_nome_max": {
+        "id": "p3_nome_max",
+        "valor": "SONGO",
+        "unidade": "",
+        "formato": "texto",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Aeroportos Nacionais"
+          ],
+          "linhas_usadas": 1,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Aeroportos Nacionais"
+          ]
+        }
+      },
+      "p3_n": {
+        "id": "p3_n",
+        "valor": 1,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Aeroportos Nacionais"
+          ],
+          "linhas_usadas": 1,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Aeroportos Nacionais"
+          ]
+        }
+      },
+      "p3_soma": {
+        "id": "p3_soma",
+        "valor": 9683941750,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Aeroportos Nacionais"
+          ],
+          "linhas_usadas": 1,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Aeroportos Nacionais"
+          ]
+        }
+      },
+      "p3_media": {
+        "id": "p3_media",
+        "valor": 9683941750,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Aeroportos Nacionais"
+          ],
+          "linhas_usadas": 1,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Aeroportos Nacionais"
+          ]
+        }
+      },
+      "p3_mediana": {
+        "id": "p3_mediana",
+        "valor": 9683941750,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Aeroportos Nacionais"
+          ],
+          "linhas_usadas": 1,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Aeroportos Nacionais"
+          ]
+        }
+      },
+      "p3_min": {
+        "id": "p3_min",
+        "valor": 9683941750,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Aeroportos Nacionais"
+          ],
+          "linhas_usadas": 1,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Aeroportos Nacionais"
+          ]
+        }
+      },
+      "p3_max": {
+        "id": "p3_max",
+        "valor": 9683941750,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Aeroportos Nacionais"
+          ],
+          "linhas_usadas": 1,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Aeroportos Nacionais"
+          ]
+        }
+      },
+      "p3_q1": {
+        "id": "p3_q1",
+        "valor": 9683941750,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Aeroportos Nacionais"
+          ],
+          "linhas_usadas": 1,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Aeroportos Nacionais"
+          ]
+        }
+      },
+      "p3_q3": {
+        "id": "p3_q3",
+        "valor": 9683941750,
+        "unidade": "",
+        "formato": "numero",
+        "passo_id": "p3",
+        "proveniencia": {
+          "datasets": [
+            "Aeroportos Nacionais"
+          ],
+          "linhas_usadas": 1,
+          "metodo": "resumo_estatistico",
+          "fontes": [
+            "Aeroportos Nacionais"
+          ]
+        }
+      }
+    },
+    "series": [
+      {
+        "passo_id": "p2",
+        "nivel": "admin1",
+        "unidades": [
+          {
+            "codigo": "05",
+            "nome": "TETE",
+            "valor": 9683941750
+          }
+        ],
+        "metrica": "ID OSM (província)",
+        "normalizacao": "nenhuma",
+        "dataset_id": 5
+      },
+      {
+        "passo_id": "p3",
+        "nivel": "admin3",
+        "unidades": [
+          {
+            "codigo": "050301",
+            "nome": "SONGO",
+            "valor": 9683941750
+          }
+        ],
+        "metrica": "ID OSM (posto administrativo)",
+        "normalizacao": "nenhuma",
+        "dataset_id": 5
+      }
+    ],
+    "graficos": [
+      {
+        "passo_id": "p1",
+        "tipo": "pizza",
+        "titulo": "Perfila os tipos de infraestrutura aeroportuária (aeródromo, heliporto, pista) existentes.",
+        "eixoX": [
+          "aerodrome",
+          "holding_position",
+          "windsock",
+          "navigationaid",
+          "helipad"
+        ],
+        "series": [
+          {
+            "nome": "aeroway",
+            "valores": [
+              37,
+              10,
+              9,
+              7,
+              1
+            ]
+          }
+        ]
+      },
+      {
+        "passo_id": "p6",
+        "tipo": "pizza",
+        "titulo": "Avalia completude e fonte dos registos para confirmar fiabilidade da localização.",
+        "eixoX": [
+          "ourairports.com",
+          "Bing",
+          "bing"
+        ],
+        "series": [
+          {
+            "nome": "source",
+            "valores": [
+              10,
+              5,
+              3
+            ]
+          }
+        ]
+      },
+      {
+        "passo_id": "p2_grafico_garantia",
+        "tipo": "barra",
+        "titulo": "ID OSM (província): maiores unidades",
+        "eixoX": [
+          "TETE"
+        ],
+        "series": [
+          {
+            "nome": "ID OSM (província)",
+            "valores": [
+              9683941750
+            ]
+          }
+        ],
+        "categoria": "comparativo"
+      },
+      {
+        "passo_id": "p3_grafico_garantia",
+        "tipo": "barra",
+        "titulo": "ID OSM (posto administrativo): maiores unidades",
+        "eixoX": [
+          "SONGO"
+        ],
+        "series": [
+          {
+            "nome": "ID OSM (posto administrativo)",
+            "valores": [
+              9683941750
+            ]
+          }
+        ],
+        "categoria": "comparativo"
+      }
+    ],
+    "destaques": [],
+    "avisos": [],
+    "enriquecimentoPopulacao": {},
+    "camadasBrutas": [
+      {
+        "dataset_id": 5,
+        "titulo": "Aeroportos Nacionais",
+        "tipoGeometria": "Point",
+        "colunasCategoricas": [
+          "aeroway",
+          "Provincia",
+          "Distrito"
+        ],
+        "rotulosAprendidos": {
+          "colunas": {},
+          "valores": {}
+        },
+        "features": [
+          {
+            "nome": "Aeroportos Nacionais",
+            "categorias": {
+              "aeroway": "helipad"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                35.4216259,
+                -24.2247201
+              ]
+            }
+          },
+          {
+            "nome": "Aeroporto de Vila Franca do Save",
+            "categorias": {
+              "aeroway": "aerodrome"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                34.5610696,
+                -21.1625508
+              ]
+            }
+          },
+          {
+            "nome": "Zongoene",
+            "categorias": {
+              "aeroway": "aerodrome"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                33.5011298,
+                -25.1995933
+              ]
+            }
+          },
+          {
+            "nome": "Aeroporto de Bilene",
+            "categorias": {
+              "aeroway": "aerodrome"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                33.2385979,
+                -25.2659855
+              ]
+            }
+          },
+          {
+            "nome": "Aeroportos Nacionais",
+            "categorias": {
+              "aeroway": "windsock"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                34.9061903,
+                -19.7976317
+              ]
+            }
+          },
+          {
+            "nome": "Aeroportos Nacionais",
+            "categorias": {
+              "aeroway": "windsock"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                34.9155539,
+                -19.7995068
+              ]
+            }
+          },
+          {
+            "nome": "Aeroportos Nacionais",
+            "categorias": {
+              "aeroway": "holding_position"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                34.904585,
+                -19.7964834
+              ]
+            }
+          },
+          {
+            "nome": "Aeroportos Nacionais",
+            "categorias": {
+              "aeroway": "windsock"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                34.8993105,
+                -19.7935243
+              ]
+            }
+          },
+          {
+            "nome": "Aeroporto do Indigo Bay Lodge",
+            "categorias": {
+              "aeroway": "aerodrome"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                35.4528008,
+                -21.7080002
+              ]
+            }
+          },
+          {
+            "nome": "Aeroportos Nacionais",
+            "categorias": {
+              "aeroway": "holding_position"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                34.9176092,
+                -19.7997535
+              ]
+            }
+          },
+          {
+            "nome": "Aeroportos Nacionais",
+            "categorias": {
+              "aeroway": "holding_position"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                36.8697256,
+                -17.8587446
+              ]
+            }
+          },
+          {
+            "nome": "Aeroportos Nacionais",
+            "categorias": {
+              "aeroway": "windsock"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                34.5856456,
+                -19.8933436
+              ]
+            }
+          },
+          {
+            "nome": "Aeroportos Nacionais",
+            "categorias": {
+              "aeroway": "holding_position"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                33.4282918,
+                -19.1479985
+              ]
+            }
+          },
+          {
+            "nome": "Aeroportos Nacionais",
+            "categorias": {
+              "aeroway": "holding_position"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                33.4281135,
+                -19.1499533
+              ]
+            }
+          },
+          {
+            "nome": "Aeródromo Bananalândia",
+            "categorias": {
+              "aeroway": "aerodrome"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                32.2776677,
+                -26.0461341
+              ]
+            }
+          },
+          {
+            "nome": "Aeroportos Nacionais",
+            "categorias": {
+              "aeroway": "aerodrome"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                32.8835637,
+                -26.802856
+              ]
+            }
+          },
+          {
+            "nome": "Aeroportos Nacionais",
+            "categorias": {
+              "aeroway": "windsock"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                32.9284877,
+                -25.999047
+              ]
+            }
+          },
+          {
+            "nome": "Aeródromo de songo",
+            "categorias": {
+              "aeroway": "aerodrome",
+              "Provincia": "TETE",
+              "Distrito": "Cahora-Bassa"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                32.7733227,
+                -15.6055973
+              ]
+            }
+          },
+          {
+            "nome": "Palma",
+            "categorias": {
+              "aeroway": "aerodrome"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                40.47087,
+                -10.7524932
+              ]
+            }
+          },
+          {
+            "nome": "Bush strip",
+            "categorias": {
+              "aeroway": "aerodrome"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                37.1886348,
+                -11.9008621
+              ]
+            }
+          },
+          {
+            "nome": "Bush strip",
+            "categorias": {
+              "aeroway": "aerodrome"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                38.0001527,
+                -12.2424529
+              ]
+            }
+          },
+          {
+            "nome": "Mbatamila",
+            "categorias": {
+              "aeroway": "aerodrome"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                37.54613,
+                -12.1696793
+              ]
+            }
+          },
+          {
+            "nome": "Pista de pouso",
+            "categorias": {
+              "aeroway": "aerodrome"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                37.6600486,
+                -12.4660624
+              ]
+            }
+          },
+          {
+            "nome": "Aeroportos Nacionais",
+            "categorias": {
+              "aeroway": "navigationaid"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                33.6396726,
+                -16.113449
+              ]
+            }
+          },
+          {
+            "nome": "Aeroportos Nacionais",
+            "categorias": {
+              "aeroway": "navigationaid"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                33.639501,
+                -16.1134454
+              ]
+            }
+          },
+          {
+            "nome": "Aeroporto de Ponta do Ouro",
+            "categorias": {
+              "aeroway": "aerodrome"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                32.8377075,
+                -26.8285522
+              ]
+            }
+          },
+          {
+            "nome": "Mapai",
+            "categorias": {
+              "aeroway": "aerodrome"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                32.0042977,
+                -22.8208754
+              ]
+            }
+          },
+          {
+            "nome": "Massangena",
+            "categorias": {
+              "aeroway": "aerodrome"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                32.9292169,
+                -21.5879383
+              ]
+            }
+          },
+          {
+            "nome": "Aeroporto do Songo",
+            "categorias": {
+              "aeroway": "aerodrome"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                32.773201,
+                -15.6027002
+              ]
+            }
+          },
+          {
+            "nome": "Aeroportos Nacionais",
+            "categorias": {
+              "aeroway": "aerodrome"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                32.762586,
+                -15.7363258
+              ]
+            }
+          },
+          {
+            "nome": "Baixo Pinda",
+            "categorias": {
+              "aeroway": "aerodrome"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                40.6967906,
+                -14.2110529
+              ]
+            }
+          },
+          {
+            "nome": "Aeroportos Nacionais",
+            "categorias": {
+              "aeroway": "holding_position"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                40.5249309,
+                -12.9913937
+              ]
+            }
+          },
+          {
+            "nome": "Aeroportos Nacionais",
+            "categorias": {
+              "aeroway": "holding_position"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                34.9183246,
+                -19.7999484
+              ]
+            }
+          },
+          {
+            "nome": "Aeroportos Nacionais",
+            "categorias": {
+              "aeroway": "windsock"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                36.8689343,
+                -17.8501549
+              ]
+            }
+          },
+          {
+            "nome": "particular",
+            "categorias": {
+              "aeroway": "aerodrome"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                40.0434146,
+                -14.8790274
+              ]
+            }
+          },
+          {
+            "nome": "Bush strip",
+            "categorias": {
+              "aeroway": "aerodrome"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                38.3189937,
+                -12.1403522
+              ]
+            }
+          },
+          {
+            "nome": "Bush strip",
+            "categorias": {
+              "aeroway": "aerodrome"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                38.2838889,
+                -12.1515121
+              ]
+            }
+          },
+          {
+            "nome": "Nangade",
+            "categorias": {
+              "aeroway": "aerodrome"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                39.6748264,
+                -11.0729292
+              ]
+            }
+          },
+          {
+            "nome": "Aeroportos Nacionais",
+            "categorias": {
+              "aeroway": "navigationaid"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                33.6397552,
+                -16.1134508
+              ]
+            }
+          },
+          {
+            "nome": "Aeroportos Nacionais",
+            "categorias": {
+              "aeroway": "aerodrome"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                40.6123137,
+                -11.0301101
+              ]
+            }
+          },
+          {
+            "nome": "Aeroportos Nacionais",
+            "categorias": {
+              "aeroway": "windsock"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                33.6393642,
+                -16.1134424
+              ]
+            }
+          },
+          {
+            "nome": "Aeroporto",
+            "categorias": {
+              "aeroway": "aerodrome"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                34.8043578,
+                -12.7015132
+              ]
+            }
+          },
+          {
+            "nome": "Aeroporto do Ulongué",
+            "categorias": {
+              "aeroway": "aerodrome"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                34.353037,
+                -14.7054025
+              ]
+            }
+          },
+          {
+            "nome": "Aeroporto de Gurue",
+            "categorias": {
+              "aeroway": "aerodrome"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                36.98669,
+                -15.5040186
+              ]
+            }
+          },
+          {
+            "nome": "Chiure",
+            "categorias": {
+              "aeroway": "aerodrome"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                39.8028527,
+                -13.4070995
+              ]
+            }
+          },
+          {
+            "nome": "Aeroporto de Montepuez",
+            "categorias": {
+              "aeroway": "aerodrome"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                39.0527992,
+                -13.1218996
+              ]
+            }
+          },
+          {
+            "nome": "Aeroportos Nacionais",
+            "categorias": {
+              "aeroway": "windsock"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                37.8172761,
+                -12.2873665
+              ]
+            }
+          },
+          {
+            "nome": "Bush strip",
+            "categorias": {
+              "aeroway": "aerodrome"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                36.5552365,
+                -12.6018862
+              ]
+            }
+          },
+          {
+            "nome": "Pista de pouso",
+            "categorias": {
+              "aeroway": "aerodrome"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                36.2569637,
+                -12.5498226
+              ]
+            }
+          },
+          {
+            "nome": "Aeroportos Nacionais",
+            "categorias": {
+              "aeroway": "holding_position"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                34.8968663,
+                -19.7952821
+              ]
+            }
+          },
+          {
+            "nome": "Aeroportos Nacionais",
+            "categorias": {
+              "aeroway": "navigationaid"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                34.9214199,
+                -19.799879
+              ]
+            }
+          },
+          {
+            "nome": "Aeroporto Mocuba",
+            "categorias": {
+              "aeroway": "aerodrome"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                36.966587,
+                -16.8536831
+              ]
+            }
+          },
+          {
+            "nome": "Aeroportos Nacionais",
+            "categorias": {
+              "aeroway": "holding_position"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                36.870207,
+                -17.8631229
+              ]
+            }
+          },
+          {
+            "nome": "Aeroportos Nacionais",
+            "categorias": {
+              "aeroway": "holding_position"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                36.8702442,
+                -17.8636121
+              ]
+            }
+          },
+          {
+            "nome": "Aeroporto da Ilha Paraíso",
+            "categorias": {
+              "aeroway": "aerodrome"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                35.3380013,
+                -21.6149998
+              ]
+            }
+          },
+          {
+            "nome": "Aeroportos Nacionais",
+            "categorias": {
+              "aeroway": "windsock"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                33.4278915,
+                -19.1489727
+              ]
+            }
+          },
+          {
+            "nome": "Xinavane",
+            "categorias": {
+              "aeroway": "aerodrome"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                32.7483858,
+                -25.0319515
+              ]
+            }
+          },
+          {
+            "nome": "Aeroporto da Ilha do Bazaruto",
+            "categorias": {
+              "aeroway": "aerodrome"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                35.4731954,
+                -21.5362894
+              ]
+            }
+          },
+          {
+            "nome": "Corrumane",
+            "categorias": {
+              "aeroway": "aerodrome"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                32.1598927,
+                -25.2376204
+              ]
+            }
+          },
+          {
+            "nome": "Aeroportos Nacionais",
+            "categorias": {
+              "aeroway": "aerodrome"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                32.1538495,
+                -23.9395556
+              ]
+            }
+          },
+          {
+            "nome": "Aeroporto de Mueda",
+            "categorias": {
+              "aeroway": "aerodrome"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                39.5630989,
+                -11.6729002
+              ]
+            }
+          },
+          {
+            "nome": "Aeroportos Nacionais",
+            "categorias": {
+              "aeroway": "navigationaid"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                33.6395895,
+                -16.1134473
+              ]
+            }
+          },
+          {
+            "nome": "Aeroportos Nacionais",
+            "categorias": {
+              "aeroway": "navigationaid"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                33.753625,
+                -24.8874243
+              ]
+            }
+          },
+          {
+            "nome": "Aeroportos Nacionais",
+            "categorias": {
+              "aeroway": "navigationaid"
+            },
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                33.7524113,
+                -24.8985043
+              ]
+            }
+          }
+        ],
+        "truncado": false
+      }
+    ],
+    "qualidade": [
+      {
+        "coluna": "Tipo",
+        "completude_pct": 100,
+        "n_distintos": 5,
+        "tipo": "categorica"
+      },
+      {
+        "coluna": "Fonte",
+        "completude_pct": 28.1,
+        "n_distintos": 3,
+        "tipo": "categorica"
+      }
+    ],
+    "codigoExecutado": [],
+    "custoExecucaoCodigo": 0
+  },
+  "achados": [],
+  "narrativa": {
+    "titulo": "Moçambique tem {{calc:p1_n_total}} pontos de infraestrutura aeroportuária registados, mas só um tem localização confirmada: {{calc:p3_nome_max}}, na província de {{calc:p2_nome_max}}",
+    "subtitulo": "O IACM catalogou aeródromos, pistas, heliportos e radioajudas em todo o país, mas o campo de endereço só está preenchido para um único registo, o que impede localizar a maioria por província ou distrito",
+    "resposta_directa": "Os dados do IACM identificam {{calc:p1_n_total}} pontos de infraestrutura aeronáutica em Moçambique, distribuídos por {{calc:p1_n_distintos}} tipos diferentes (aeródromos, pistas de pouso, heliportos, radioajudas à navegação e mangas de vento). No entanto, apenas um registo, o de {{calc:p3_nome_max}}, tem cidade e província preenchidas e confirmadas ({{calc:p2_nome_max}}). Para os restantes {{calc:p1_n_total}} pontos menos um, o dataset não indica a que província, distrito ou posto administrativo pertencem, pelo que não é possível responder de forma completa a ",
+    "numeros_chave": [
+      {
+        "calc_id": "p1_n_total",
+        "rotulo": "Pontos de infraestrutura aeroportuária no país",
+        "contexto": "Inclui aeródromos, pistas, heliportos, radioajudas e mangas de vento, não só aeroportos comerciais."
+      },
+      {
+        "calc_id": "p1_n_distintos",
+        "rotulo": "Tipos distintos de infraestrutura aeronáutica",
+        "contexto": "Aeródromo, pista de pouso, heliporto, radioajuda à navegação e manga de vento."
+      },
+      {
+        "calc_id": "p3_nome_max",
+        "rotulo": "Única localidade com nome de cidade confirmado",
+        "contexto": "Songo é o único registo com o campo de endereço (addr_city) preenchido no dataset inteiro."
+      },
+      {
+        "calc_id": "p2_nome_max",
+        "rotulo": "Única província identificável a partir dos endereços",
+        "contexto": "Tete é a única unidade administrativa que se consegue associar a um ponto com confiança."
+      },
+      {
+        "calc_id": "p4_aerodrome_n_unidades",
+        "rotulo": "Aeródromos com localização geográfica atribuída",
+        "contexto": "De todos os pontos classificados como \"aerodrome\", só um tem cidade e província conhecidas."
+      },
+      {
+        "calc_id": "p6_n_preenchidos",
+        "rotulo": "Registos com fonte de dados identificada",
+        "contexto": "De 64 pontos, só estes indicam se vieram do ourairports.com ou do Bing, o que limita a verificação da origem."
+      }
+    ],
+    "o_que_mostram": "O dataset cataloga 64 pontos ligados à aviação em Moçambique, mas a maioria não é um \"aeroporto\" no sentido comum: mais de metade são aeródromos, e o resto reparte-se por pistas de pouso informais (bush strip), heliportos, radioajudas à navegação e mangas de vento, que são equipamento de apoio, não pistas próprias. Nenhum destes tipos domina de forma esmagadora: há uma mistura de infraestrutura formal e informal espalhada pelo país. Do ponto de vista geográfico, o quadro é muito mais limitado: apenas o Aeródromo de Songo, em Tete, tem o campo de cidade preenchido, o que faz dele o único ponto que conseguimos atribuir com confiança a uma província ou distrito.",
+    "porque": "A limitação não é sobre onde os aeroportos realmente estão, é sobre o que o dataset regista: o campo de endereço (addr_city) está vazio para 63 dos 64 pontos. Uma explicação plausível é que estes dados vêm de contribuições OpenStreetMap e do ourairports.com, onde voluntários marcam a posição num mapa mas raramente preenchem um endereço postal, sobretudo para pistas rurais sem infraestrutura formal. Outra explicação possível é que o processo de ligação geográfica usado aqui dependa do texto do endereço em vez das coordenadas do ponto, pelo que mesmo pontos bem localizados no mapa ficam sem província atribuída nesta análise (R7).",
+    "o_que_nao_diz": [
+      "Não diz em que província ou distrito estão os outros 63 pontos, mesmo que estejam mapeados com coordenadas no OpenStreetMap: falta o campo de endereço para os associar administrativamente.",
+      "Não permite montar um mapa ou uma tabela por província ou posto administrativo, porque só existe uma unidade geográfica confirmada em todo o dataset.",
+      "A fonte de origem (ourairports.com, Bing) só está identificada para 18 dos 64 registos, o que limita a verificação de qualidade dos restantes.",
+      "Os dados são de 2020 e não reflectem aberturas, encerramentos ou obras concluídas depois dessa data."
+    ],
+    "como_chegamos": "Perfilámos as colunas de tipo de infraestrutura (aeroway) e de endereço (addr_city) para ver quantos registos tinham cada informação preenchida. Depois tentámos ligar o endereço à divisão administrativa mais fina possível (posto administrativo, nível admin3), o que só teve sucesso para um único registo, em Tete.",
+    "fontes": [
+      {
+        "instituicao": "IACM (Instituto de Aviação Civil de Moçambique)",
+        "documento": "Base de dados da Aviação Civil de Moçambique",
+        "ano": 2020
+      },
+      {
+        "instituicao": "OpenStreetMap / ourairports.com",
+        "documento": "Dados geoespaciais de infraestrutura aeroportuária",
+        "ano": 2020
+      }
+    ]
+  },
+  "narrativa_resolvida": {
+    "titulo": "Moçambique tem 64 pontos de infraestrutura aeroportuária registados, mas só um tem localização confirmada: SONGO, na província de TETE",
+    "subtitulo": "O IACM catalogou aeródromos, pistas, heliportos e radioajudas em todo o país, mas o campo de endereço só está preenchido para um único registo, o que impede localizar a maioria por província ou distrito",
+    "resposta_directa": "Os dados do IACM identificam 64 pontos de infraestrutura aeronáutica em Moçambique, distribuídos por 5 tipos diferentes (aeródromos, pistas de pouso, heliportos, radioajudas à navegação e mangas de vento). No entanto, apenas um registo, o de SONGO, tem cidade e província preenchidas e confirmadas (TETE). Para os restantes 64 pontos menos um, o dataset não indica a que província, distrito ou posto administrativo pertencem, pelo que não é possível responder de forma completa a ",
+    "numeros_chave": [
+      {
+        "calc_id": "p1_n_total",
+        "rotulo": "Pontos de infraestrutura aeroportuária no país",
+        "contexto": "Inclui aeródromos, pistas, heliportos, radioajudas e mangas de vento, não só aeroportos comerciais.",
+        "valor": "64"
+      },
+      {
+        "calc_id": "p1_n_distintos",
+        "rotulo": "Tipos distintos de infraestrutura aeronáutica",
+        "contexto": "Aeródromo, pista de pouso, heliporto, radioajuda à navegação e manga de vento.",
+        "valor": "5"
+      },
+      {
+        "calc_id": "p3_nome_max",
+        "rotulo": "Única localidade com nome de cidade confirmado",
+        "contexto": "Songo é o único registo com o campo de endereço (addr_city) preenchido no dataset inteiro.",
+        "valor": "SONGO"
+      },
+      {
+        "calc_id": "p2_nome_max",
+        "rotulo": "Única província identificável a partir dos endereços",
+        "contexto": "Tete é a única unidade administrativa que se consegue associar a um ponto com confiança.",
+        "valor": "TETE"
+      },
+      {
+        "calc_id": "p4_aerodrome_n_unidades",
+        "rotulo": "Aeródromos com localização geográfica atribuída",
+        "contexto": "De todos os pontos classificados como \"aerodrome\", só um tem cidade e província conhecidas.",
+        "valor": "1"
+      },
+      {
+        "calc_id": "p6_n_preenchidos",
+        "rotulo": "Registos com fonte de dados identificada",
+        "contexto": "De 64 pontos, só estes indicam se vieram do ourairports.com ou do Bing, o que limita a verificação da origem.",
+        "valor": "18"
+      }
+    ],
+    "o_que_mostram": "O dataset cataloga 64 pontos ligados à aviação em Moçambique, mas a maioria não é um \"aeroporto\" no sentido comum: mais de metade são aeródromos, e o resto reparte-se por pistas de pouso informais (bush strip), heliportos, radioajudas à navegação e mangas de vento, que são equipamento de apoio, não pistas próprias. Nenhum destes tipos domina de forma esmagadora: há uma mistura de infraestrutura formal e informal espalhada pelo país. Do ponto de vista geográfico, o quadro é muito mais limitado: apenas o Aeródromo de Songo, em Tete, tem o campo de cidade preenchido, o que faz dele o único ponto que conseguimos atribuir com confiança a uma província ou distrito.",
+    "porque": "A limitação não é sobre onde os aeroportos realmente estão, é sobre o que o dataset regista: o campo de endereço (addr_city) está vazio para 63 dos 64 pontos. Uma explicação plausível é que estes dados vêm de contribuições OpenStreetMap e do ourairports.com, onde voluntários marcam a posição num mapa mas raramente preenchem um endereço postal, sobretudo para pistas rurais sem infraestrutura formal. Outra explicação possível é que o processo de ligação geográfica usado aqui dependa do texto do endereço em vez das coordenadas do ponto, pelo que mesmo pontos bem localizados no mapa ficam sem província atribuída nesta análise (R7).",
+    "o_que_nao_diz": [
+      "Não diz em que província ou distrito estão os outros 63 pontos, mesmo que estejam mapeados com coordenadas no OpenStreetMap: falta o campo de endereço para os associar administrativamente.",
+      "Não permite montar um mapa ou uma tabela por província ou posto administrativo, porque só existe uma unidade geográfica confirmada em todo o dataset.",
+      "A fonte de origem (ourairports.com, Bing) só está identificada para 18 dos 64 registos, o que limita a verificação de qualidade dos restantes.",
+      "Os dados são de 2020 e não reflectem aberturas, encerramentos ou obras concluídas depois dessa data."
+    ],
+    "como_chegamos": "Perfilámos as colunas de tipo de infraestrutura (aeroway) e de endereço (addr_city) para ver quantos registos tinham cada informação preenchida. Depois tentámos ligar o endereço à divisão administrativa mais fina possível (posto administrativo, nível admin3), o que só teve sucesso para um único registo, em Tete.",
+    "fontes": [
+      {
+        "instituicao": "IACM (Instituto de Aviação Civil de Moçambique)",
+        "documento": "Base de dados da Aviação Civil de Moçambique",
+        "ano": 2020
+      },
+      {
+        "instituicao": "OpenStreetMap / ourairports.com",
+        "documento": "Dados geoespaciais de infraestrutura aeroportuária",
+        "ano": 2020
+      }
+    ]
+  },
+  "critica": {
+    "objeccoes": [],
+    "bloqueia_publicacao": false
+  },
+  "custo_usd": 0.11707500000000001,
+  "duracao_ms": 148429,
+  "confianca": {
+    "percentagem": 100,
+    "datasetsUsados": 1,
+    "ligacoesGeograficas": [
+      {
+        "dataset_id": 5,
+        "nivel": "admin3",
+        "taxa_correspondencia": 1
+      }
+    ],
+    "completudeMediaPct": 64.1,
+    "valoresDerivados": 0,
+    "passosViaCodigo": 0
+  }
+}

@@ -345,7 +345,7 @@ function convertToCSV(data: any): string {
   csv += 'Relatório de Dashboard\n'
   csv += `Gerado em: ${data.metadata.generatedAt}\n`
   if (hasPeriodFilter) {
-    csv += `Período: ${data.metadata.filters.startDate || '—'} a ${data.metadata.filters.endDate || '—'}\n`
+    csv += `Período: ${data.metadata.filters.startDate || 'N/D'} a ${data.metadata.filters.endDate || 'N/D'}\n`
   }
   csv += '\n'
 

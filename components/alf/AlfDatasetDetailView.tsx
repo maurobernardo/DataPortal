@@ -1,7 +1,5 @@
 import type { ReactNode } from 'react'
-import Link from 'next/link'
 import {
-  ArrowLeft,
   Calendar,
   Database,
   Download,
@@ -16,6 +14,8 @@ import {
 import { AlfDetailPreviewCard } from '@/components/alf/AlfDetailPreviewCard'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { RecordRecentlyViewed } from '@/components/RecordRecentlyViewed'
+import { ProvenanciaDataset } from '@/components/ProvenanciaDataset'
+import { VoltarComFiltro } from '@/components/VoltarComFiltro'
 
 type DatasetDetail = {
   id: number
@@ -31,6 +31,9 @@ type DatasetDetail = {
   coverage: string | null
   fileSize: string | null
   filePath: string | null
+  createdAt?: string | null
+  updatedAt?: string | null
+  certificacao?: string | null
   category: { id: number; name: string }
 }
 
@@ -38,7 +41,7 @@ export function AlfDatasetDetailView({ dataset }: { dataset: DatasetDetail }) {
   const keywords = dataset.keywords?.split(',').map((k) => k.trim()).filter(Boolean) ?? []
 
   return (
-    <div className="geo-detail-page alf-detail-page">
+    <div className="geo-detail-page alf-detail-page animate-fade-in">
       <div className="geo-detail-inner">
         <RecordRecentlyViewed
           id={dataset.id}
@@ -56,10 +59,9 @@ export function AlfDatasetDetailView({ dataset }: { dataset: DatasetDetail }) {
           ]}
         />
 
-        <Link href="/dados-alfanumericos" className="geo-detail-back">
-          <ArrowLeft className="size-4" aria-hidden />
+        <VoltarComFiltro fallbackHref="/dados-alfanumericos" className="geo-detail-back">
           Voltar aos Dados Alfanuméricos
-        </Link>
+        </VoltarComFiltro>
 
         <div className="geo-detail-layout geo-detail-layout--alf-stack">
           <section className="geo-detail-preview-sticky geo-detail-preview-full">
@@ -181,6 +183,13 @@ export function AlfDatasetDetailView({ dataset }: { dataset: DatasetDetail }) {
                     </div>
                   </div>
                 </div>
+
+                <ProvenanciaDataset
+                  datasetId={dataset.id}
+                  criadoEm={dataset.createdAt ?? null}
+                  actualizadoEm={dataset.updatedAt ?? null}
+                  certificacao={dataset.certificacao}
+                />
               </div>
             </div>
           </div>

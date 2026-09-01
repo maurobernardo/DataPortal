@@ -16,10 +16,19 @@ import { existeMetodo, invocarMetodo } from './library'
 import { pesosKnn, type Ponto } from './library/geo'
 import { distanciasParaMaisProximo, contarDentroDoRaio } from './library/proximidade'
 import { paraNumero } from './library/numeric'
-import { rotularColuna } from './rotulos-cliente'
+import { rotularColuna, traduzirValorCategoria, ehColunaIdTecnico } from './rotulos-cliente'
+import {
+  prepararCacheRotulosAprendidos,
+  obterRotuloAprendidoSincrono,
+  aprenderEmSegundoPlano,
+  dicionarioAprendidoPara,
+  pareceRotuloTecnico,
+  pareceValorTecnico,
+} from './rotulos-aprendidos'
 import { executarComCodigo } from './execucao-codigo'
 import { modeloPara, custoUsd } from './router'
 import type { CelulaCalculada, PassoPlano } from './types'
+import { escolherForma, type Distribuicao, type TipoGrafico } from './forma-do-grafico'
 
 /**
  * Executor de passos do plano.
@@ -36,8 +45,20 @@ export type SerieGeografica = {
   unidades: { codigo: string; nome: string; valor: number; categoria?: string }[]
   metrica: string
   normalizacao: string
+  /**
+   * Os valores são a VARIAÇÃO entre dois momentos, com sinal.
+   *
+   * Declarado e nunca inferido da presença de negativos: um saldo migratório também tem negativos
+   * e não é variação de nada. É isto que faz o mapa trocar a rampa sequencial pela escala
+   * divergente centrada no zero.
+   */
+  variacao?: boolean
   /** 'categorico' quando `categoria` é que deve ditar a cor no mapa (ex.: hotspot/coldspot LISA/Gi*), não `valor`. */
   modo?: 'continuo' | 'categorico'
+  /** Qual dataset produziu esta série — usado para só esconder a camada bruta de um dataset
+   *  quando EXISTE uma série calculada PARA ESSE MESMO dataset, não para qualquer série de
+   *  qualquer dataset (ver uso em DashboardApresentacao/AnaliseVisualizacoes). */
+  dataset_id?: number
 }
 
 /** Ordem de severidade para colorir categorias LISA/Gi* de forma consistente no mapa. */
@@ -58,16 +79,96 @@ const SEVERIDADE_CATEGORIA: Record<string, number> = {
  */
 export type GraficoResultado = {
   passo_id: string
-  tipo: 'linha' | 'barra' | 'pizza' | 'dispersao' | 'area'
+  tipo: TipoGrafico
   titulo: string
   eixoX: string[]
   series: { nome: string; valores: (number | null)[] }[]
   /** Linha de referência opcional (ex.: diagonal de igualdade perfeita na curva de Lorenz). */
   referencia?: { nome: string; valores: (number | null)[] }
+  /** Unidade dos valores. Decide se somar faz sentido, e com isso que formas são honestas. */
+  unidade?: string
+  /** Ligações origem→destino, quando o passo mediu um percurso e não uma distribuição. */
+  fluxos?: { origem: string; destino: string; valor: number }[]
+  /** Resumos de distribuição por cinco números, um por caixa. */
+  distribuicoes?: Distribuicao[]
+  /** As três primeiras séries são o eixo horizontal, o vertical e o tamanho de cada bolha. */
+  bolhas?: boolean
+  /** As categorias são etapas encaixadas, cada uma dentro da anterior. */
+  funil?: boolean
+  /**
+   * Se os valores são partes de um mesmo total. Viaja até ao dashboard porque o selector de forma
+   * recalcula as alternativas do lado do cliente: sem isto, um treemap correcto vinha acompanhado
+   * de um selector que só oferecia barra e linha, e nem sequer marcava a forma desenhada.
+   */
+  composicao?: boolean
+  /** Porque é esta a forma. Guardado para o dashboard poder explicá-lo a quem pergunta. */
+  porqueEstaForma?: string
   /** Marca gráficos que merecem secção dedicada no dashboard ("Análise Comparativa" /
    *  "Tendências e Evolução") em vez de caírem na grelha genérica — só quando a pergunta
    *  realmente produziu esse tipo de cálculo, nunca por omissão. */
   categoria?: 'comparativo' | 'temporal'
+}
+
+/**
+ * Guarda um gráfico deixando a FORMA ser decidida pelos dados.
+ *
+ * Antes, cada sítio que produzia um gráfico escolhia o tipo à mão, e o que saía era quase sempre
+ * uma barra: a mesma forma para uma repartição de um total, para uma matriz de duas dimensões e
+ * para um percurso entre categorias. A escolha passou para `escolherForma`, que olha para o
+ * número de séries, a cardinalidade do eixo, o sinal dos valores, a unidade e a densidade da
+ * matriz — e devolve também a justificação, que fica visível no relatório.
+ *
+ * `forma` só se usa quando o próprio método determina o desenho e os números sozinhos não o
+ * revelariam: uma curva de Lorenz é sempre uma curva, mesmo que o eixo pareça categórico.
+ */
+function empurrarGrafico(
+  ctx: ContextoExecucao,
+  g: {
+    passo_id: string
+    titulo: string
+    eixoX: string[]
+    series: { nome: string; valores: (number | null)[] }[]
+    referencia?: { nome: string; valores: (number | null)[] }
+    unidade?: string
+    fluxos?: { origem: string; destino: string; valor: number }[]
+    /** Declarar que os valores são partes de um mesmo total. Sem isto nunca sai pizza nem treemap. */
+    composicao?: boolean
+    distribuicoes?: Distribuicao[]
+    bolhas?: boolean
+    funil?: boolean
+    categoria?: 'comparativo' | 'temporal'
+    forma?: TipoGrafico
+  }
+) {
+  const escolha = g.forma
+    ? { tipo: g.forma, porque: '', alternativas: [] as TipoGrafico[] }
+    : escolherForma({
+        eixoX: g.eixoX,
+        series: g.series,
+        unidade: g.unidade,
+        fluxos: g.fluxos,
+        composicao: g.composicao,
+        distribuicoes: g.distribuicoes,
+        bolhas: g.bolhas,
+        funil: g.funil,
+      })
+
+  ctx.graficos.push({
+    passo_id: g.passo_id,
+    tipo: escolha.tipo,
+    titulo: g.titulo,
+    eixoX: g.eixoX,
+    series: g.series,
+    ...(g.referencia ? { referencia: g.referencia } : {}),
+    ...(g.unidade ? { unidade: g.unidade } : {}),
+    ...(g.fluxos ? { fluxos: g.fluxos } : {}),
+    ...(g.composicao ? { composicao: true } : {}),
+    ...(g.distribuicoes ? { distribuicoes: g.distribuicoes } : {}),
+    ...(g.bolhas ? { bolhas: true } : {}),
+    ...(g.funil ? { funil: true } : {}),
+    ...(g.categoria ? { categoria: g.categoria } : {}),
+    ...(escolha.porque ? { porqueEstaForma: escolha.porque } : {}),
+  })
 }
 
 /**
@@ -101,6 +202,20 @@ export type ContextoExecucao = {
    *  dataset de pontos (ex.: unidades sanitárias) merece pontos no mapa, não só um total por
    *  distrito. */
   camadasBrutas: CamadaBruta[]
+  /**
+   * Os registos em si, quando a pergunta pediu QUAIS e não só QUANTOS.
+   *
+   * Faltava um canal para isto e o defeito era visível: a "quantas escolas temos na cidade da Beira
+   * e quais são?" o motor respondeu 105 e nunca disse uma única escola. O plano tinha decomposto o
+   * "quais são" em "que TIPOS de escola existem", que é outra pergunta: os tipos são seis, as
+   * escolas são cento e cinco, e quem perguntou queria a lista.
+   *
+   * Nenhum canal existente servia. `calcs` guarda números, `series` guarda um valor por unidade
+   * geográfica e `graficos` guarda eixos: nomes de registos não são nenhuma dessas coisas.
+   */
+  listas: ListaRegistos[]
+  /** Séries do mesmo indicador em vários momentos, para desenhar lado a lado. */
+  multiplos: MultiploGeografico[]
   /** Completude por coluna (Plano de Dashboard, item "cartão de qualidade"): um resumo visual de
    *  quão preenchido está cada coluna que algum passo perfilou, em vez de ficar escondido dentro
    *  do texto da narrativa. */
@@ -112,6 +227,43 @@ export type ContextoExecucao = {
   /** execucao_codigo custa uma chamada extra ao modelo, fora do estágio Planeamento/Narrativa que
    *  o pipeline já contabiliza — sem este acumulador o custo real da análise ficava subestimado. */
   custoExecucaoCodigo: number
+}
+
+/**
+ * O mesmo indicador, em vários momentos, para ser desenhado lado a lado.
+ *
+ * Guardado como UM objecto com vários períodos, e não como várias séries soltas, por uma razão que
+ * decide se a coisa funciona: os mapas de uma série de múltiplos pequenos têm de partilhar a MESMA
+ * classificação. Se cada mapa calcular os seus próprios quartis, o vermelho de 2018 e o vermelho de
+ * 2023 significam números diferentes, e a comparação que a figura promete é exactamente a que ela
+ * impede. Mantê-los juntos torna a escala partilhada a coisa natural a fazer.
+ */
+export type MultiploGeografico = {
+  passo_id: string
+  metrica: string
+  nivel: NivelAdmin
+  unidade: string
+  periodos: { rotulo: string; unidades: { codigo: string; nome: string; valor: number }[] }[]
+}
+
+/**
+ * Uma lista de registos nomeados, tal como saiu dos dados.
+ *
+ * Guarda os valores tal e qual, sem os agregar: agregar é precisamente o que já se fazia e o que
+ * deixava a segunda metade da pergunta por responder.
+ */
+export type ListaRegistos = {
+  passo_id: string
+  titulo: string
+  /** A coluna de onde vieram os nomes, para quem quiser confirmar a origem. */
+  coluna: string
+  /** Unidade administrativa a que a lista foi restringida, quando houve filtro. */
+  ambito: string | null
+  itens: string[]
+  /** Quantos existem ao todo. Difere de `itens.length` quando a lista foi cortada. */
+  total: number
+  /** Verdadeiro quando `itens` mostra só uma parte: obriga a dizê-lo no ecrã (R8). */
+  truncada: boolean
 }
 
 export type QualidadeColuna = {
@@ -132,6 +284,10 @@ export type CamadaBruta = {
   colunasCategoricas: string[]
   features: { nome: string; categorias: Record<string, string>; geometry: any }[]
   truncado: boolean
+  /** Traduções aprendidas em segundo plano (chave em minúsculas) para nomes de coluna e valores
+   *  que o dicionário fixo não cobria — ver rotulos-aprendidos.ts. O componente cliente (que não
+   *  tem acesso à base de dados) consulta isto antes de cair no dicionário fixo. */
+  rotulosAprendidos?: { colunas: Record<string, string>; valores: Record<string, string> }
 }
 
 /**
@@ -140,6 +296,50 @@ export type CamadaBruta = {
  * uma amostra. 1513 estradas com 30 819 pontos (~1,4 MB de JSON) já cabem várias vezes dentro
  * dos 16 MB actuais.
  */
+/**
+ * Os períodos que têm mesmo valores, em ordem.
+ *
+ * Escrito depois de um defeito que custou uma análise inteira. A primeira versão tomava o primeiro
+ * e o último valor DISTINTOS da coluna de tempo, e num ficheiro do portal isso deu 2015 e 2025: dois
+ * anos que existem na coluna e não têm um único valor preenchido. O passo morreu com "0 unidades
+ * com valor nos dois períodos" e a análise foi recusada, quando 2018 a 2024 estava lá inteiro.
+ *
+ * Uma coluna de anos costuma cobrir a ambição do ficheiro, não a sua realidade: os anos do plano
+ * de recolha ficam lá, vazios, à espera. Escolher pelos extremos da coluna é escolher precisamente
+ * as linhas que ninguém preencheu.
+ *
+ * Conta só as linhas dentro de `ligacoes`, que a esta altura já vêm filtradas pelo indicador e pela
+ * unidade geográfica do passo: um ano cheio de dados de arroz não torna um passo sobre milho viável.
+ */
+function periodosComDados(
+  tabela: Tabela,
+  ligacoes: Map<number, string>,
+  colunaTempo: string,
+  colunaMetrica: string | null
+): string[] {
+  const tempos = colunaValores(tabela, colunaTempo)
+  const valores = colunaMetrica ? colunaValores(tabela, colunaMetrica) : null
+  const contagem = new Map<string, number>()
+  Array.from(ligacoes.keys()).forEach((i) => {
+    const periodo = (tempos[i] || '').trim()
+    if (!periodo) return
+    // Sem coluna de métrica o passo conta registos, e a própria existência da linha é o valor.
+    if (valores && paraNumero(valores[i]) === null) return
+    contagem.set(periodo, (contagem.get(periodo) || 0) + 1)
+  })
+  const comDados = Array.from(contagem.keys())
+  const todosNumericos = comDados.every((d) => Number.isFinite(Number(d)))
+  return todosNumericos
+    ? comDados.sort((a, b) => Number(a) - Number(b))
+    : comDados.sort((a, b) => a.localeCompare(b, 'pt'))
+}
+
+/** Acima disto cada mapa fica pequeno demais para se distinguir uma unidade de outra. */
+const MAX_PERIODOS_MULTIPLOS = 6
+
+/** Acima disto uma lista deixa de ser resposta e passa a ser um despejo do ficheiro. */
+const LIMITE_ITENS_LISTA = 500
+
 export async function criarContexto(datasetIds: number[]): Promise<ContextoExecucao> {
   const ctx: ContextoExecucao = {
     tabelas: new Map(),
@@ -151,10 +351,19 @@ export async function criarContexto(datasetIds: number[]): Promise<ContextoExecu
     avisos: [],
     enriquecimentoPopulacao: new Map(),
     camadasBrutas: [],
+    listas: [],
+    multiplos: [],
     qualidade: [],
     codigoExecutado: [],
     custoExecucaoCodigo: 0,
   }
+
+  // PLANO-ROTULOS-E-VELOCIDADE.md, Frente A Fase 2: carrega a cache de nomes de coluna já
+  // aprendidos (partilhada entre TODAS as análises, não por dataset) — depois desta chamada,
+  // consultá-la é uma leitura de memória síncrona, sem custo, para o resto desta análise. Só
+  // toca a base de dados na primeira vez que este processo do servidor arranca; análises
+  // seguintes reaproveitam a mesma cache já carregada, custo zero.
+  await prepararCacheRotulosAprendidos()
 
   for (const id of datasetIds) {
     const t = await carregarTabela(id)
@@ -167,30 +376,6 @@ export async function criarContexto(datasetIds: number[]): Promise<ContextoExecu
       ctx.avisos.push(
         `${t.titulo}: leitura truncada em ${t.n_linhas} linhas; os totais são um limite inferior.`
       )
-    }
-
-    if (t.geometrias && t.geometrias.length > 0) {
-      const colunaNome = detectarColunaRotulo(t, [])
-      const iColunaNome = colunaNome ? t.colunas.indexOf(colunaNome) : -1
-      const colunasCategoricas = detectarColunasCategoricas(t, colunaNome ? [colunaNome] : [])
-      const indicesCategoricas = colunasCategoricas.map((c) => t.colunas.indexOf(c))
-      const tipoGeometria = t.geometrias.find((g) => g?.type)?.type || 'desconhecido'
-      ctx.camadasBrutas.push({
-        dataset_id: id,
-        titulo: t.titulo,
-        tipoGeometria,
-        colunasCategoricas,
-        features: t.geometrias.map((g, i) => ({
-          nome: iColunaNome >= 0 ? t.linhas[i]?.[iColunaNome] || t.titulo : t.titulo,
-          categorias: Object.fromEntries(
-            colunasCategoricas
-              .map((c, j) => [c, indicesCategoricas[j] >= 0 ? t.linhas[i]?.[indicesCategoricas[j]] : undefined])
-              .filter(([, v]) => !!v)
-          ),
-          geometry: g,
-        })),
-        truncado: false,
-      })
     }
 
     let lig = await detectarColunaGeografica(t)
@@ -242,6 +427,109 @@ export async function criarContexto(datasetIds: number[]): Promise<ContextoExecu
         `${t.titulo}: ${lig.nao_correspondidos.length} valor(es) da coluna "${lig.coluna_usada}" não correspondem a unidades administrativas de Moçambique (${lig.nao_correspondidos.slice(0, 4).join(', ')}) e ficam fora dos totais por unidade.`
       )
     }
+
+    if (t.geometrias && t.geometrias.length > 0) {
+      const colunaNome = detectarColunaRotulo(t, [])
+      const iColunaNome = colunaNome ? t.colunas.indexOf(colunaNome) : -1
+      const colunasCategoricas = detectarColunasCategoricas(t, colunaNome ? [colunaNome] : [])
+      const indicesCategoricas = colunasCategoricas.map((c) => t.colunas.indexOf(c))
+      const tipoGeometria = t.geometrias.find((g) => g?.type)?.type || 'desconhecido'
+
+      // "Filtro por província/distrito" não pode depender de o dataset ter, por acaso, uma
+      // coluna de atributo chamada "Provincia" — a maioria dos shapefiles reais (estradas, rios,
+      // linhas eléctricas) não tem nenhuma coluna administrativa, só geometria; é exactamente por
+      // isso que `lig` acima teve de a derivar da própria geometria (ligarPorGeometria). Sem
+      // reaproveitar aqui essa ligação já calculada, o mapa de pontos/linhas/polígonos ficava sem
+      // filtro nenhum de âmbito geográfico, mesmo quando o motor já sabe a que unidade cada
+      // feição pertence (é essa mesma ligação que já alimenta "Distância por província" nos
+      // gráficos ao lado). Trunca sempre a admin1 (província): é o nível que faz sentido como
+      // filtro de topo, independentemente do nível a que `lig` ficou resolvida.
+      let provinciaPorLinha: Map<number, string> | null = null
+      let distritoPorLinha: Map<number, string> | null = null
+      if (lig) {
+        const provincias = await carregarUnidades('admin1')
+        const nomePorCodigo1 = new Map(provincias.map((u) => [u.codigo, u.nome]))
+        provinciaPorLinha = new Map()
+        for (const [indice, codigo] of Array.from(lig.ligacoes)) {
+          const nome = nomePorCodigo1.get(codigo.slice(0, 2))
+          if (nome) provinciaPorLinha.set(indice, nome)
+        }
+        // Distrito só faz sentido quando `lig` já resolveu a esse nível ou mais fino (admin2/3) —
+        // truncar um código de 2 dígitos (só província) a 4 dígitos dava um "distrito" falso.
+        if (lig.nivel === 'admin2' || lig.nivel === 'admin3') {
+          const distritos = await carregarUnidades('admin2')
+          const nomePorCodigo2 = new Map(distritos.map((u) => [u.codigo, u.nome]))
+          distritoPorLinha = new Map()
+          for (const [indice, codigo] of Array.from(lig.ligacoes)) {
+            const nome = nomePorCodigo2.get(codigo.slice(0, 4))
+            if (nome) distritoPorLinha.set(indice, nome)
+          }
+        }
+      }
+      // Nomes escolhidos para bater com os aliases que rotularColuna já reconhece (/^provinc/i,
+      // /^distrit/i) — assim "Colorir por", a legenda e o detector de filtro em
+      // AnaliseMapaPontos.tsx (que procuram uma coluna cujo rótulo traduzido seja "Província"/
+      // "Distrito") tratam isto exactamente como tratariam uma coluna administrativa real do
+      // próprio dataset, sem precisar de um caso especial.
+      const NOME_COLUNA_PROVINCIA_DERIVADA = 'Provincia'
+      const NOME_COLUNA_DISTRITO_DERIVADA = 'Distrito'
+      const jaTemColunaProvincia = colunasCategoricas.some((c) => rotularColuna(c) === 'Província')
+      const jaTemColunaDistrito = colunasCategoricas.some((c) => rotularColuna(c) === 'Distrito')
+      const usarProvinciaDerivada = !!provinciaPorLinha && !jaTemColunaProvincia
+      const usarDistritoDerivado = !!distritoPorLinha && !jaTemColunaDistrito
+
+      // AnaliseMapaPontos.tsx (mapa de geometria própria) corre no browser, sem acesso nenhum à
+      // base de dados aprendida — "REASON"/"PC to PC" ficavam em inglês ali mesmo depois de outros
+      // sítios da análise (séries/destaques) já terem a correcção, porque esses são calculados
+      // aqui no servidor e este mapa lê directamente o nome/valor bruto. A solução é embutir o
+      // dicionário aprendido nos DADOS enviados ao cliente (dicionarioAprendidoPara), não tentar
+      // dar acesso à base de dados ao componente. Também é aqui que se aprende o que ainda falta.
+      const valoresDistintos = Array.from(
+        new Set(colunasCategoricas.flatMap((c) => colunaValores(t, c).filter(Boolean)))
+      )
+      for (const c of colunasCategoricas) {
+        if (pareceRotuloTecnico(c, rotularColuna(c))) aprenderEmSegundoPlano(c, 'coluna')
+      }
+      for (const v of valoresDistintos.slice(0, 60)) {
+        if (pareceValorTecnico(v) && traduzirValorCategoria(v) === v) aprenderEmSegundoPlano(v, 'valor')
+      }
+      const rotulosAprendidos = dicionarioAprendidoPara(colunasCategoricas, valoresDistintos)
+
+      ctx.camadasBrutas.push({
+        dataset_id: id,
+        titulo: t.titulo,
+        tipoGeometria,
+        colunasCategoricas: [
+          ...colunasCategoricas,
+          ...(usarProvinciaDerivada ? [NOME_COLUNA_PROVINCIA_DERIVADA] : []),
+          ...(usarDistritoDerivado ? [NOME_COLUNA_DISTRITO_DERIVADA] : []),
+        ],
+        rotulosAprendidos,
+        features: t.geometrias.map((g, i) => ({
+          // Sem coluna de nome detectada no dataset (comum em shapefiles com só colunas técnicas,
+          // ex.: cod_dist/cana_acuc), TODAS as feições caíam para o mesmo "nome" (o título do
+          // dataset) — quebrava "Comparar" (que identifica a feição clicada pelo nome: com todas
+          // iguais, comparava sempre a primeira feição consigo mesma) e os tooltips do mapa
+          // (mostravam sempre o mesmo texto). Cai antes para o distrito/província já derivado da
+          // geometria (`distritoPorLinha`/`provinciaPorLinha`, calculado acima), que já é único por
+          // feição; só na ausência total de qualquer identificador usa um índice, nunca o título.
+          nome:
+            (iColunaNome >= 0 && t.linhas[i]?.[iColunaNome]) ||
+            distritoPorLinha?.get(i) ||
+            provinciaPorLinha?.get(i) ||
+            `${t.titulo} #${i + 1}`,
+          categorias: Object.fromEntries(
+            [
+              ...colunasCategoricas.map((c, j) => [c, indicesCategoricas[j] >= 0 ? t.linhas[i]?.[indicesCategoricas[j]] : undefined]),
+              ...(usarProvinciaDerivada ? [[NOME_COLUNA_PROVINCIA_DERIVADA, provinciaPorLinha!.get(i)]] : []),
+              ...(usarDistritoDerivado ? [[NOME_COLUNA_DISTRITO_DERIVADA, distritoPorLinha!.get(i)]] : []),
+            ].filter(([, v]) => !!v)
+          ),
+          geometry: g,
+        })),
+        truncado: false,
+      })
+    }
   }
 
   return ctx
@@ -277,11 +565,25 @@ function detectarColunaRotulo(tabela: Tabela, excluir: string[]): string | null 
  * província, consoante a pergunta, e só o utilizador sabe qual quer no momento — por isso o mapa
  * deixa escolher em vez de fixar automaticamente uma só dimensão (Parte 24).
  */
+// "Path"/"Layer" são metadados de como o shapefile foi PREPARADO (o caminho no computador de
+// quem exportou o ficheiro, ex.: "D:\PROJECTOS QGIS\...\Parque_Nacional_Gorongosa.shp"), nunca um
+// dado sobre a feição em si — confirmado ao vivo: apareceu literalmente na UI como "Colorir por"
+// e no painel de comparação, expondo o disco e a estrutura de pastas de quem tratou os dados.
+// Nenhuma pessoa que usa o portal tem uso nenhum para isto.
+const NOMES_COLUNA_META_FICHEIRO = /^(path|layer|filepath|file[_ ]?path|filename|arquivo|shapefile)$/i
+function pareceCaminhoDeFicheiro(valores: string[]): boolean {
+  const amostra = valores.slice(0, 20)
+  if (amostra.length === 0) return false
+  const comAspectoDeCaminho = amostra.filter((v) => /[\\/]/.test(v) && /\.(shp|zip|csv|geojson|json|kml|gpkg|dbf)$/i.test(v))
+  return comAspectoDeCaminho.length / amostra.length > 0.5
+}
+
 function detectarColunasCategoricas(tabela: Tabela, excluir: string[]): string[] {
-  const candidatos = tabela.colunas.filter((c) => !excluir.includes(c))
+  const candidatos = tabela.colunas.filter((c) => !excluir.includes(c) && !NOMES_COLUNA_META_FICHEIRO.test(c.trim()))
   const avaliar = (c: string) => {
     const valores = colunaValores(tabela, c).filter(Boolean)
     if (valores.length < tabela.n_linhas * 0.5) return null
+    if (pareceCaminhoDeFicheiro(valores)) return null
     const numericos = valores.filter((v) => paraNumero(v) !== null).length
     if (numericos / valores.length > 0.3) return null
     const distintos = new Set(valores).size
@@ -338,7 +640,16 @@ function achatarResultado(
 ) {
   if (resultado == null) return
   if (typeof resultado === 'number') {
-    registarCalc(ctx, passo.id, resultado, unidadeBase, 'numero', passo, datasets, linhas)
+    registarCalc(
+      ctx,
+      passo.id,
+      resultado,
+      unidadeBase,
+      unidadeBase === '%' ? 'percentagem' : 'numero',
+      passo,
+      datasets,
+      linhas
+    )
     return
   }
   if (typeof resultado === 'string') {
@@ -358,11 +669,18 @@ function achatarResultado(
       .replace(/^_+|_+$/g, '') || 'v'
     const id = `${passo.id}_${chaveSegura}`
     if (typeof valor === 'number' && Number.isFinite(valor)) {
+      // O formato vinha só do NOME da chave do resultado, e a percentagem é propriedade dos dados,
+      // não do nome que o plano deu ao cálculo. Verificado ao vivo: a mesma análise mostrou "74,8%"
+      // numa corrida e "74,8" noutra, conforme o plano baptizou o cálculo. Uma percentagem sem o
+      // símbolo lê-se como número absoluto e muda o sentido da frase, por isso a unidade declarada
+      // pelo próprio ficheiro (coluna "unit") manda mais do que a chave.
       const formato = /p$|^p_|pvalor|p_valor/i.test(chave)
         ? 'numero'
-        : /percent|quota|proporcao/i.test(chave)
+        : unidadeBase === '%'
           ? 'percentagem'
-          : 'numero'
+          : /percent|quota|proporcao/i.test(chave)
+            ? 'percentagem'
+            : 'numero'
       registarCalc(ctx, id, valor, unidadeBase, formato, passo, datasets, linhas)
     } else if (typeof valor === 'string') {
       registarCalc(ctx, id, valor, '', 'texto', passo, datasets, linhas)
@@ -445,6 +763,423 @@ let proximoIdSintetico = -1
  * dataset_id real da base de dados) para que passos seguintes do plano possam encadear
  * correlação, comparação de grupos, etc. sobre a junção como se fosse mais um dataset.
  */
+/**
+ * Diz se uma coluna guarda um atributo DA UNIDADE, repetido em todas as linhas dessa unidade.
+ *
+ * "Province electricity access (%)" é um valor por província escrito em cada um dos 1094 postos
+ * dessa província. Correlacionar duas colunas assim linha a linha não usa 411 observações
+ * independentes: usa 11, repetidas. O coeficiente até pode sair certo, mas o p-valor vem de uma
+ * amostra que não existe, e sai "p = 0" onde a amostra real daria algo como 0,02.
+ *
+ * Devolve um valor por unidade quando a coluna é constante dentro de cada uma, e null quando
+ * varia (nesse caso as linhas são observações genuínas e não há nada a colapsar).
+ */
+export function atributoPorUnidade(
+  tabela: Tabela,
+  ligacao: ResultadoLigacao,
+  coluna: string
+): Map<string, number> | null {
+  const indice = tabela.colunas.indexOf(coluna)
+  if (indice === -1) return null
+
+  const porUnidade = new Map<string, number>()
+  for (const [linha, codigo] of Array.from(ligacao.ligacoes)) {
+    const valor = paraNumero(tabela.linhas[linha]?.[indice])
+    if (valor === null) continue
+    const jaVisto = porUnidade.get(codigo)
+    if (jaVisto === undefined) {
+      porUnidade.set(codigo, valor)
+    } else if (jaVisto !== valor) {
+      return null // varia dentro da unidade: são observações a sério
+    }
+  }
+  return porUnidade.size > 0 ? porUnidade : null
+}
+
+/**
+ * Nomes de coluna que identificam QUAL indicador cada linha representa, em ficheiros de formato
+ * longo. São a marca dos datasets alfanuméricos do portal (Data4Moz L02, L08, L20, ...).
+ */
+const PADRAO_COLUNA_INDICADOR = /^(variable_name(_\w+)?|variable_id|indicador|indicator|nome_variavel|variavel)$/i
+
+/**
+ * Diz se a tabela guarda vários indicadores na mesma coluna de valores, e qual coluna os separa.
+ *
+ * Agregar uma tabela destas sem restringir a um indicador soma coisas que não se somam: produção
+ * em toneladas com área em hectares. Verificado ao vivo, e é por isso que esta função existe: uma
+ * análise publicou "Manica é o maior produtor de milho, com 3 127 381 toneladas" quando o valor
+ * real mais alto é 1 717 000. O número publicado não correspondia a indicador nenhum, nada falhou
+ * e nenhum aviso apareceu.
+ */
+function colunaIndicadorDe(tabela: Tabela): string | null {
+  const candidatas = tabela.colunas.filter((c) => PADRAO_COLUNA_INDICADOR.test(c.trim()))
+  // O mesmo ficheiro traz "variable_id", "variable_name_en" e "variable_name_pt". Todas servem
+  // para filtrar, mas a que vai no nome sugerido tem de ser a legível: dizer "filtra variable_id"
+  // obriga a conhecer códigos como "L20_V001", enquanto "Produção de milho (toneladas)" é o que a
+  // pergunta já usa. A ordem aqui decide o que aparece na mensagem de erro e no que o utilizador
+  // acaba por ler em "o que isto não diz".
+  const preferidas = [
+    ...candidatas.filter((c) => /_pt$/i.test(c)),
+    ...candidatas.filter((c) => /name/i.test(c) && !/_pt$/i.test(c)),
+    ...candidatas.filter((c) => !/name/i.test(c)),
+  ]
+  for (const coluna of preferidas) {
+    const i = tabela.colunas.indexOf(coluna)
+    const distintos = new Set<string>()
+    for (const linha of tabela.linhas) {
+      const v = linha[i]
+      if (v != null && String(v).trim() !== '') distintos.add(String(v).trim())
+      if (distintos.size > 1) return coluna
+    }
+  }
+  return null
+}
+
+/**
+ * Recusa agregar um ficheiro de formato longo sem dizer QUAL indicador se quer.
+ *
+ * Falha em vez de avisar de propósito. Um passo falhado é declarado e a narrativa contorna-o; um
+ * número que mistura toneladas com hectares entra na análise com ar de facto e ninguém o apanha.
+ * É a mesma regra que já vale para os tokens {{calc:}} por resolver: mais vale não responder do
+ * que responder com um número que não significa o que diz significar.
+ */
+/**
+ * Escolhe o indicador a partir do que o passo diz que quer fazer.
+ *
+ * Bloquear quando o filtro falta é correcto mas insuficiente: verificado ao vivo, o planeador
+ * omite-o com frequência, e a análise perdia quatro passos de uma vez, deixando a pergunta sem
+ * resposta nenhuma. A descrição do passo ("Soma casos de TB notificados por província") nomeia o
+ * indicador em linguagem corrente, e os valores da coluna também ("Casos de TB Notificados —
+ * Todas as Formas"): comparar as duas coisas resolve a maioria dos casos sem adivinhação.
+ *
+ * Só decide quando há um vencedor CLARO e único. Empate ou ausência de palavras em comum devolve
+ * null, e aí o passo falha como antes: escolher ao acaso entre "produção" e "área cultivada" seria
+ * exactamente o erro silencioso que esta verificação existe para impedir.
+ */
+export function inferirIndicador(tabela: Tabela, coluna: string, passo: PassoExecutavel): FiltroCategoria | null {
+  const indice = tabela.colunas.indexOf(coluna)
+  if (indice === -1) return null
+
+  const pedido = `${passo.descricao_humana || ''} ${passo.coluna_metrica || ''}`
+  const termosPedido = new Set(
+    normalizarCategoria(pedido)
+      .split(/[^a-z0-9]+/)
+      .filter((t) => t.length >= 4)
+  )
+  if (termosPedido.size === 0) return null
+
+  const distintos = new Set<string>()
+  for (const linha of tabela.linhas) {
+    const v = linha[indice]
+    if (v != null && String(v).trim() !== '') distintos.add(String(v).trim())
+  }
+
+  let melhor: { valor: string; pontos: number } | null = null
+  let segundo = 0
+  for (const valor of Array.from(distintos)) {
+    let pontos = 0
+    for (const t of Array.from(normalizarCategoria(valor).split(/[^a-z0-9]+/))) {
+      if (t.length >= 4 && termosPedido.has(t)) pontos++
+    }
+    if (!melhor || pontos > melhor.pontos) {
+      segundo = melhor?.pontos ?? 0
+      melhor = { valor, pontos }
+    } else if (pontos > segundo) {
+      segundo = pontos
+    }
+  }
+
+  if (!melhor || melhor.pontos === 0 || melhor.pontos === segundo) return null
+  return { coluna, valor: melhor.valor }
+}
+
+/**
+ * Devolve o filtro de indicador a usar: o que o passo trouxe, ou um inferido da sua descrição.
+ *
+ * Regista sempre no contexto qual indicador foi escolhido por inferência, para que a análise possa
+ * declarar sobre o que respondeu. Um indicador escolhido pelo motor e não pelo plano é informação
+ * que o leitor precisa de ter.
+ */
+function resolverFiltroIndicador(
+  tabela: Tabela,
+  filtro: FiltroCategoria | null,
+  passo: PassoExecutavel,
+  ctx: ContextoExecucao
+): FiltroCategoria | null {
+  const colunaIndicador = colunaIndicadorDe(tabela)
+  if (!colunaIndicador) return filtro
+  if (filtro && PADRAO_COLUNA_INDICADOR.test(filtro.coluna.trim()) && tabela.colunas.includes(filtro.coluna)) {
+    return filtro
+  }
+
+  const inferido = inferirIndicador(tabela, colunaIndicador, passo)
+  if (inferido) {
+    ctx.avisos.push(
+      `Passo "${passo.descricao_humana}": "${tabela.titulo}" guarda vários indicadores na mesma ` +
+        `coluna e o plano não escolheu nenhum; foi usado "${inferido.valor}", por ser o que ` +
+        `corresponde ao que o passo pedia.`
+    )
+    return inferido
+  }
+  return filtro
+}
+
+function exigirIndicadorEscolhido(
+  tabela: Tabela,
+  filtro: FiltroCategoria | null,
+  passoId: string
+): void {
+  const colunaIndicador = colunaIndicadorDe(tabela)
+  if (!colunaIndicador) return
+  // Aceita o filtro sobre QUALQUER das colunas que identificam o indicador, não só sobre a
+  // primeira que foi detectada. O mesmo ficheiro traz "variable_id", "variable_name_en" e
+  // "variable_name_pt", que são três formas de dizer a mesma coisa: exigir uma delas em concreto
+  // rejeitava filtros correctos e fazia falhar análises que antes funcionavam.
+  if (filtro && PADRAO_COLUNA_INDICADOR.test(filtro.coluna.trim()) && tabela.colunas.includes(filtro.coluna)) {
+    return
+  }
+  throw new Error(
+    `Passo ${passoId}: "${tabela.titulo}" guarda vários indicadores na mesma coluna de valores; ` +
+      `sem restringir "${colunaIndicador}" a um indicador, o resultado somaria grandezas diferentes ` +
+      `(ex.: toneladas com hectares). Usa filtro_unidade "cat:${colunaIndicador}=<indicador>" ` +
+      `(ou "cat2:" para o segundo dataset de um cruzamento).`
+  )
+}
+
+/**
+ * Unidade que o próprio ficheiro declara para o indicador em causa.
+ *
+ * Os datasets em formato longo trazem uma coluna "unit" a dizer o que é cada valor ("%", "count",
+ * "tonne"). Sem a ler, o motor decidia o formato pelo nome que o plano dava ao cálculo, e a mesma
+ * análise mostrava "74,8%" numa corrida e "74,8" noutra.
+ *
+ * Devolve só "%", de propósito. É o caso em que a ausência da unidade torna o número ERRADO: uma
+ * percentagem sem símbolo lê-se como valor absoluto. Uma contagem sem sufixo lê-se bem, e traduzir
+ * "tonne" ou "ha" para texto visível é outra discussão, com risco próprio.
+ */
+function unidadePercentagemDoIndicador(
+  tabela: Tabela,
+  ligacao: ResultadoLigacao | null,
+  filtro: FiltroCategoria | null
+): string {
+  const iUnidade = tabela.colunas.findIndex((c) => /^(unit|unidade|units)$/i.test(c.trim()))
+  if (iUnidade === -1) return ''
+
+  const linhasRelevantes = ligacao?.ligacoes
+    ? Array.from(ligacao.ligacoes.keys()).map((i) => tabela.linhas[i])
+    : tabela.linhas
+
+  const unidades = new Set<string>()
+  for (const linha of linhasRelevantes) {
+    if (!linha) continue
+    if (filtro) {
+      const iFiltro = tabela.colunas.indexOf(filtro.coluna)
+      if (iFiltro !== -1) {
+        const v = linha[iFiltro]
+        if (v == null || normalizarCategoria(String(v)) !== normalizarCategoria(filtro.valor)) continue
+      }
+    }
+    const u = String(linha[iUnidade] ?? '').trim()
+    if (u) unidades.add(u.toLowerCase())
+  }
+
+  // Só quando NÃO há ambiguidade: um passo que misture percentagens com contagens não tem uma
+  // unidade única, e inventar uma seria pior do que não ter nenhuma.
+  if (unidades.size !== 1) return ''
+  const unica = Array.from(unidades)[0]
+  return unica === '%' || unica === 'percent' || unica === 'percentagem' ? '%' : ''
+}
+
+type FiltroCategoria = { coluna: string; valor: string }
+
+/**
+ * Lê os filtros de categoria de um passo, um por cada lado de um cruzamento.
+ *
+ * Os datasets alfanuméricos do portal estão em formato longo: uma coluna "value" guarda dezenas de
+ * indicadores distintos, e o que identifica cada um é outra coluna ("variable_name_pt"). Juntar
+ * dois destes ficheiros somando "value" misturaria toneladas de milho com casos de tuberculose e
+ * daria um número com aspecto de resultado e sem significado nenhum. Cruzá-los exige, portanto,
+ * um filtro DE CADA LADO, e até aqui só existia um.
+ *
+ * A segunda condição entra no mesmo campo com o prefixo "cat2:" em vez de num campo novo, pela
+ * razão já documentada no filtro original: o schema de passo está perto do limite de propriedades
+ * que a API de saída estruturada aceita antes de falhar a compilar a gramática.
+ *
+ * Formato: "cat:coluna=valor" ou "cat:coluna=valor;cat2:coluna=valor".
+ */
+function lerFiltrosCategoria(filtro?: string): { a: FiltroCategoria | null; b: FiltroCategoria | null } {
+  const vazio = { a: null, b: null }
+  if (!filtro) return vazio
+
+  const lados: { a: FiltroCategoria | null; b: FiltroCategoria | null } = { a: null, b: null }
+  for (const parte of filtro.split(';')) {
+    const texto = parte.trim()
+    const prefixo = texto.startsWith('cat2:') ? 'b' : texto.startsWith('cat:') ? 'a' : null
+    if (!prefixo) continue
+    const corpo = texto.slice(texto.indexOf(':') + 1)
+    const igual = corpo.indexOf('=')
+    if (igual === -1) continue
+    const coluna = corpo.slice(0, igual).trim()
+    const valor = corpo.slice(igual + 1).trim()
+    if (coluna && valor) lados[prefixo as 'a' | 'b'] = { coluna, valor }
+  }
+  return lados
+}
+
+function normalizarCategoria(s: string): string {
+  return s.toLowerCase().normalize('NFD').replace(new RegExp('[\\u0300-\\u036f]', 'g'), '').trim()
+}
+
+/**
+ * Restringe uma ligação às linhas onde uma coluna categórica tem o valor pedido.
+ *
+ * Devolve a ligação intacta quando não há filtro. Lança quando o filtro não corresponde a nada:
+ * um cruzamento sobre zero linhas produziria um resultado vazio com ar de resposta.
+ */
+function ligacaoFiltradaPorCategoria(
+  tabela: Tabela,
+  ligacao: ResultadoLigacao,
+  filtro: FiltroCategoria | null,
+  passoId: string
+): ResultadoLigacao {
+  if (!filtro) return ligacao
+  const indice = tabela.colunas.indexOf(filtro.coluna)
+  if (indice === -1) {
+    throw new Error(`Passo ${passoId}: coluna "${filtro.coluna}" não existe em "${tabela.titulo}"`)
+  }
+  const alvo = normalizarCategoria(filtro.valor)
+  const filtradas = new Map(
+    Array.from(ligacao.ligacoes).filter(([linha]) => {
+      const v = tabela.linhas[linha]?.[indice]
+      return v != null && normalizarCategoria(String(v)) === alvo
+    })
+  )
+  if (filtradas.size === 0) {
+    // Distinguir os dois casos importa para quem lê o aviso na análise ou depura o plano. Visto ao
+    // vivo: "Incidência de TB" existe no ficheiro, mas só na linha "Nacional", que não corresponde
+    // a nenhuma unidade administrativa e por isso não entra na ligação geográfica. Dizer que o
+    // valor não existe mandava procurar uma gralha que não havia.
+    const existeNaTabela = tabela.linhas.some((l) => {
+      const v = l[indice]
+      return v != null && normalizarCategoria(String(v)) === alvo
+    })
+    throw new Error(
+      existeNaTabela
+        ? `Passo ${passoId}: "${filtro.valor}" existe em "${tabela.titulo}", mas só em linhas sem ` +
+          `correspondência a uma unidade administrativa (tipicamente totais nacionais), por isso ` +
+          `não pode ser usado num passo geográfico`
+        : `Passo ${passoId}: nenhuma linha de "${tabela.titulo}" tem "${filtro.coluna}" = "${filtro.valor}"`
+    )
+  }
+  return { ...ligacao, ligacoes: filtradas }
+}
+
+/**
+ * Alinha duas métricas que vivem em datasets DIFERENTES, juntando-as pela unidade administrativa
+ * comum.
+ *
+ * Existe porque o planeador não tem como escrever este passo correctamente. `juntar_datasets` cria
+ * uma tabela sintética com um id atribuído só em execução (`proximoIdSintetico--`), e um plano é
+ * escrito antes de qualquer id existir: não há nada que o modelo possa pôr em `dataset_id` para
+ * apontar ao resultado da junção. Sem saída, ele escreve a correlação sobre um dos datasets com
+ * uma coluna do outro, e o passo morre com "exige duas séries do mesmo tamanho" (verificado ao
+ * vivo em "as províncias com maior área de cana têm maior acesso a electricidade?").
+ *
+ * Em vez de exigir do modelo uma referência que ele não pode conhecer, o executor reconhece a
+ * situação e faz a junção sozinho. Perguntas de cruzamento são as mais valiosas do portal, e não
+ * podem depender de o plano acertar num identificador que ainda não foi criado.
+ */
+async function alinharMetricasDeDatasetsDiferentes(
+  passo: PassoExecutavel,
+  ctx: ContextoExecucao
+): Promise<{ x: number[]; y: number[]; nomes: string[]; nivel: NivelAdmin } | null> {
+  const colA = passo.coluna_metrica
+  const colB = passo.coluna_metrica_2
+
+  // Só entram tabelas reais com ligação geográfica: as sintéticas (id negativo) já são o produto
+  // de uma junção e não têm unidades para voltar a agregar.
+  const candidatas = Array.from(ctx.tabelas.entries()).filter(
+    ([id]) => id >= 0 && !!ctx.ligacoes.get(id)
+  )
+  const filtros = lerFiltrosCategoria(passo.filtro_unidade)
+
+  // Em formato longo as duas métricas chamam-se ambas "value", por isso procurar a tabela pelo
+  // nome da coluna devolveria a mesma dos dois lados. Nesse caso é o filtro de cada lado que diz
+  // qual é qual: só uma das tabelas tem a coluna categórica com aquele valor.
+  const temFiltro = (t: Tabela, f: FiltroCategoria | null) => {
+    if (!f) return false
+    const i = t.colunas.indexOf(f.coluna)
+    if (i === -1) return false
+    const alvo = normalizarCategoria(f.valor)
+    return t.linhas.some((l) => l[i] != null && normalizarCategoria(String(l[i])) === alvo)
+  }
+
+  const donaDe = (coluna: string | undefined, f: FiltroCategoria | null, excluir?: number) => {
+    // Sem coluna métrica a pergunta é sobre CONTAR registos ("distritos com mais escolas do que
+    // unidades sanitárias"): nesse caso o dataset vem do próprio passo, não do nome da coluna.
+    // É a forma mais natural de cruzar duas camadas de pontos, e sem isto o passo era abandonado.
+    if (!coluna) {
+      const preferido = excluir === undefined ? passo.dataset_id : passo.dataset_id_2
+      return (
+        candidatas.find(([id]) => id !== excluir && id === preferido) ||
+        candidatas.find(([id]) => id !== excluir)
+      )
+    }
+    return (
+      candidatas.find(
+        ([id, t]) => id !== excluir && t.colunas.includes(coluna) && (!f || temFiltro(t, f))
+      ) || candidatas.find(([id, t]) => id !== excluir && t.colunas.includes(coluna))
+    )
+  }
+
+  const a = donaDe(colA, filtros.a)
+  const b = donaDe(colB, filtros.b, a?.[0])
+  if (!a || !b || a[0] === b[0]) return null
+
+  const indCruzA = resolverFiltroIndicador(a[1], filtros.a, passo, ctx)
+  const indCruzB = resolverFiltroIndicador(b[1], filtros.b, passo, ctx)
+  exigirIndicadorEscolhido(a[1], indCruzA, passo.id)
+  exigirIndicadorEscolhido(b[1], indCruzB, passo.id)
+  const ligA = ligacaoFiltradaPorCategoria(a[1], ctx.ligacoes.get(a[0])!, indCruzA, passo.id)
+  const ligB = ligacaoFiltradaPorCategoria(b[1], ctx.ligacoes.get(b[0])!, indCruzB, passo.id)
+
+  // Nível comum é o mais GROSSO dos dois: descer o dataset mais grosso ao nível fino do outro
+  // inventaria detalhe que ele não tem. Mesma regra de executarJuncaoDatasets.
+  const ordem: Record<NivelAdmin, number> = { admin1: 1, admin2: 2, admin3: 3 }
+  const nivel = ordem[ligA.nivel] <= ordem[ligB.nivel] ? ligA.nivel : ligB.nivel
+
+  // Sem coluna, ou com uma coluna que não é numérica, o que se quer é contar registos por unidade
+  // (quantas escolas, quantas unidades sanitárias), não somar texto.
+  const modoDe = (t: Tabela, coluna?: string) =>
+    coluna && colunaNumerica(t, coluna).length ? 'soma' : 'contagem'
+  const porA = await agregarPorUnidade(a[1], ligA, colA || a[1].colunas[0], modoDe(a[1], colA), nivel)
+  const porB = await agregarPorUnidade(b[1], ligB, colB || b[1].colunas[0], modoDe(b[1], colB), nivel)
+
+  const mapaB = new Map(porB.map((u) => [u.codigo, u.valor]))
+  const comuns = porA.filter((u) => mapaB.has(u.codigo))
+  if (comuns.length < 3) return null
+
+  if (comuns.length < porA.length) {
+    ctx.avisos.push(
+      `Passo "${passo.descricao_humana}": as duas métricas vinham de ficheiros diferentes e foram ` +
+        `cruzadas ao nível ${nivel}; ${porA.length - comuns.length} unidade(s) sem correspondência ` +
+        `nos dois ficaram de fora.`
+    )
+  } else {
+    ctx.avisos.push(
+      `Passo "${passo.descricao_humana}": as duas métricas vinham de ficheiros diferentes e foram ` +
+        `cruzadas ao nível ${nivel}, sobre ${comuns.length} unidades em comum.`
+    )
+  }
+
+  return {
+    x: comuns.map((u) => u.valor),
+    y: comuns.map((u) => mapaB.get(u.codigo)!),
+    nomes: comuns.map((u) => u.nome),
+    nivel,
+  }
+}
+
 async function executarJuncaoDatasets(passo: PassoExecutavel, ctx: ContextoExecucao): Promise<void> {
   const idA = passo.dataset_id ?? Array.from(ctx.tabelas.keys())[0]
   const idB = passo.dataset_id_2
@@ -454,13 +1189,22 @@ async function executarJuncaoDatasets(passo: PassoExecutavel, ctx: ContextoExecu
   const tabelaA = ctx.tabelas.get(idA)
   const tabelaB = ctx.tabelas.get(idB)
   if (!tabelaA || !tabelaB) throw new Error(`Passo ${passo.id}: dataset(s) não carregado(s)`)
-  const ligA = ctx.ligacoes.get(idA)
-  const ligB = ctx.ligacoes.get(idB)
-  if (!ligA || !ligB) {
+  const ligBrutaA = ctx.ligacoes.get(idA)
+  const ligBrutaB = ctx.ligacoes.get(idB)
+  if (!ligBrutaA || !ligBrutaB) {
     throw new Error(
       `Passo ${passo.id}: os dois datasets têm de estar ligados a unidades administrativas para se poderem juntar`
     )
   }
+  // Sem isto, juntar dois ficheiros em formato longo somava indicadores diferentes da mesma coluna
+  // "value" (produção de milho com casos de tuberculose) e devolvia um total sem significado.
+  const filtrosJuncao = lerFiltrosCategoria(passo.filtro_unidade)
+  const indJuncaoA = resolverFiltroIndicador(tabelaA, filtrosJuncao.a, passo, ctx)
+  const indJuncaoB = resolverFiltroIndicador(tabelaB, filtrosJuncao.b, passo, ctx)
+  exigirIndicadorEscolhido(tabelaA, indJuncaoA, passo.id)
+  exigirIndicadorEscolhido(tabelaB, indJuncaoB, passo.id)
+  const ligA = ligacaoFiltradaPorCategoria(tabelaA, ligBrutaA, indJuncaoA, passo.id)
+  const ligB = ligacaoFiltradaPorCategoria(tabelaB, ligBrutaB, indJuncaoB, passo.id)
   if (!passo.coluna_metrica || !passo.coluna_metrica_2) {
     throw new Error(
       `Passo ${passo.id}: juntar_datasets exige coluna_metrica (do primeiro dataset) e coluna_metrica_2 (do segundo)`
@@ -516,6 +1260,7 @@ async function executarJuncaoDatasets(passo: PassoExecutavel, ctx: ContextoExecu
     unidades: combinadas.map((c) => ({ codigo: c.codigo, nome: c.nome, valor: c.valorA })),
     metrica: `${rotularColuna(passo.coluna_metrica || '')} (${tabelaA.titulo})`,
     normalizacao: 'nenhuma',
+    dataset_id: idA,
   })
   ctx.series.push({
     passo_id: `${passo.id}_b`,
@@ -523,11 +1268,13 @@ async function executarJuncaoDatasets(passo: PassoExecutavel, ctx: ContextoExecu
     unidades: combinadas.map((c) => ({ codigo: c.codigo, nome: c.nome, valor: c.valorB })),
     metrica: `${rotularColuna(passo.coluna_metrica_2 || '')} (${tabelaB.titulo})`,
     normalizacao: 'nenhuma',
+    dataset_id: idB,
   })
 
-  ctx.graficos.push({
+  // Forma fixa: são pares (x, y) de duas medidas, e é a nuvem que mostra a forma da relação.
+  empurrarGrafico(ctx, {
     passo_id: `${passo.id}_dispersao`,
-    tipo: 'dispersao',
+    forma: 'dispersao',
     titulo: passo.descricao_humana,
     eixoX: combinadas.map((c) => String(c.valorA)),
     series: [{ nome: `${passo.coluna_metrica_2} (${tabelaB.titulo})`, valores: combinadas.map((c) => c.valorB) }],
@@ -625,12 +1372,12 @@ async function executarDistanciaMinima(passo: PassoExecutavel, ctx: ContextoExec
       .sort((a, b) => b.d - a.d)
       .slice(0, 15)
     if (maisLonge.length >= 2) {
-      ctx.graficos.push({
+      empurrarGrafico(ctx, {
         passo_id: `${passo.id}_distancias`,
-        tipo: 'barra',
         titulo: passo.descricao_humana,
         eixoX: maisLonge.map((x) => x.nome),
         series: [{ nome: `Distância a "${tabelaB.titulo}" (km)`, valores: maisLonge.map((x) => Math.round(x.d * 100) / 100) }],
+        unidade: 'km',
       })
     }
   }
@@ -686,9 +1433,8 @@ async function executarContagemBuffer(passo: PassoExecutavel, ctx: ContextoExecu
       .sort((a, b) => b.v - a.v)
       .slice(0, 15)
     if (top.length >= 2) {
-      ctx.graficos.push({
+      empurrarGrafico(ctx, {
         passo_id: `${passo.id}_buffer`,
-        tipo: 'barra',
         titulo: passo.descricao_humana,
         eixoX: top.map((x) => x.nome),
         series: [{ nome: rotuloSerie, valores: top.map((x) => x.v) }],
@@ -744,6 +1490,39 @@ function proximoRotuloPeriodo(tempos: string[]): string {
   return 'próximo período'
 }
 
+/**
+ * Rótulo de uma coluna-métrica para aparecer a um utilizador — mas nunca o nome bruto de um
+ * identificador técnico do ficheiro (OBJECTID, FID, GID...), que não significa nada fora do
+ * ficheiro-fonte (ex.: "OBJECTID 1 por província"). Nesse caso cai para a descrição do próprio
+ * passo, a mesma rede de segurança já usada quando não há coluna nenhuma.
+ */
+function rotularMetricaSemIdTecnico(coluna: string, descricaoHumana: string, semColunaOuFallback: string): string {
+  if (ehColunaIdTecnico(coluna)) return descricaoHumana || semColunaOuFallback
+  const aprendido = obterRotuloAprendidoSincrono(coluna, 'coluna')
+  if (aprendido) return aprendido
+  const resultado = rotularColuna(coluna)
+  // Nunca aguardado: a análise em curso usa `resultado` já (o dicionário fixo, correcto na
+  // maioria dos casos); só aprende para a PRÓXIMA vez que este nome de coluna aparecer, nesta ou
+  // noutra análise — ver rotulos-aprendidos.ts para a restrição de nunca atrasar nada.
+  if (pareceRotuloTecnico(coluna, resultado)) aprenderEmSegundoPlano(coluna, 'coluna')
+  return resultado
+}
+
+/**
+ * Quando filtro_unidade é "cat:coluna=valor", o rótulo da série tem de vir do VALOR filtrado
+ * (ex.: "Milho"), não do nome genérico da coluna métrica (ex.: "Valor" ou "Área cultivada") —
+ * sem isto, dois passos que filtram categorias diferentes da mesma coluna produzem séries com o
+ * mesmo rótulo, indistinguíveis no selector do mapa/gráfico mesmo contendo dados diferentes.
+ */
+function rotuloFiltroCategoria(passo: PassoExecutavel): string | null {
+  if (!passo.filtro_unidade?.startsWith('cat:')) return null
+  const corpo = passo.filtro_unidade.slice(4)
+  const igual = corpo.indexOf('=')
+  if (igual === -1) return null
+  const valor = corpo.slice(igual + 1).trim()
+  return valor || null
+}
+
 export async function executarPasso(passo: PassoExecutavel, ctx: ContextoExecucao): Promise<void> {
   if (!existeMetodo(passo.metodo)) {
     throw new Error(`Passo ${passo.id}: método "${passo.metodo}" não existe no catálogo`)
@@ -774,7 +1553,28 @@ export async function executarPasso(passo: PassoExecutavel, ctx: ContextoExecuca
   // "Distritos DENTRO de Inhambane" é diferente de "distritos do país inteiro": sem isto,
   // nivel_geo agregava sempre ao país inteiro, e um passo destinado a uma só província devolvia
   // (com rótulo enganador) o resultado nacional — errado em silêncio, sem nunca lançar um erro.
-  if (passo.filtro_unidade && ligacao) {
+  //
+  // Prefixo "cat:coluna=valor" reaproveita o mesmo campo para um filtro diferente: restringe às
+  // linhas onde outra coluna (categórica, ex.: "Nome da cultura") tem um valor exacto (ex.:
+  // "Milho"), antes de agregar por geografia. Não é um novo campo no schema porque o schema de
+  // passo já está perto do limite de propriedades que a API de saída estruturada aceita antes de
+  // "Grammar compilation timed out" (ver comentário em instrucaoCodigo acima) — reaproveitar
+  // filtro_unidade com um prefixo evita repetir esse incidente. É o mecanismo que permite ao
+  // Planeamento gerar um passo por cultura/categoria nomeada (ex.: milho, arroz, mapira) num
+  // dataset em formato longo, para que cada uma produza a sua própria série real em vez de só a
+  // última/primeira lida ficar visível no mapa e no gráfico.
+  if (passo.filtro_unidade?.startsWith('cat:') && ligacao) {
+    // Usa o mesmo leitor do caminho de cruzamento: um passo de dataset único que traga por engano
+    // a segunda condição ("cat:...;cat2:...") fica com a primeira em vez de a interpretar mal e
+    // ir procurar um valor que inclui o resto da cadeia.
+    const { a } = lerFiltrosCategoria(passo.filtro_unidade)
+    if (!a) {
+      throw new Error(`Passo ${passo.id}: filtro_unidade "cat:..." mal formado, esperado "cat:coluna=valor"`)
+    }
+    const indicadorA = resolverFiltroIndicador(tabela, a, passo, ctx)
+    exigirIndicadorEscolhido(tabela, indicadorA, passo.id)
+    ligacao = ligacaoFiltradaPorCategoria(tabela, ligacao, indicadorA, passo.id)
+  } else if (passo.filtro_unidade && ligacao) {
     const unidadeFiltro = await resolverUnidadePorNome(passo.filtro_unidade)
     if (!unidadeFiltro) {
       throw new Error(
@@ -790,6 +1590,22 @@ export async function executarPasso(passo: PassoExecutavel, ctx: ContextoExecuca
     ligacao = { ...ligacao, ligacoes: ligacoesFiltradas }
   }
 
+  // O caso que produziu o número errado não foi um filtro mal escrito: foi passo NENHUM filtro
+  // sobre um ficheiro de formato longo. As verificações acima só correm quando já existe um
+  // filtro, por isso a exigência tem de ficar aqui, depois de todos os ramos, onde apanha também
+  // quem não filtrou de todo. Só se aplica a passos que agregam uma métrica: um passo que apenas
+  // descreve a composição de uma coluna categórica não soma nada e não corre este risco.
+  if (passo.coluna_metrica && passo.metodo !== 'execucao_codigo' && passo.metodo !== 'perfil_coluna') {
+    const bruto = lerFiltrosCategoria(passo.filtro_unidade).a
+    const resolvido = resolverFiltroIndicador(tabela, bruto, passo, ctx)
+    exigirIndicadorEscolhido(tabela, resolvido, passo.id)
+    // Aplica o indicador inferido: sem isto a verificacao passava mas a agregacao continuava a
+    // somar todos os indicadores, que e precisamente o numero errado que se quer evitar.
+    if (resolvido && resolvido !== bruto && ligacao) {
+      ligacao = ligacaoFiltradaPorCategoria(tabela, ligacao, resolvido, passo.id)
+    }
+  }
+
   // execucao_codigo (PLANO-INTELIGENCIA-PRO-MAX.md, Fase 2): último recurso do catálogo. Chega
   // aqui só quando o Planeamento decidiu explicitamente que nenhum método normal cobre a
   // sub-pergunta — o código corre de verdade sobre os dados reais deste dataset, num sandbox
@@ -802,10 +1618,25 @@ export async function executarPasso(passo: PassoExecutavel, ctx: ContextoExecuca
     // sistematicamente sub-representado ou ausente consoante onde as suas linhas caem na ordem
     // original, em vez de uma amostra aleatória representativa.
     const LIMITE_LINHAS_CODIGO = 15000
+    // Numa pergunta de cruzamento o código precisa dos dois ficheiros. Usa o segundo indicado pelo
+    // passo e, quando o plano não o indica, o outro dataset carregado: pedir para cruzar e mandar
+    // um ficheiro só é o que fazia estes passos morrerem com "só contém dados da camada X".
+    const idSegundo =
+      passo.dataset_id_2 ??
+      Array.from(ctx.tabelas.keys()).find((id) => id >= 0 && id !== (passo.dataset_id ?? idEscolhido))
+    const tabelaSegunda = idSegundo !== undefined ? ctx.tabelas.get(idSegundo) : undefined
     const saida = await executarComCodigo(
       { titulo: tabela.titulo, colunas: tabela.colunas, linhas: tabela.linhas, n_linhas: tabela.n_linhas },
       instrucao,
-      LIMITE_LINHAS_CODIGO
+      LIMITE_LINHAS_CODIGO,
+      tabelaSegunda && tabelaSegunda !== tabela
+        ? {
+            titulo: tabelaSegunda.titulo,
+            colunas: tabelaSegunda.colunas,
+            linhas: tabelaSegunda.linhas,
+            n_linhas: tabelaSegunda.n_linhas,
+          }
+        : undefined
     )
     ctx.custoExecucaoCodigo += custoUsd(modeloPara('codigo'), saida.tokens_entrada, saida.tokens_saida)
     ctx.codigoExecutado.push({ passo_id: passo.id, instrucao, codigo: saida.codigo })
@@ -845,6 +1676,254 @@ export async function executarPasso(passo: PassoExecutavel, ctx: ContextoExecuca
   // os pontos brutos) "saber" uma resposta que a narrativa dizia não conseguir calcular. Não é um
   // caso especial de um dataset: qualquer dataset com geometria + coluna categórica tem este
   // problema, por isso o método fica no catálogo, não escondido aqui.
+  /*
+   * "Quantas escolas há na Beira E QUAIS SÃO": a segunda metade da pergunta.
+   *
+   * Todos os outros métodos deste catálogo agregam. Contam, somam, comparam, classificam. Nenhum
+   * devolve os registos, e por isso uma pergunta que pedia os nomes recebia um número e uma
+   * distribuição por tipo: correcta, verificável, e a responder a metade.
+   *
+   * O limite existe porque uma lista de dez mil nomes não é uma resposta, é um despejo do ficheiro.
+   * Quando corta, diz que cortou: uma lista truncada em silêncio faria alguém concluir que são
+   * aqueles e mais nenhum.
+   */
+  /*
+   * "Como mudou entre 2018 e 2023, por província."
+   *
+   * Nenhum método do catálogo respondia a isto ao nível da unidade. `comparar_periodos` compara
+   * dois NÚMEROS e devolve um número; os métodos temporais correm sobre a série nacional. Faltava
+   * o que qualquer relatório pede primeiro: o mapa de quem subiu e quem desceu.
+   *
+   * Sobre a unidade em que a variação é expressa, que é a decisão que mais muda o resultado:
+   *
+   * Se a métrica JÁ É uma percentagem, a variação vai em PONTOS PERCENTUAIS. De 40% para 50% é uma
+   * subida de 10 pontos, e não de 25%, e as duas leituras estão certas mas só uma se soma e se
+   * compara entre províncias.
+   *
+   * Se a métrica é uma contagem ou um total, a variação vai em PERCENTAGEM. A variação absoluta
+   * daria sempre o mapa das províncias grandes: Nampula sobe mil escolas e Maputo Cidade sobe
+   * cinquenta, e o mapa diria que Maputo estagnou quando pode ter crescido mais depressa.
+   */
+  if (passo.metodo === 'variacao_geografica') {
+    if (!ligacao) throw new Error(`Passo ${passo.id}: dataset sem ligação geográfica`)
+    if (!passo.coluna_tempo) {
+      throw new Error(`Passo ${passo.id}: variacao_geografica exige coluna_tempo`)
+    }
+    if (!tabela.colunas.includes(passo.coluna_tempo)) {
+      throw new Error(`Passo ${passo.id}: a coluna de tempo "${passo.coluna_tempo}" não existe em "${nomeDataset}"`)
+    }
+    const nivel = (passo.nivel_geo as NivelAdmin) || ligacao.nivel
+
+    const temposBrutos = colunaValores(tabela, passo.coluna_tempo)
+    // Só períodos com valores, e já ordenados: os anos vazios do fim do plano de recolha não podem
+    // ser escolhidos como extremos da variação.
+    const ordenados = periodosComDados(tabela, ligacao.ligacoes, passo.coluna_tempo, passo.coluna_metrica || null)
+    if (ordenados.length < 2) {
+      throw new Error(
+        `Passo ${passo.id}: "${passo.coluna_tempo}" só tem ${ordenados.length} período(s) com dados, e uma variação precisa de dois`
+      )
+    }
+    const inicio = ordenados[0]
+    const fim = ordenados[ordenados.length - 1]
+
+    const ligacaoDoPeriodo = (periodo: string) => {
+      const filtradas = new Map<number, string>()
+      Array.from(ligacao!.ligacoes).forEach(([indice, codigo]) => {
+        if ((temposBrutos[indice] || '').trim() === periodo) filtradas.set(indice, codigo)
+      })
+      return { ...ligacao!, ligacoes: filtradas }
+    }
+
+    const agregacao = passo.coluna_metrica ? 'soma' : 'contagem'
+    const coluna = passo.coluna_metrica || tabela.colunas[0]
+    const noInicio = await agregarPorUnidade(tabela, ligacaoDoPeriodo(inicio), coluna, agregacao, nivel)
+    const noFim = await agregarPorUnidade(tabela, ligacaoDoPeriodo(fim), coluna, agregacao, nivel)
+
+    const porCodigoInicio = new Map(noInicio.map((u) => [u.codigo, u.valor]))
+    const emPontos =
+      unidadePercentagemDoIndicador(tabela, ligacao, lerFiltrosCategoria(passo.filtro_unidade).a) === '%'
+
+    const unidades: { codigo: string; nome: string; valor: number }[] = []
+    const semBase: string[] = []
+    for (const u of noFim) {
+      const antes = porCodigoInicio.get(u.codigo)
+      if (antes === undefined) {
+        semBase.push(u.nome)
+        continue
+      }
+      if (emPontos) {
+        unidades.push({ codigo: u.codigo, nome: u.nome, valor: u.valor - antes })
+      } else {
+        // Uma variação percentual a partir de zero não existe. Excluir a unidade e dizê-lo é a
+        // única saída honesta: pintá-la como "sem mudança" esconderia um arranque do nada, e
+        // pintá-la como subida infinita dominaria a escala e apagaria todas as outras.
+        if (antes === 0) {
+          semBase.push(u.nome)
+          continue
+        }
+        unidades.push({ codigo: u.codigo, nome: u.nome, valor: ((u.valor - antes) / Math.abs(antes)) * 100 })
+      }
+    }
+    if (unidades.length < 2) {
+      throw new Error(`Passo ${passo.id}: apenas ${unidades.length} unidade(s) com valor nos dois períodos`)
+    }
+    if (semBase.length > 0) {
+      ctx.avisos.push(
+        `${passo.descricao_humana}: ${semBase.length} unidade(s) ficaram fora do mapa de variação por não terem valor em ${inicio} (${semBase.slice(0, 5).join(', ')}${semBase.length > 5 ? ', ...' : ''}).`
+      )
+    }
+
+    ctx.series.push({
+      passo_id: passo.id,
+      nivel,
+      unidades,
+      metrica: `${passo.descricao_humana || 'Variação'} (${inicio} a ${fim})`,
+      normalizacao: 'nenhuma',
+      variacao: true,
+      dataset_id: idEscolhido,
+    })
+
+    const subiram = unidades.filter((u) => u.valor > 0).length
+    const desceram = unidades.filter((u) => u.valor < 0).length
+    const sufixo = emPontos ? 'pp' : '%'
+    registarCalc(ctx, `${passo.id}_subiram`, subiram, '', 'inteiro', passo, [nomeDataset], unidades.length)
+    registarCalc(ctx, `${passo.id}_desceram`, desceram, '', 'inteiro', passo, [nomeDataset], unidades.length)
+    const maior = unidades.reduce((a, b) => (b.valor > a.valor ? b : a))
+    const menor = unidades.reduce((a, b) => (b.valor < a.valor ? b : a))
+    registarCalc(ctx, `${passo.id}_maior_subida`, maior.valor, sufixo, 'decimal', passo, [nomeDataset], unidades.length)
+    registarCalc(ctx, `${passo.id}_maior_subida_nome`, maior.nome, '', 'texto', passo, [nomeDataset], unidades.length)
+    registarCalc(ctx, `${passo.id}_maior_descida`, menor.valor, sufixo, 'decimal', passo, [nomeDataset], unidades.length)
+    registarCalc(ctx, `${passo.id}_maior_descida_nome`, menor.nome, '', 'texto', passo, [nomeDataset], unidades.length)
+    return
+  }
+
+  /*
+   * O mesmo indicador em vários momentos, para desenhar lado a lado.
+   *
+   * Responde a uma pergunta que o mapa de mudança não responde. A mudança diz QUANTO variou entre
+   * o princípio e o fim, e apaga tudo o que aconteceu pelo meio: uma província que subiu, caiu e
+   * voltou ao mesmo lugar aparece como "sem mudança", que é verdade e não é a história. Os
+   * múltiplos mostram cada momento por si.
+   *
+   * O limite de períodos não é cosmético. Acima de meia dúzia, cada mapa fica pequeno demais para
+   * se distinguir uma província de outra, e a figura passa a ser uma textura. Quando há mais anos
+   * do que isso, escolhem-se momentos ESPAÇADOS ao longo da série em vez dos primeiros: os
+   * primeiros seis anos de uma série de vinte contam o princípio e calam o resto.
+   */
+  if (passo.metodo === 'mapas_por_periodo') {
+    if (!ligacao) throw new Error(`Passo ${passo.id}: dataset sem ligação geográfica`)
+    if (!passo.coluna_tempo) throw new Error(`Passo ${passo.id}: mapas_por_periodo exige coluna_tempo`)
+    if (!tabela.colunas.includes(passo.coluna_tempo)) {
+      throw new Error(`Passo ${passo.id}: a coluna de tempo "${passo.coluna_tempo}" não existe em "${nomeDataset}"`)
+    }
+    const nivel = (passo.nivel_geo as NivelAdmin) || ligacao.nivel
+
+    const temposBrutos = colunaValores(tabela, passo.coluna_tempo)
+    // Mesma razão da variação: um ano sem um único valor preenchido desenharia um mapa em branco,
+    // e um mapa em branco no meio da série lê-se como "aqui não havia nada", que é outra coisa.
+    const ordenados = periodosComDados(tabela, ligacao.ligacoes, passo.coluna_tempo, passo.coluna_metrica || null)
+    if (ordenados.length < 2) {
+      throw new Error(`Passo ${passo.id}: "${passo.coluna_tempo}" só tem ${ordenados.length} período(s) com dados`)
+    }
+
+    let escolhidos = ordenados
+    if (ordenados.length > MAX_PERIODOS_MULTIPLOS) {
+      // Amostragem espaçada, com o primeiro e o último SEMPRE incluídos: são os dois momentos que
+      // qualquer leitor procura primeiro, e perdê-los para uma divisão certinha seria absurdo.
+      const passoAmostra = (ordenados.length - 1) / (MAX_PERIODOS_MULTIPLOS - 1)
+      escolhidos = Array.from({ length: MAX_PERIODOS_MULTIPLOS }, (_, i) => ordenados[Math.round(i * passoAmostra)])
+      escolhidos = Array.from(new Set(escolhidos))
+      ctx.avisos.push(
+        `${passo.descricao_humana}: a série tem ${ordenados.length} períodos e a figura mostra ${escolhidos.length} espaçados (${escolhidos.join(', ')}).`
+      )
+    }
+
+    const agregacao = passo.coluna_metrica ? 'soma' : 'contagem'
+    const coluna = passo.coluna_metrica || tabela.colunas[0]
+    const periodos: { rotulo: string; unidades: { codigo: string; nome: string; valor: number }[] }[] = []
+    for (const periodo of escolhidos) {
+      const filtradas = new Map<number, string>()
+      Array.from(ligacao.ligacoes).forEach(([indice, codigo]) => {
+        if ((temposBrutos[indice] || '').trim() === periodo) filtradas.set(indice, codigo)
+      })
+      const porUnidade = await agregarPorUnidade(tabela, { ...ligacao, ligacoes: filtradas }, coluna, agregacao, nivel)
+      if (porUnidade.length === 0) continue
+      periodos.push({
+        rotulo: periodo,
+        unidades: porUnidade.map((u) => ({ codigo: u.codigo, nome: u.nome, valor: u.valor })),
+      })
+    }
+    if (periodos.length < 2) {
+      throw new Error(`Passo ${passo.id}: só ${periodos.length} período(s) com dados, insuficiente para comparar`)
+    }
+
+    ctx.multiplos.push({
+      passo_id: passo.id,
+      metrica: passo.descricao_humana || 'Indicador',
+      nivel,
+      unidade: unidadePercentagemDoIndicador(tabela, ligacao, lerFiltrosCategoria(passo.filtro_unidade).a) || '',
+      periodos,
+    })
+
+    registarCalc(ctx, `${passo.id}_n_periodos`, periodos.length, '', 'inteiro', passo, [nomeDataset], tabela.n_linhas)
+    return
+  }
+
+  if (passo.metodo === 'listar_registos') {
+    const coluna = passo.coluna_grupo
+    if (!coluna) throw new Error(`Passo ${passo.id}: listar_registos exige coluna_grupo (a coluna dos nomes)`)
+    if (!tabela.colunas.includes(coluna)) {
+      throw new Error(`Passo ${passo.id}: a coluna "${coluna}" não existe em "${nomeDataset}"`)
+    }
+
+    // Quando houve filtro por unidade, `ligacao.ligacoes` já vem restringido às linhas que caem lá
+    // dentro (ver o bloco de filtro_unidade acima). Sem ligação, a lista é do dataset inteiro.
+    const indice = tabela.colunas.indexOf(coluna)
+    const linhasNoAmbito = ligacao
+      ? Array.from(ligacao.ligacoes.keys()).sort((x, y) => x - y)
+      : tabela.linhas.map((_, i) => i)
+
+    const vistos = new Set<string>()
+    const nomes: string[] = []
+    for (const i of linhasNoAmbito) {
+      const valor = (tabela.linhas[i]?.[indice] ?? '').trim()
+      if (!valor) continue
+      const chave = valor.toLowerCase()
+      if (vistos.has(chave)) continue
+      vistos.add(chave)
+      nomes.push(valor)
+    }
+    if (nomes.length === 0) {
+      throw new Error(`Passo ${passo.id}: a coluna "${coluna}" não tem nomes preenchidos no âmbito pedido`)
+    }
+
+    nomes.sort((x, y) => x.localeCompare(y, 'pt'))
+    const truncada = nomes.length > LIMITE_ITENS_LISTA
+    const ambito = passo.filtro_unidade && !passo.filtro_unidade.startsWith('cat:')
+      ? passo.filtro_unidade
+      : null
+
+    ctx.listas.push({
+      passo_id: passo.id,
+      titulo: passo.descricao_humana || `Registos em "${coluna}"`,
+      coluna,
+      ambito,
+      itens: nomes.slice(0, LIMITE_ITENS_LISTA),
+      total: nomes.length,
+      truncada,
+    })
+
+    // O total entra em `calcs` para a narrativa o poder citar com {{calc:}} como qualquer outro
+    // número, em vez de o repetir de cabeça a partir da lista.
+    registarCalc(ctx, passo.id, nomes.length, '', 'inteiro', passo, [nomeDataset], linhasNoAmbito.length)
+    if (truncada) {
+      ctx.avisos.push(
+        `${passo.descricao_humana}: a lista mostra ${LIMITE_ITENS_LISTA} dos ${nomes.length} nomes encontrados.`
+      )
+    }
+    return
+  }
+
   if (passo.metodo === 'distribuicao_categoria_geo') {
     if (!ligacao) throw new Error(`Passo ${passo.id}: dataset sem ligação geográfica`)
     if (!passo.coluna_grupo) throw new Error(`Passo ${passo.id}: distribuicao_categoria_geo exige coluna_grupo`)
@@ -867,16 +1946,25 @@ export async function executarPasso(passo: PassoExecutavel, ctx: ContextoExecuca
     const digitos: Record<NivelAdmin, number> = { admin1: 2, admin2: 4, admin3: 6 }
     const cortar = (codigo: string) => codigo.slice(0, digitos[nivel])
 
+    // Contagem por (categoria, unidade): é a tabela cruzada que os escalares abaixo resumem, e
+    // é o que permite finalmente desenhá-la.
+    const contagemPorCategoriaEUnidade = new Map<string, Map<string, number>>()
+    const unidadesComAlgum = new Set<string>()
+
     for (const categoria of distintas) {
       const codigosComCategoria = new Set<string>()
+      const porUnidade = new Map<string, number>()
       let total = 0
       Array.from(ligacao.ligacoes).forEach(([indiceLinha, codigoOrigem]) => {
         if (categorias[indiceLinha] !== categoria) return
         const codigo = cortar(codigoOrigem)
         if (!nomePorCodigo.has(codigo)) return
         codigosComCategoria.add(codigo)
+        porUnidade.set(codigo, (porUnidade.get(codigo) || 0) + 1)
+        unidadesComAlgum.add(codigo)
         total++
       })
+      contagemPorCategoriaEUnidade.set(categoria, porUnidade)
       if (codigosComCategoria.size === 0) continue
 
       const nomesUnidades = Array.from(codigosComCategoria)
@@ -911,6 +1999,48 @@ export async function executarPasso(passo: PassoExecutavel, ctx: ContextoExecuca
         total
       )
       registarCalc(ctx, `${passo.id}_${slug}_total`, total, '', 'inteiro', passo, [nomeDataset], total)
+    }
+
+    // A matriz. As unidades ficam ordenadas pelo total, para o padrão aparecer da esquerda para a
+    // direita em vez de ficar espalhado pela ordem alfabética dos códigos.
+    const totalPorUnidade = new Map<string, number>()
+    for (const porUnidade of Array.from(contagemPorCategoriaEUnidade.values())) {
+      Array.from(porUnidade).forEach(([codigo, n]) => {
+        totalPorUnidade.set(codigo, (totalPorUnidade.get(codigo) || 0) + n)
+      })
+    }
+    const codigosOrdenados = Array.from(unidadesComAlgum).sort(
+      (a, b) => (totalPorUnidade.get(b) || 0) - (totalPorUnidade.get(a) || 0)
+    )
+    const categoriasComDados = distintas.filter((c) => (contagemPorCategoriaEUnidade.get(c)?.size || 0) > 0)
+
+    if (codigosOrdenados.length >= 2 && categoriasComDados.length >= 2) {
+      const eixoX = codigosOrdenados.map((c) => nomePorCodigo.get(c)!)
+      const series = categoriasComDados.map((categoria) => ({
+        nome: traduzirValorCategoria(categoria),
+        valores: codigosOrdenados.map((codigo) => contagemPorCategoriaEUnidade.get(categoria)?.get(codigo) ?? null),
+      }))
+      // O mesmo cruzamento também é um percurso (de onde para quê), e o selector decide qual das
+      // duas leituras mostra primeiro consoante o número de fitas.
+      const fluxos = categoriasComDados.flatMap((categoria) =>
+        codigosOrdenados
+          .map((codigo) => ({
+            origem: nomePorCodigo.get(codigo)!,
+            destino: traduzirValorCategoria(categoria),
+            valor: contagemPorCategoriaEUnidade.get(categoria)?.get(codigo) ?? 0,
+          }))
+          .filter((f) => f.valor > 0)
+      )
+
+      empurrarGrafico(ctx, {
+        passo_id: `${passo.id}_matriz`,
+        titulo: passo.descricao_humana,
+        eixoX,
+        series,
+        unidade: 'registos',
+        fluxos,
+        composicao: true,
+      })
     }
     return
   }
@@ -961,8 +2091,14 @@ export async function executarPasso(passo: PassoExecutavel, ctx: ContextoExecuca
       passo_id: passo.id,
       nivel,
       unidades: porUnidade.map((u, i) => ({ codigo: u.codigo, nome: u.nome, valor: valores[i] })),
-      metrica: passo.coluna_metrica ? rotularColuna(passo.coluna_metrica) : 'contagem',
+      // "contagem" sozinho é igual em qualquer passo de contagem, mesmo quando cada um conta uma
+      // coisa diferente (ex.: "escolas por província" e "hospitais por província" são dois passos
+      // sem coluna_metrica, ambos ficavam com o MESMO rótulo "contagem", indistinguíveis num
+      // selector com várias séries) — cai para a descrição do próprio passo, que o Planeamento já
+      // escreve a dizer o quê está a contar.
+      metrica: rotuloFiltroCategoria(passo) || (passo.coluna_metrica ? rotularMetricaSemIdTecnico(passo.coluna_metrica, passo.descricao_humana, 'contagem') : passo.descricao_humana || 'contagem'),
       normalizacao,
+      dataset_id: idEscolhido,
     })
 
     if (Array.isArray(resultado)) {
@@ -1019,9 +2155,13 @@ export async function executarPasso(passo: PassoExecutavel, ctx: ContextoExecuca
         }),
         metrica: `${passo.descricao_humana} (classificação)`,
         normalizacao: 'nenhuma',
+        dataset_id: idEscolhido,
       })
     } else {
-      achatarResultado(ctx, passo, resultado, [nomeDataset], porUnidade.length)
+      achatarResultado(
+        ctx, passo, resultado, [nomeDataset], porUnidade.length,
+        unidadePercentagemDoIndicador(tabela, ligacao, lerFiltrosCategoria(passo.filtro_unidade).a)
+      )
     }
     return
   }
@@ -1046,24 +2186,61 @@ export async function executarPasso(passo: PassoExecutavel, ctx: ContextoExecuca
       // análise inteira vazia.
       const usaContagem = !coluna || colunaNumerica(tabela, coluna).length === 0
       const nivel = passo.nivel_geo as NivelAdmin
+
+      // Percentagens não se somam. Verificado ao vivo: uma análise de imunização apresentou uma
+      // "pontuação vacinal combinada" de 305,8%, que era a cobertura de BCG mais a de DPT3 mais a
+      // do sarampo. Cada parcela é real (e passar de 100% é normal aqui, quando a população-alvo
+      // estimada fica abaixo da real), mas a soma não significa nada e lê-se como percentagem.
+      // A média mantém a grandeza interpretável; a soma inventava uma escala que não existe.
+      const ePercentagem =
+        !usaContagem &&
+        unidadePercentagemDoIndicador(tabela, ligacao, lerFiltrosCategoria(passo.filtro_unidade).a) === '%'
+      if (ePercentagem) {
+        ctx.avisos.push(
+          `Passo "${passo.descricao_humana}": a coluna está em percentagem, por isso os valores ` +
+            `foram resumidos pela média por unidade e não somados (somar percentagens de ` +
+            `indicadores diferentes não produz uma percentagem).`
+        )
+      }
+
       const porUnidade = await agregarPorUnidade(
         tabela,
         ligacao,
         coluna || tabela.colunas[0],
-        usaContagem ? 'contagem' : 'soma',
+        usaContagem ? 'contagem' : ePercentagem ? 'media' : 'soma',
         nivel
       )
 
       const normalizacao = passo.normalizacao && passo.normalizacao !== 'nenhuma' ? passo.normalizacao : 'nenhuma'
+      // 'razao_coluna' (PLANO-DATAPROPROMAX.md, Fase 1): taxa/produtividade/cobertura entre duas
+      // colunas QUAISQUER do mesmo dataset (não só população/área de geo_unidades). Soma o
+      // numerador e o denominador RAW por unidade antes de dividir — nunca a média das razões já
+      // calculadas linha a linha, que é a distorção que a regra 11 do Planeamento já avisava
+      // (a média de 10 taxas distritais não é a taxa provincial). Tira o caso comum de
+      // "taxa de X" / "produtividade de Y" do caminho lento de execucao_codigo.
       const valoresNormalizados =
         normalizacao === 'nenhuma'
           ? porUnidade.map((u) => u.valor)
-          : normalizarPorUnidade(
-              porUnidade,
-              mesclarPopulacao(await carregarUnidades(nivel), ctx.enriquecimentoPopulacao.get(nivel)),
-              normalizacao,
-              passo.id
-            )
+          : normalizacao === 'razao_coluna'
+            ? await (async () => {
+                if (!passo.coluna_metrica_2) {
+                  throw new Error(
+                    `Passo ${passo.id}: normalização "razao_coluna" exige coluna_metrica_2 (o denominador).`
+                  )
+                }
+                const porUnidadeDenom = await agregarPorUnidade(tabela, ligacao, passo.coluna_metrica_2, 'soma', nivel)
+                const denomPorCodigo = new Map(porUnidadeDenom.map((u) => [u.codigo, u.valor]))
+                return porUnidade.map((u) => {
+                  const denom = denomPorCodigo.get(u.codigo)
+                  return denom ? u.valor / denom : 0
+                })
+              })()
+            : normalizarPorUnidade(
+                porUnidade,
+                mesclarPopulacao(await carregarUnidades(nivel), ctx.enriquecimentoPopulacao.get(nivel)),
+                normalizacao,
+                passo.id
+              )
 
       serieGeoRef.nomes = porUnidade.map((u) => u.nome)
 
@@ -1072,8 +2249,11 @@ export async function executarPasso(passo: PassoExecutavel, ctx: ContextoExecuca
           passo_id: passo.id,
           nivel,
           unidades: porUnidade.map((u, i) => ({ codigo: u.codigo, nome: u.nome, valor: valoresNormalizados[i] })),
-          metrica: coluna ? rotularColuna(coluna) : 'contagem de registos',
+          // Mesma razão que acima: "contagem de registos" sozinho não distingue entre passos
+          // diferentes que também contam sem coluna_metrica — usa a descrição do passo nesse caso.
+          metrica: rotuloFiltroCategoria(passo) || (coluna ? rotularMetricaSemIdTecnico(coluna, passo.descricao_humana, 'contagem de registos') : passo.descricao_humana || 'contagem de registos'),
           normalizacao,
+          dataset_id: idEscolhido,
         })
       }
       return valoresNormalizados
@@ -1085,7 +2265,7 @@ export async function executarPasso(passo: PassoExecutavel, ctx: ContextoExecuca
   if (passo.metodo === 'perfil_coluna') {
     const coluna = passo.coluna_metrica || tabela.colunas[0]
     const r: any = invocarMetodo(passo.metodo, [coluna, colunaValores(tabela, coluna)])
-    achatarResultado(ctx, passo, r, [nomeDataset], tabela.n_linhas)
+    achatarResultado(ctx, passo, r, [nomeDataset], tabela.n_linhas, unidadePercentagemDoIndicador(tabela, ligacao, lerFiltrosCategoria(passo.filtro_unidade).a))
 
     if (typeof r?.completude_pct === 'number' && !ctx.qualidade.some((q) => q.coluna === coluna)) {
       ctx.qualidade.push({
@@ -1106,16 +2286,17 @@ export async function executarPasso(passo: PassoExecutavel, ctx: ContextoExecuca
         ? r.n_distintos <= r.n_preenchidos * 0.5
         : true
     if (Array.isArray(r?.top_categorias) && r.top_categorias.length >= 2 && ehRealmenteCategorica) {
-      // Pizza só até 6 fatias: acima disso a legenda deixa de caber e fica ilegível. Mais do que
-      // isso, NENHUMA categoria real fica de fora escondida num "Outros" — passa a barra
-      // ordenada, que escala bem a muitas categorias e mostra tudo com o próprio nome.
-      const tipo = r.top_categorias.length <= 6 ? 'pizza' : 'barra'
-      ctx.graficos.push({
+      // Contagens por categoria de uma mesma coluna: aqui o total existe mesmo, e por isso
+      // `composicao` é declarada. A forma sai daí: fatias quando são poucas, blocos por área
+      // quando são muitas de mais para uma pizza, barra ordenada quando são muitas demais para
+      // qualquer das duas. Nenhuma categoria real fica escondida num "Outros".
+      empurrarGrafico(ctx, {
         passo_id: passo.id,
-        tipo,
         titulo: passo.descricao_humana,
         eixoX: r.top_categorias.map((c: any) => c.valor),
         series: [{ nome: coluna, valores: r.top_categorias.map((c: any) => c.n) }],
+        unidade: 'registos',
+        composicao: true,
       })
     }
     return
@@ -1141,9 +2322,10 @@ export async function executarPasso(passo: PassoExecutavel, ctx: ContextoExecuca
     // dois grupos: o número sozinho não mostra a forma da diferença.
     const mA = a.reduce((s, v) => s + v, 0) / a.length
     const mB = b.reduce((s, v) => s + v, 0) / b.length
-    ctx.graficos.push({
+    // Sem `composicao`: são duas médias independentes, não duas partes de um total. Uma pizza
+    // aqui inventaria um bolo que ninguém calculou.
+    empurrarGrafico(ctx, {
       passo_id: passo.id,
-      tipo: 'barra',
       titulo: passo.descricao_humana,
       eixoX: [distintos[0], distintos[1]],
       series: [{ nome: passo.coluna_metrica || 'valor', valores: [mA, mB] }],
@@ -1153,8 +2335,58 @@ export async function executarPasso(passo: PassoExecutavel, ctx: ContextoExecuca
   }
 
   if (METODOS_BIVARIADOS.includes(passo.metodo) || passo.metodo === 'detectar_simpson') {
-    const x = await serieDe(passo.coluna_metrica)
-    const y = await serieDe(passo.coluna_metrica_2)
+    let x = await serieDe(passo.coluna_metrica)
+    let y = await serieDe(passo.coluna_metrica_2)
+
+    // Séries que não alinham é o sintoma típico de o passo estar a pedir duas métricas que vivem
+    // em datasets diferentes. Antes de desistir, tenta cruzá-las pela unidade administrativa
+    // comum: é quase sempre o que a pergunta queria dizer, e a alternativa era perder o passo
+    // central de uma análise de cruzamento.
+    if (x.length < 3 || y.length < 3 || x.length !== y.length) {
+      const cruzado = await alinharMetricasDeDatasetsDiferentes(passo, ctx)
+      if (cruzado) {
+        x = cruzado.x
+        y = cruzado.y
+        // Sem isto a narrativa consegue dizer o valor extremo mas não a que província pertence.
+        serieGeoRef.nomes = cruzado.nomes
+      }
+    }
+
+    // Pseudo-replicação: sem nivel_geo, as séries vêm linha a linha. Quando as duas colunas são
+    // atributos da unidade repetidos em cada linha, isso multiplica artificialmente a amostra e
+    // produz uma significância que a amostra real não sustenta. Colapsar para um valor por unidade
+    // não perde informação nenhuma (os valores repetidos são idênticos por definição) e devolve o
+    // n verdadeiro.
+    if (!passo.nivel_geo && ligacao && passo.coluna_metrica && passo.coluna_metrica_2) {
+      const porUnidadeX = atributoPorUnidade(tabela, ligacao, passo.coluna_metrica)
+      const porUnidadeY = atributoPorUnidade(tabela, ligacao, passo.coluna_metrica_2)
+      if (porUnidadeX && porUnidadeY) {
+        const codigos = Array.from(porUnidadeX.keys()).filter((c) => porUnidadeY.has(c))
+        if (codigos.length >= 3 && codigos.length < x.length) {
+          ctx.avisos.push(
+            `Passo "${passo.descricao_humana}": "${passo.coluna_metrica}" e "${passo.coluna_metrica_2}" ` +
+              `são valores por unidade administrativa repetidos em cada linha. O teste foi feito sobre ` +
+              `as ${codigos.length} unidades reais, e não sobre as ${x.length} linhas, que dariam uma ` +
+              `significância inflacionada pela repetição.`
+          )
+          x = codigos.map((c) => porUnidadeX.get(c)!)
+          y = codigos.map((c) => porUnidadeY.get(c)!)
+          serieGeoRef.nomes = null
+        }
+      } else if (porUnidadeX || porUnidadeY) {
+        // Só uma das colunas é atributo da unidade. Colapsar obrigaria a resumir a outra (média,
+        // soma) e mudaria a pergunta, por isso o cálculo fica como está: o que não pode ficar é o
+        // leitor sem saber que o p-valor conta cada unidade tantas vezes quantas as suas linhas.
+        const repetida = porUnidadeX ? passo.coluna_metrica : passo.coluna_metrica_2
+        ctx.avisos.push(
+          `Passo "${passo.descricao_humana}": "${repetida}" é um valor por unidade administrativa ` +
+            `repetido em cada linha, por isso a significância deste teste está inflacionada: conta ` +
+            `${x.length} observações quando as independentes são apenas ` +
+            `${(porUnidadeX || porUnidadeY)!.size}.`
+        )
+      }
+    }
+
     if (x.length < 3 || y.length < 3 || x.length !== y.length) {
       throw new Error(
         `Passo ${passo.id}: ${passo.metodo} exige duas séries numéricas do mesmo tamanho ` +
@@ -1167,7 +2399,7 @@ export async function executarPasso(passo: PassoExecutavel, ctx: ContextoExecuca
       args.push(colunaValores(tabela, passo.coluna_grupo).slice(0, x.length))
     }
     const r = invocarMetodo(passo.metodo, args)
-    achatarResultado(ctx, passo, r, [nomeDataset], x.length)
+    achatarResultado(ctx, passo, r, [nomeDataset], x.length, unidadePercentagemDoIndicador(tabela, ligacao, lerFiltrosCategoria(passo.filtro_unidade).a))
 
     // Pearson/Spearman devolvem só r e p: sem os pontos brutos não se vê a FORMA da relação
     // (linear, curva, agrupada), que é exactamente o que um coeficiente sozinho pode esconder.
@@ -1225,7 +2457,7 @@ export async function executarPasso(passo: PassoExecutavel, ctx: ContextoExecuca
         tipo: 'linha',
         titulo: passo.descricao_humana,
         eixoX: tempos,
-        series: [{ nome: rotularColuna(passo.coluna_metrica), valores: resultado as (number | null)[] }],
+        series: [{ nome: rotularMetricaSemIdTecnico(passo.coluna_metrica, passo.descricao_humana, 'valor'), valores: resultado as (number | null)[] }],
         categoria: 'temporal',
       })
       return
@@ -1254,7 +2486,7 @@ export async function executarPasso(passo: PassoExecutavel, ctx: ContextoExecuca
           titulo: passo.descricao_humana,
           eixoX: [...tempos, proximoRotulo],
           series: [
-            { nome: rotularColuna(passo.coluna_metrica), valores: [...valoresOrdenados, null] },
+            { nome: rotularMetricaSemIdTecnico(passo.coluna_metrica, passo.descricao_humana, 'valor'), valores: [...valoresOrdenados, null] },
             {
               nome: 'Projecção (declive de Sen, não garantia)',
               valores: [
@@ -1272,13 +2504,13 @@ export async function executarPasso(passo: PassoExecutavel, ctx: ContextoExecuca
           tipo: 'linha',
           titulo: passo.descricao_humana,
           eixoX: tempos,
-          series: [{ nome: rotularColuna(passo.coluna_metrica), valores: valoresOrdenados }],
+          series: [{ nome: rotularMetricaSemIdTecnico(passo.coluna_metrica, passo.descricao_humana, 'valor'), valores: valoresOrdenados }],
           categoria: 'temporal',
         })
       }
     }
 
-    achatarResultado(ctx, passo, resultado, [nomeDataset], valoresOrdenados.length)
+    achatarResultado(ctx, passo, resultado, [nomeDataset], valoresOrdenados.length, unidadePercentagemDoIndicador(tabela, ligacao, lerFiltrosCategoria(passo.filtro_unidade).a))
     return
   }
 
@@ -1299,9 +2531,11 @@ export async function executarPasso(passo: PassoExecutavel, ctx: ContextoExecuca
     // sem ela a curva sozinha não diz se a desigualdade é muita ou pouca.
     const pontos = resultado as { pop_acum: number; valor_acum: number }[]
     if (pontos.length > 0) {
-      ctx.graficos.push({
+      // Forma fixa: uma curva de Lorenz é sempre uma curva, e o eixo de percentagens acumuladas
+      // não se lê como categorias.
+      empurrarGrafico(ctx, {
         passo_id: passo.id,
-        tipo: 'linha',
+        forma: 'linha',
         titulo: passo.descricao_humana,
         eixoX: pontos.map((p) => `${p.pop_acum}%`),
         series: [{ nome: 'Curva de Lorenz', valores: pontos.map((p) => p.valor_acum) }],
@@ -1339,14 +2573,31 @@ export async function executarPasso(passo: PassoExecutavel, ctx: ContextoExecuca
         // Destaque geográfico: só faz sentido quando o dataset tem geometria própria por linha
         // (não agregada a unidades administrativas) — é isso que permite desenhar SÓ a unidade
         // vencedora no mapa, isolada, em vez do coroplético do país inteiro.
+        //
+        // Registava-se sempre o MÁXIMO, nunca o mínimo — uma pergunta que pede explicitamente "o
+        // maior e o mais pequeno" (ex.: "qual o parque maior e qual o mais pequeno") ficava com um
+        // só mapa de destaque, mesmo o texto já respondendo aos dois pelo nome. Agora regista os
+        // dois quando são linhas diferentes, com título distinto para não se confundirem no ecrã.
+        const metricaDestaque =
+          rotuloFiltroCategoria(passo) || (passo.coluna_metrica ? rotularMetricaSemIdTecnico(passo.coluna_metrica, passo.descricao_humana, 'valor') : 'valor')
         if (tabela.geometrias?.[linhaMax] && nomes[linhaMax]) {
           ctx.destaques.push({
-            passo_id: passo.id,
-            titulo: passo.descricao_humana,
+            passo_id: `${passo.id}_max`,
+            titulo: `${passo.descricao_humana} (maior)`,
             nome: nomes[linhaMax],
             valor: pares[iMax].v,
-            metrica: passo.coluna_metrica ? rotularColuna(passo.coluna_metrica) : 'valor',
+            metrica: metricaDestaque,
             geometry: tabela.geometrias[linhaMax],
+          })
+        }
+        if (linhaMin !== linhaMax && tabela.geometrias?.[linhaMin] && nomes[linhaMin]) {
+          ctx.destaques.push({
+            passo_id: `${passo.id}_min`,
+            titulo: `${passo.descricao_humana} (menor)`,
+            nome: nomes[linhaMin],
+            valor: pares[iMin].v,
+            metrica: metricaDestaque,
+            geometry: tabela.geometrias[linhaMin],
           })
         }
       }
@@ -1407,7 +2658,19 @@ export async function executarPasso(passo: PassoExecutavel, ctx: ContextoExecuca
   // etiqueta deixa o estágio de narrativa sem forma de saber a escala, e ele escreve "densidade"
   // como se fosse por km². Foi exactamente isto que o revisor adversarial apanhou por análise
   // dimensional: uma mediana de 15,6 "por km²" quando a densidade nacional real ronda 0,01/km².
-  achatarResultado(ctx, passo, resultado, [nomeDataset], valores.length, unidadeNormalizacao(passo.normalizacao))
+  // Quando não há normalização, `unidadeNormalizacao` devolve vazio e o número ficava sem unidade
+  // nenhuma. É este o caminho que produz os máximos e mínimos por província que a narrativa cita,
+  // e era por aqui que "74,8%" chegava ao ecrã como "74,8". A unidade declarada pelo ficheiro entra
+  // só quando a normalização não impõe a sua: uma densidade por km² não é uma percentagem.
+  achatarResultado(
+    ctx,
+    passo,
+    resultado,
+    [nomeDataset],
+    valores.length,
+    unidadeNormalizacao(passo.normalizacao) ||
+      unidadePercentagemDoIndicador(tabela, ligacao, lerFiltrosCategoria(passo.filtro_unidade).a)
+  )
 }
 
 const UNIDADE_POR_NORMALIZACAO: Record<string, string> = {
@@ -1420,4 +2683,409 @@ const UNIDADE_POR_NORMALIZACAO: Record<string, string> = {
 function unidadeNormalizacao(normalizacao: string | undefined): string {
   if (!normalizacao || normalizacao === 'nenhuma') return ''
   return UNIDADE_POR_NORMALIZACAO[normalizacao] || ''
+}
+
+const ROTULO_NIVEL_DESAMBIGUACAO: Record<string, string> = {
+  admin1: 'província',
+  admin2: 'distrito',
+  admin3: 'posto administrativo',
+}
+
+/**
+ * Duas séries com o MESMO rótulo (ex.: "AREA" e "AREA", duas colunas de nome igual em datasets
+ * diferentes, ou o mesmo coluna_metrica reaproveitado por dois passos com filtros diferentes que
+ * não deixam marca no rótulo) ficam indistinguíveis no selector do mapa/gráfico — o utilizador
+ * não tem como saber qual é qual. Chamado uma vez, depois de todos os passos terem corrido: para
+ * cada grupo de séries com o mesmo texto, acrescenta o que as distingue (o nível geográfico,
+ * quando difere; senão a descrição do passo que a produziu; em último caso, uma numeração).
+ */
+export function desambiguarRotulosSeries(ctx: ContextoExecucao, passos: { id: string; descricao_humana: string }[]): void {
+  if (ctx.series.length < 2) return
+  const descricaoPorPasso = new Map(passos.map((p) => [p.id, p.descricao_humana]))
+
+  const grupos = new Map<string, SerieGeografica[]>()
+  for (const s of ctx.series) {
+    const chave = s.metrica.trim().toLowerCase()
+    const grupo = grupos.get(chave) || []
+    grupo.push(s)
+    grupos.set(chave, grupo)
+  }
+
+  for (const grupo of Array.from(grupos.values())) {
+    if (grupo.length < 2) continue
+    const niveisDistintos = new Set(grupo.map((s) => s.nivel)).size > 1
+    grupo.forEach((s, i) => {
+      if (niveisDistintos) {
+        s.metrica = `${s.metrica} (${ROTULO_NIVEL_DESAMBIGUACAO[s.nivel] || s.nivel})`
+        return
+      }
+      // A descrição do passo é usada como pai da UI compõe frases com serie.metrica (ex.: título
+      // "{metrica} por {nível}"), colar a frase inteira aqui produzia lixo tipo "OBJECTID 1 —
+      // Conta o número absoluto de reservas florestais por província. por província" (frase
+      // duplicada, prefixo técnico). Fica só um trecho curto, sem a repetição do nível geográfico
+      // que a composição de fora já vai acrescentar.
+      const descricao = descricaoPorPasso.get(s.passo_id)
+      const descricaoCurta = descricao
+        ? descricao
+            .replace(/\bpor\s+(prov[íi]ncia|distrito|posto administrativo)s?\.?\s*$/i, '')
+            .trim()
+            .replace(/[.:;]+$/, '')
+            .slice(0, 42)
+        : ''
+      s.metrica = descricaoCurta ? `${s.metrica} (${descricaoCurta}${descricaoCurta.length >= 42 ? '…' : ''})` : `${s.metrica} (${i + 1})`
+    })
+  }
+}
+
+/**
+ * Gráfico de garantia (PLANO-DATAPROPROMAX.md): a instrução no prompt de planeamento para incluir
+ * pelo menos 3 gráficos já existia há duas sessões e continuou a falhar em testes reais — o
+ * modelo nem sempre a segue. Isto é a rede de segurança a nível de código: se a execução terminou
+ * sem NENHUM gráfico mas produziu pelo menos uma série geográfica real, constrói um gráfico de
+ * barras a partir dela (as maiores unidades por valor) em vez de deixar o dashboard sem nenhum
+ * gráfico. Não é um cálculo novo — é a mesma série que já alimenta o mapa, só re-apresentada como
+ * barras; por isso continua a respeitar R1 (todo o número já vem de um cálculo real).
+ */
+/**
+ * Perfil comparado de poucas unidades nos vários indicadores que a análise calculou.
+ *
+ * Quando uma análise cruza datasets, o motor acaba com várias séries geográficas sobre as MESMAS
+ * unidades: cobertura vacinal por província, prevalência de atraso no crescimento por província,
+ * acesso a água por província. Até aqui cada uma virava o seu gráfico de barras, e a pergunta que
+ * o leitor tem — "então esta província está bem ou mal, no conjunto?" — ficava para ele responder
+ * saltando de painel em painel.
+ *
+ * A teia responde a isso de uma vez. Só que uma teia mente quando os eixos vivem em ordens de
+ * grandeza diferentes: população em milhões ao lado de hospitais em dezenas encosta um eixo ao
+ * bordo e esmaga o resto. Por isso a matriz é construída e depois submetida a `escolherForma`: se
+ * a resposta não for `radar`, não se publica nada. É o próprio critério de comparabilidade a
+ * decidir, medido nos números reais, e não uma suposição sobre as unidades.
+ *
+ * As unidades desenhadas são três, e a escolha é dita no título: a do topo, a da mediana e a da
+ * base no indicador principal (o primeiro que o plano calculou, que é o da própria pergunta).
+ * Desenhar as onze tornaria a teia num novelo; escolher três "interessantes" seria editorializar.
+ */
+function gerarRadarDePerfil(ctx: ContextoExecucao): void {
+  const porNivel = new Map<string, SerieGeografica[]>()
+  for (const serie of ctx.series) {
+    if (!serie.unidades.length || serie.modo === 'categorico') continue
+    const grupo = porNivel.get(serie.nivel) || []
+    grupo.push(serie)
+    porNivel.set(serie.nivel, grupo)
+  }
+
+  for (const [nivel, series] of Array.from(porNivel)) {
+    if (series.length < 3) continue
+
+    // Só unidades presentes em TODAS as séries: uma teia com um eixo em falta desenha um vértice
+    // colapsado no centro, que se lê como "zero" quando na verdade é "não medido".
+    const codigosComuns = series
+      .map((s) => new Set(s.unidades.map((u) => u.codigo)))
+      .reduce((a, b) => new Set(Array.from(a).filter((c) => b.has(c))))
+    if (codigosComuns.size < 3) continue
+
+    const principal = series[0]
+    const ordenadas = principal.unidades
+      .filter((u) => codigosComuns.has(u.codigo))
+      .sort((a, b) => b.valor - a.valor)
+    if (ordenadas.length < 3) continue
+
+    const escolhidas = [ordenadas[0], ordenadas[Math.floor(ordenadas.length / 2)], ordenadas[ordenadas.length - 1]]
+    const codigosEscolhidos = new Set(escolhidas.map((u) => u.codigo))
+    if (codigosEscolhidos.size < 3) continue
+
+    const eixoX = series.map((s) => s.metrica)
+    const teias = escolhidas.map((u) => ({
+      nome: u.nome,
+      valores: series.map((s) => s.unidades.find((x) => x.codigo === u.codigo)?.valor ?? null),
+    }))
+
+    // O veredicto é do módulo da forma: se estes números não formam uma teia legível, não há
+    // gráfico nenhum. As barras por indicador já cobrem o caso.
+    if (escolherForma({ eixoX, series: teias }).tipo !== 'radar') continue
+
+    const rotuloNivel = nivel === 'admin1' ? 'províncias' : nivel === 'admin2' ? 'distritos' : 'postos'
+    empurrarGrafico(ctx, {
+      passo_id: `perfil_comparado_${nivel}`,
+      forma: 'radar',
+      titulo: `Perfil comparado: ${rotuloNivel} no topo, no meio e na base de ${principal.metrica}`,
+      eixoX,
+      series: teias,
+      categoria: 'comparativo',
+    })
+  }
+}
+
+/**
+ * A variação de um período para o seguinte, quando ela muda de sinal ao longo da série.
+ *
+ * Uma linha temporal mostra o nível em cada ano; não mostra quanto cada ano deu ou tirou. Quando
+ * uns anos sobem e outros descem, é isso que explica onde é que a mudança total se fez, e a
+ * cascata é a forma que o mostra sem obrigar a fazer subtracções de cabeça olhando para a linha.
+ *
+ * Aritmética exacta sobre a mesma série já desenhada: cada barra é a diferença entre dois pontos
+ * consecutivos, e a última é a soma dessas diferenças, que é por construção a variação total do
+ * primeiro para o último ano. Nada aqui é estimado.
+ */
+function gerarCascataDeVariacao(ctx: ContextoExecucao): void {
+  // Copia: o ciclo acrescenta a ctx.graficos enquanto percorre.
+  for (const g of [...ctx.graficos]) {
+    if (g.categoria !== 'temporal' || g.tipo !== 'linha') continue
+    // Uma segunda série é a projecção de Sen: a variação observada não se mistura com o que ainda
+    // não aconteceu.
+    if (g.series.length !== 1) continue
+
+    const pontos = g.eixoX
+      .map((rotulo, i) => ({ rotulo, valor: g.series[0].valores[i] }))
+      .filter((p): p is { rotulo: string; valor: number } => typeof p.valor === 'number' && Number.isFinite(p.valor))
+    if (pontos.length < 4) continue
+
+    const eixoX: string[] = []
+    const deltas: number[] = []
+    for (let i = 1; i < pontos.length; i++) {
+      eixoX.push(`${pontos[i - 1].rotulo}→${pontos[i].rotulo}`)
+      deltas.push(pontos[i].valor - pontos[i - 1].valor)
+    }
+
+    // Sem mudança de sinal, a cascata mostraria a mesma escada que a linha já mostrava.
+    if (!(deltas.some((d) => d > 0) && deltas.some((d) => d < 0))) continue
+
+    const series = [{ nome: 'Variação no período', valores: deltas as (number | null)[] }]
+    if (escolherForma({ eixoX, series, unidade: g.unidade, composicao: true }).tipo !== 'cascata') continue
+
+    empurrarGrafico(ctx, {
+      passo_id: `${g.passo_id}_variacao`,
+      forma: 'cascata',
+      titulo: `De onde veio a variação: ${g.titulo}`,
+      eixoX,
+      series,
+      unidade: g.unidade,
+      categoria: 'temporal',
+    })
+  }
+}
+
+/**
+ * A forma da distribuição de cada indicador entre as unidades.
+ *
+ * Máximo, mínimo e mediana já vão para os KPIs como três números soltos. O que eles não dizem é
+ * onde vive a maioria, quão espalhada está, e quem ficou claramente de fora. Um país com metade
+ * dos distritos entre 38 e 120 escolas e um a 360 conta uma história diferente de um em que a
+ * mesma mediana vem de valores todos encostados — e os três números são iguais nos dois casos.
+ *
+ * Os valores extremos são calculados pela mesma regra de Tukey que o resto da análise usa (fora de
+ * Q1 - 1,5·IQR a Q3 + 1,5·IQR), e cada ponto guarda o nome da unidade: um extremo sem nome é uma
+ * curiosidade, com nome é uma pista.
+ */
+function gerarCaixasDeDistribuicao(ctx: ContextoExecucao): void {
+  const MIN_UNIDADES = 5
+
+  const porNivel = new Map<string, SerieGeografica[]>()
+  for (const serie of ctx.series) {
+    if (serie.unidades.length < MIN_UNIDADES || serie.modo === 'categorico') continue
+    const grupo = porNivel.get(serie.nivel) || []
+    grupo.push(serie)
+    porNivel.set(serie.nivel, grupo)
+  }
+
+  for (const [nivel, series] of Array.from(porNivel)) {
+    const distribuicoes = series.map((serie) => {
+      const ordenados = serie.unidades.map((u) => u.valor).filter((v) => Number.isFinite(v)).sort((a, b) => a - b)
+      const quantil = (q: number) => ordenados[Math.min(ordenados.length - 1, Math.floor(ordenados.length * q))]
+      const q1 = quantil(0.25)
+      const q3 = quantil(0.75)
+      const iqr = q3 - q1
+      const abaixo = q1 - 1.5 * iqr
+      const acima = q3 + 1.5 * iqr
+      const foraDoPadrao = serie.unidades
+        .filter((u) => u.valor < abaixo || u.valor > acima)
+        .sort((a, b) => Math.abs(b.valor - quantil(0.5)) - Math.abs(a.valor - quantil(0.5)))
+        .slice(0, 8)
+        .map((u) => ({ nome: u.nome, valor: u.valor }))
+      // Os bigodes param no último valor DENTRO do intervalo aceite: esticá-los até ao extremo
+      // faria o ponto fora do padrão parecer o fim normal da distribuição.
+      const dentro = ordenados.filter((v) => v >= abaixo && v <= acima)
+      return {
+        nome: serie.metrica,
+        min: dentro.length ? dentro[0] : ordenados[0],
+        q1,
+        mediana: quantil(0.5),
+        q3,
+        max: dentro.length ? dentro[dentro.length - 1] : ordenados[ordenados.length - 1],
+        outliers: foraDoPadrao,
+        n: ordenados.length,
+      }
+    })
+
+    // Várias caixas partilham um eixo horizontal: se as escalas não forem comparáveis, uma caixa
+    // fica achatada contra a margem e as outras num traço. Nesse caso desenha-se só a primeira.
+    const magnitudes = distribuicoes.map((d) => Math.abs(d.max)).filter((m) => m > 0)
+    const comparaveis =
+      magnitudes.length < 2 || Math.max(...magnitudes) / Math.min(...magnitudes) <= 12
+    const aDesenhar = comparaveis ? distribuicoes : distribuicoes.slice(0, 1)
+
+    empurrarGrafico(ctx, {
+      passo_id: `distribuicao_${nivel}`,
+      forma: 'caixa',
+      titulo:
+        aDesenhar.length === 1
+          ? `Como se distribui: ${aDesenhar[0].nome}`
+          : 'Como se distribuem os indicadores entre as unidades',
+      eixoX: [],
+      series: [],
+      distribuicoes: aDesenhar,
+      categoria: 'comparativo',
+    })
+  }
+}
+
+/**
+ * Três medidas de cada unidade num só desenho.
+ *
+ * É o par do radar, para o caso que o radar recusa. Quando os indicadores vivem em ordens de
+ * grandeza diferentes (população em milhões, escolas em centenas, hospitais em dezenas), uma teia
+ * mente; mas duas dessas medidas nos eixos e a terceira no tamanho da bolha lêem-se sem problema
+ * nenhum, porque cada uma tem a sua própria escala.
+ */
+function gerarBolhasDeTresMedidas(ctx: ContextoExecucao): void {
+  const porNivel = new Map<string, SerieGeografica[]>()
+  for (const serie of ctx.series) {
+    if (!serie.unidades.length || serie.modo === 'categorico') continue
+    const grupo = porNivel.get(serie.nivel) || []
+    grupo.push(serie)
+    porNivel.set(serie.nivel, grupo)
+  }
+
+  for (const [nivel, series] of Array.from(porNivel)) {
+    if (series.length < 3) continue
+
+    const codigosComuns = series
+      .slice(0, 3)
+      .map((s) => new Set(s.unidades.map((u) => u.codigo)))
+      .reduce((a, b) => new Set(Array.from(a).filter((c) => b.has(c))))
+    if (codigosComuns.size < 4) continue
+
+    const tres = series.slice(0, 3)
+    const eixoX = Array.from(codigosComuns).map(
+      (codigo) => tres[0].unidades.find((u) => u.codigo === codigo)!.nome
+    )
+    const valores = tres.map((s) => ({
+      nome: s.metrica,
+      valores: Array.from(codigosComuns).map((codigo) => s.unidades.find((u) => u.codigo === codigo)?.valor ?? null),
+    }))
+
+    // A bolha entra onde o radar sai. E a pergunta certa é se o radar JÁ FOI DESENHADO para este
+    // nível, não se estes números formam um radar: as duas formas orientam a matriz ao contrário
+    // uma da outra (o radar põe os indicadores nos eixos, a bolha põe as unidades nos pontos), e
+    // medir a comparabilidade na orientação errada respondia sempre que sim.
+    if (ctx.graficos.some((g) => g.passo_id === `perfil_comparado_${nivel}`)) continue
+    // A terceira medida vira raio, e um raio negativo não existe.
+    if (valores[2].valores.some((v) => typeof v === 'number' && v < 0)) continue
+
+    empurrarGrafico(ctx, {
+      passo_id: `tres_medidas_${nivel}`,
+      forma: 'bolha',
+      titulo: `${valores[0].nome} e ${valores[1].nome}, com ${valores[2].nome} no tamanho`,
+      eixoX,
+      series: valores,
+      bolhas: true,
+      categoria: 'comparativo',
+    })
+  }
+}
+
+/**
+ * De quantos registos é que a análise realmente partiu.
+ *
+ * Três etapas encaixadas, cada uma um subconjunto da anterior: o que o ficheiro tem, o que foi
+ * possível situar numa unidade administrativa, e o que chegou a entrar num cálculo. É a pergunta
+ * "isto foi calculado sobre quê?", que hoje só se responde lendo a auditoria número a número.
+ *
+ * Só se desenha quando há perda real entre as etapas: sem perda, o funil seria três faixas do
+ * mesmo tamanho a dizer o que um número já dizia.
+ */
+function gerarFunilDeCobertura(ctx: ContextoExecucao): void {
+  const PERDA_MINIMA = 0.02
+
+  for (const [datasetId, tabela] of Array.from(ctx.tabelas)) {
+    const ligacao = ctx.ligacoes.get(datasetId)
+    if (!ligacao || !tabela?.n_linhas) continue
+
+    const noFicheiro = tabela.n_linhas
+    const comUnidade = ligacao.ligacoes.size
+    const usadas = Math.max(
+      0,
+      ...Object.values(ctx.calcs)
+        .filter((c) => (c.proveniencia?.datasets || []).includes(tabela.titulo))
+        .map((c) => c.proveniencia?.linhas_usadas || 0)
+    )
+    if (!usadas) continue
+
+    const etapas = [noFicheiro, comUnidade, Math.min(usadas, comUnidade)]
+    if (etapas.some((v) => !Number.isFinite(v) || v <= 0)) continue
+    // Encaixe obrigatório: uma etapa maior do que a anterior não é um subconjunto dela.
+    if (etapas[1] > etapas[0] || etapas[2] > etapas[1]) continue
+    if ((etapas[0] - etapas[2]) / etapas[0] < PERDA_MINIMA) continue
+
+    empurrarGrafico(ctx, {
+      passo_id: `cobertura_${datasetId}`,
+      forma: 'funil',
+      titulo: `De que dados partiu esta análise: ${tabela.titulo}`,
+      eixoX: ['Registos no ficheiro', 'Situados numa unidade administrativa', 'Usados no cálculo'],
+      series: [{ nome: 'Registos', valores: etapas }],
+      unidade: 'registos',
+      funil: true,
+      composicao: true,
+    })
+  }
+}
+
+export function gerarGraficosDeGarantia(ctx: ContextoExecucao): void {
+  gerarRadarDePerfil(ctx)
+  gerarBolhasDeTresMedidas(ctx)
+  gerarCaixasDeDistribuicao(ctx)
+  gerarCascataDeVariacao(ctx)
+  gerarFunilDeCobertura(ctx)
+
+  if (ctx.series.length === 0) return
+
+  // Antes, isto parava ao encontrar QUALQUER gráfico já existente e só cobria ctx.series[0] — com
+  // várias séries (ex.: uma por cultura filtrada via "cat:coluna=valor"), só a primeira alguma vez
+  // ganhava gráfico de garantia, mesmo quando nenhuma das outras tinha gráfico próprio nenhum.
+  // Agora cobre cada série que ainda não tem um gráfico correspondente, não só a primeira.
+  //
+  // Tentei aqui detectar automaticamente quando duas séries são "a mesma coisa a granularidades
+  // diferentes" (para mostrar só a mais fina) por semelhança do texto de "metrica" — mas não há
+  // forma fiável de distinguir isso de duas grandezas genuinamente diferentes sobre a mesma
+  // categoria (ex.: "Produção de milho" em toneladas vs "Milho" — uma coluna larga sem tipo de
+  // grandeza no nome — em hectares): um texto ambíguo pode ser a mesma coisa ou pode não ser, e
+  // esconder dados reais por engano é pior do que um gráfico a mais. Por isso cada série continua
+  // a gerar o seu próprio gráfico; reduzir duplicados genuínos é uma decisão do Planeamento (não
+  // pedir aos dois datasets a mesma grandeza), não algo para adivinhar aqui a partir de texto.
+  const idsComGrafico = new Set(
+    ctx.graficos.map((g) => g.passo_id.replace(/_grafico_garantia$/, ''))
+  )
+
+  for (const serie of ctx.series) {
+    if (idsComGrafico.has(serie.passo_id) || !serie.unidades.length) continue
+
+    const ordenadas = [...serie.unidades].sort((a, b) => b.valor - a.valor).slice(0, 15)
+    const unidadeTexto = UNIDADE_POR_NORMALIZACAO[serie.normalizacao] || ''
+
+    // `composicao` exige três coisas ao mesmo tempo, e faltando uma não há fatias.
+    //   1. Sem normalização: por habitante ou por km², somar as unidades não dá total nenhum.
+    //   2. Sem valores negativos.
+    //   3. A lista COMPLETA. Este gráfico corta nas 15 maiores, e uma pizza das 15 maiores de 128
+    //      distritos afirma que aquelas são o todo, quando são uma amostra do topo.
+    const listaCompleta = ordenadas.length === serie.unidades.length
+    empurrarGrafico(ctx, {
+      passo_id: `${serie.passo_id}_grafico_garantia`,
+      titulo: `${serie.metrica}${unidadeTexto ? ` (${unidadeTexto})` : ''}${listaCompleta ? '' : ': maiores unidades'}`,
+      eixoX: ordenadas.map((u) => u.nome),
+      series: [{ nome: serie.metrica, valores: ordenadas.map((u) => u.valor) }],
+      unidade: unidadeTexto,
+      composicao: listaCompleta && serie.normalizacao === 'nenhuma' && ordenadas.every((u) => u.valor >= 0),
+      categoria: 'comparativo',
+    })
+  }
 }

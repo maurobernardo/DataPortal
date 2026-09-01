@@ -68,7 +68,9 @@ Se não encontrares nada fiável, diz isso explicitamente e não inventes valore
 Se uma pesquisa ou leitura de página devolver erro de limite ou de capacidade do servidor, tenta
 no máximo mais uma vez essa mesma chamada. Não esperes (sleep) nem repitas em ciclo à espera que o
 limite desapareça: reporta o que já confirmaste até esse ponto e conclui. Um relatório honesto
-sobre o que não foi possível verificar vale mais do que minutos de novas tentativas.`
+sobre o que não foi possível verificar vale mais do que minutos de novas tentativas.
+
+Nunca uses o travessão "—" no resumo final: usa ":" ou ";".`
 
 const SCHEMA_EXTRACCAO = {
   type: 'object',
@@ -245,6 +247,26 @@ export async function tentarEnriquecerExterno(
   // quanto um número sem fonte nenhuma.
   if (!/^https?:\/\//i.test(extraccao.fonte_url)) {
     return { resultado: null, custoUsd: custo, tentado }
+  }
+
+  // PLANO-MOTOR-FINAL.md, secção 4: confirma que o URL responde de verdade antes de o aceitar
+  // como fonte citável — ferramentas de pesquisa por IA raramente, mas por vezes, devolvem um URL
+  // que não existe ou já não responde. Citar uma fonte morta é pior do que não citar nenhuma.
+  // Falha aberta em caso de timeout/erro de rede: não é o mesmo que o URL estar confirmadamente
+  // morto, e negar uma fonte real por instabilidade de rede seria pior do que aceitar sem 100% de
+  // certeza — a extracção já passou por validação estrutural antes disto.
+  try {
+    const controlador = new AbortController()
+    const temporizador = setTimeout(() => controlador.abort(), 8000)
+    const resposta = await fetch(extraccao.fonte_url, { method: 'HEAD', signal: controlador.signal }).catch(
+      () => null
+    )
+    clearTimeout(temporizador)
+    if (resposta && resposta.status >= 400) {
+      return { resultado: null, custoUsd: custo, tentado }
+    }
+  } catch {
+    // silencioso: falha de rede na verificação não deve derrubar uma fonte possivelmente válida
   }
 
   const ano = Number.parseInt(extraccao.ano, 10)

@@ -114,6 +114,66 @@ export interface AlvoEnriquecimento {
   parametros?: Record<string, unknown>
 }
 
+/**
+ * Veredicto categórico do portão de viabilidade.
+ *
+ * Substitui a decisão por limiar sobre `confianca_sem_enriquecimento`: um número contínuo convida
+ * a deriva (0.85 disparava quase sempre, 0.6 quase nunca), enquanto o que se quer aqui é uma
+ * decisão de três estados com critérios nomeados.
+ */
+export type VeredictoViabilidade = 'suficiente' | 'parcial' | 'insuficiente'
+
+export type TipoLacunaBloqueante =
+  | 'variavel_ausente'
+  | 'granularidade_insuficiente'
+  | 'serie_temporal_insuficiente'
+  | 'cobertura_geografica'
+  | 'dominio_diferente'
+  // Os períodos existem, mas estão vazios de mais para a trajectória pedida. Distinto de
+  // 'serie_temporal_insuficiente' (que é ter um só período): aqui há dez anos e quase metade das
+  // células por preencher, e uma "evolução por província" construída sobre isso seria uma linha
+  // desenhada a partir de buracos.
+  | 'cobertura_dados_insuficiente'
+  /**
+   * Os dados chegavam, mas o cálculo rebentou.
+   *
+   * Existe separado porque não é uma lacuna dos dados e não deve ser descrito ao utilizador como
+   * tal. Durante algum tempo estas recusas saíam rotuladas `variavel_ausente` com o termo ausente
+   * "resultado calculável para esta pergunta", uma frase que não nomeia variável nenhuma: quem
+   * lesse os registos concluía que faltava uma coluna quando o que falhou foi um passo. Verificado
+   * ao vivo em duas análises de turismo seguidas, ambas com um passo falhado e ambas arquivadas
+   * como se o ficheiro não tivesse o assunto.
+   */
+  | 'execucao_falhou'
+
+/**
+ * Prova concreta que sustenta um veredicto `insuficiente`.
+ *
+ * O veredicto sozinho não basta para bloquear: é o mesmo modelo que acabou de planear a análise a
+ * dizer se ela é possível, e pedir-lhe uma auto-avaliação logo a seguir ao plano gera ancoragem.
+ * Exigir que nomeie exactamente o que falta transforma a opinião em algo que o código consegue
+ * verificar contra o perfil real do dataset (ver `verificarEvidencia`) antes de aceitar o bloqueio.
+ */
+export interface EvidenciaLacuna {
+  tipo: TipoLacunaBloqueante
+  /** O que a pergunta exige: nome da variável, nível administrativo ou ano/intervalo. */
+  exigido: string
+  /**
+   * Só a coisa que falta, em uma ou duas palavras, sem a entidade que existe.
+   *
+   * Existe separado de `exigido` porque `exigido` é prosa para ler no ecrã e descreve as duas
+   * coisas ao mesmo tempo: a medida em falta e o objecto medido. Verificado ao vivo: para
+   * "contagem de passageiros por aeroporto", a palavra "aeroporto" está nos dados e fazia a
+   * verificação concluir que nada faltava. É este campo, e não a frase, que o código confronta
+   * com os dados.
+   */
+  termo_ausente?: string
+  /** O que os datasets realmente têm nesse eixo. Vazio quando não têm nada. */
+  disponivel: string
+  /** Uma frase, em linguagem de utilizador, sobre porque isto impede a resposta. */
+  explicacao: string
+}
+
 export interface Suficiencia {
   cobertura: {
     sub_pergunta: string
@@ -125,6 +185,29 @@ export interface Suficiencia {
   confianca_sem_enriquecimento: number
   precisa_enriquecimento: boolean
   alvos_enriquecimento: AlvoEnriquecimento[]
+  veredicto: VeredictoViabilidade
+  /** Obrigatório quando o veredicto é `insuficiente`; ignorado nos outros casos. */
+  evidencia?: EvidenciaLacuna
+}
+
+// ==================== PERGUNTAS VIÁVEIS ====================
+
+/**
+ * Pergunta que os datasets seleccionados conseguem responder bem.
+ *
+ * Cada uma declara como seria respondida (colunas, método do catálogo, nível geográfico) para que
+ * o código possa validar a proposta contra a estrutura real dos dados antes de a mostrar. É a
+ * mesma disciplina de `resolverNarrativa`: o modelo propõe, o código verifica, o que não resolve
+ * não chega ao utilizador.
+ */
+export interface PerguntaViavel {
+  pergunta: string
+  /** Porque é que estes dados respondem bem a isto, numa frase. */
+  porque: string
+  colunas_usadas: string[]
+  metodo: string
+  nivel_geo?: string
+  dataset_ids: number[]
 }
 
 // ==================== ESTÁGIO 5: EXECUÇÃO ====================
@@ -228,11 +311,23 @@ export type EventoPipeline =
   | { tipo: 'achado'; achado: Achado }
   | { tipo: 'narrativa_delta'; texto: string }
   | { tipo: 'concluido'; analise_id: string; url: string }
+  // Os dados não respondem à pergunta. Não é erro (nada falhou) nem sucesso (não há análise): o
+  // cliente fica onde está e mostra a causa mais as perguntas que estes dados respondem bem, em
+  // vez de navegar para um dashboard que responderia a outra coisa.
+  | {
+      tipo: 'inviavel'
+      analise_id: string
+      evidencia: EvidenciaLacuna
+      sugestoes: PerguntaViavel[]
+    }
   | { tipo: 'erro'; estagio: EstadoPipeline; mensagem: string; recuperavel: boolean }
 
 // ==================== REGISTO DA ANÁLISE ====================
 
-export type EstadoAnalise = 'planeando' | 'executando' | 'compondo' | 'pronto' | 'erro'
+// 'inviavel': o motor recusou responder porque os dados não chegam. Estado próprio de propósito:
+// não é 'erro' (nada falhou tecnicamente, e contá-lo como falha estragaria as métricas de
+// fiabilidade) nem 'pronto' (não há dashboard nenhum para mostrar).
+export type EstadoAnalise = 'planeando' | 'executando' | 'compondo' | 'pronto' | 'erro' | 'inviavel'
 
 export interface Analise {
   id: string

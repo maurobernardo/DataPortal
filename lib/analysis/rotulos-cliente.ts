@@ -5,12 +5,40 @@
  */
 
 /**
+ * O coroplético pinta a área administrativa INTEIRA (província/distrito) por um valor agregado —
+ * correcto para "quantos X por província", mas nunca mostra ONDE a coisa em si está: uma província
+ * pintada de vermelho não diz nada sobre a forma real de um parque nacional, de uma reserva, ou de
+ * uma rede de estradas dentro dela. A princípio isto excluía polígonos (a ideia era que um dataset
+ * de polígonos pudesse já SER a própria área administrativa reagregada, e nesse caso mostrar a
+ * geometria bruta seria redundante) — mas todos os casos reais vistos nesta sessão (parques
+ * nacionais, reservas florestais, reservas nacionais) são polígonos de feições DISCRETAS, não
+ * unidades administrativas, e ficavam completamente escondidos atrás do coroplético. Aplica-se
+ * então a todos os tipos de geometria, sem excepção: a forma real do dataset é sempre informação,
+ * nunca só o coroplético isolado.
+ */
+export function geometriaPrecisaDaSuaPropriaCamada(_tipoGeometria: string): boolean {
+  return true
+}
+
+/**
  * O nome bruto da coluna ("Admin1", "Facility_t") não diz nada a quem não trabalhou com o
  * ficheiro. Ficheiros shapefile (.dbf) limitam nomes de coluna a 10 caracteres, por isso é
  * frequentíssimo neste portal ver sufixos truncados como "_t" (tipo), "_n" (nome) — expandir
  * esses sufixos e reconhecer os nomes administrativos padrão (Admin1/2/3, Country) cobre a
  * generalidade dos datasets geoespaciais aqui, não só um dataset específico.
  */
+/**
+ * Colunas de identificador técnico (chave interna do ficheiro, nunca um dado real) — "OBJECTID",
+ * "OBJECTID_1" (sufixo que o ArcGIS/shapefile acrescenta quando já existe um campo com esse nome),
+ * "FID", "GID", "OGC_FID", "ROWID"/"ROW_ID". Nenhuma tem significado para quem lê a análise; usar
+ * o nome bruto como rótulo de uma métrica ("OBJECTID 1 por província") expõe um detalhe interno
+ * do ficheiro-fonte, não uma grandeza real. Os pontos de chamada que constroem rótulos de série
+ * devem, ao detectar isto, usar a descrição do passo em vez do nome da coluna.
+ */
+export function ehColunaIdTecnico(coluna: string): boolean {
+  return /^(object ?id|f[io]d|gid|ogc[_ ]?fid|row ?id)(_\d+)?$/i.test(coluna.trim())
+}
+
 export function rotularColuna(coluna: string): string {
   const limpo = coluna.trim()
   const conhecidos: [RegExp, string][] = [
@@ -39,6 +67,28 @@ export function rotularColuna(coluna: string): string {
     [/^addr[_:]?city$/i, 'Cidade'],
     [/^source$/i, 'Fonte'],
     [/^osm[_:]?id$/i, 'ID OSM'],
+    // Datasets de conservação (Biofund e semelhantes) usam nomes de campo em inglês por inteiro,
+    // não abreviados — sem isto o rótulo ficava "National Park" tal qual, em inglês, porque já
+    // tem espaço a separar palavras e passa despercebido ao teste de "ainda parece técnico".
+    [/^national[_ ]?park$/i, 'Parque Nacional'],
+    [/^protected[_ ]?area$/i, 'Área protegida'],
+    [/^buffer[_ ]?zone$/i, 'Zona-tampão'],
+    // Vocabulário comum em datasets de infra-estrutura (estradas, redes) deste portal — nomes de
+    // campo truncados/abreviados que apareceram em datasets reais analisados nesta sessão
+    // (estradas: "Ligacao", "Manut1996") e o seu padrão geral, não só esses nomes exactos.
+    [/^liga[cç][aã]o$/i, 'Ligação'],
+    [/^manut(en[cç][aã]o)?[-_ ]?\d*$/i, 'Manutenção'],
+    [/^cond(i[cç][aã]o)?$/i, 'Condição'],
+    [/^estado$/i, 'Estado'],
+    [/^superf(icie)?$/i, 'Superfície'],
+    [/^extens[aã]o$/i, 'Extensão'],
+    [/^ext[_-]?km$/i, 'Extensão (km)'],
+    [/^class(e|ifica[cç][aã]o)?$/i, 'Classificação'],
+    [/^regi[aã]o$/i, 'Região'],
+    [/^posto$/i, 'Posto administrativo'],
+    [/^bairro$/i, 'Bairro'],
+    [/^localidade$/i, 'Localidade'],
+    [/^ano$/i, 'Ano'],
   ]
   for (const [re, rotulo] of conhecidos) if (re.test(limpo)) return rotulo
 
@@ -94,6 +144,30 @@ const VALORES_CONHECIDOS: Record<string, string> = {
   residential: 'Residencial',
   unclassified: 'Não classificada',
   track: 'Caminho',
+  // Condição/estado de infra-estrutura (estradas, redes) — vocabulário comum em datasets de
+  // manutenção rodoviária deste portal.
+  good: 'Boa',
+  fair: 'Razoável',
+  poor: 'Má',
+  bad: 'Má',
+  paved: 'Pavimentada',
+  unpaved: 'Não pavimentada',
+  other: 'Outro',
+  vicinal: 'Vicinal',
+  // Categorias de gestão de conservação (Biofund e semelhantes) — o mesmo texto em inglês aparece
+  // como VALOR de uma coluna (ex.: "Management"), não só como nome de coluna (já coberto em
+  // rotularColuna); os dois têm de estar traduzidos, senão o rótulo da coluna fica em português
+  // mas o valor lá dentro continua em inglês.
+  'national park': 'Parque Nacional',
+  'protected area': 'Área protegida',
+  'buffer zone': 'Zona-tampão',
+  'game reserve': 'Reserva de caça',
+  'forest reserve': 'Reserva florestal',
+  // Classificação de estradas em português (variantes de maiúsculas vindas directamente do
+  // dataset, sem tradução nenhuma a fazer — só normalização de maiúscula/minúscula).
+  primaria: 'Primária',
+  secundaria: 'Secundária',
+  terciaria: 'Terciária',
 }
 
 export function traduzirValorCategoria(valor: string): string {

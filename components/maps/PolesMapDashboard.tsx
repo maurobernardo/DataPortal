@@ -457,7 +457,7 @@ export default function PolesMapDashboard({ dataPath, title, subtitle, badges = 
     })
     const totalDef = Object.values(provDef).reduce((a, b) => a + b, 0)
     const topProv = Object.entries(provDef).sort((a, b) => b[1] - a[1])[0]
-    const topProvName = topProv ? topProv[0] : '—'
+    const topProvName = topProv ? topProv[0] : 'N/D'
     const topProvShare = topProv ? pct(topProv[1], totalDef) : 0
     const topProvRows = filtered.filter((d) => d.prov === topProvName && d.def)
     const matCounts: Record<string, number> = {}
@@ -465,7 +465,7 @@ export default function PolesMapDashboard({ dataPath, title, subtitle, badges = 
       matCounts[r.mat] = (matCounts[r.mat] || 0) + 1
     })
     const dominantMat =
-      Object.entries(matCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || '—'
+      Object.entries(matCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/D'
     const reductionPotential = pct(topProv ? topProv[1] : 0, filtered.length)
 
     const wood = filtered.filter((d) => d.mat === 'Madeira')
@@ -541,10 +541,10 @@ export default function PolesMapDashboard({ dataPath, title, subtitle, badges = 
           attribution: '© OpenTopoMap',
           maxZoom: 17,
         }),
-        dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-          attribution: '© CartoDB',
-          maxZoom: 19,
-        }),
+        dark: L.tileLayer(
+          'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+          { attribution: '© Esri', maxZoom: 16 }
+        ),
         sat: L.tileLayer(
           'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
           { attribution: '© Esri', maxZoom: 18 }
@@ -899,18 +899,18 @@ export default function PolesMapDashboard({ dataPath, title, subtitle, badges = 
                         ['Material', selected.mat, () => toggleDim('mat', selected.mat)],
                         [
                           'Tensão',
-                          selected.volt ?? '—',
+                          selected.volt ?? 'N/D',
                           selected.volt ? () => toggleDim('volt', selected.volt!) : undefined,
                         ],
                         ['Linhas', selected.lines, () => toggleDim('lines', selected.lines)],
-                        ['Área', selected.area ?? '—', undefined],
-                        ['Proximidade', selected.prox ?? '—', undefined],
-                        ['Técnico', selected.tech ?? '—', undefined],
+                        ['Área', selected.area ?? 'N/D', undefined],
+                        ['Proximidade', selected.prox ?? 'N/D', undefined],
+                        ['Técnico', selected.tech ?? 'N/D', undefined],
                         [
                           'Data',
                           selected.date
                             ? selected.date.toLocaleDateString('pt-PT')
-                            : '—',
+                            : 'N/D',
                           undefined,
                         ],
                         ['Risk score', selected.risk, undefined],

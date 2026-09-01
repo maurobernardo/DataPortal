@@ -14,7 +14,8 @@
     "carregar-geo-unidades": "tsx scripts/carregar-geo-unidades.ts",
     "add-hidrografia": "tsx scripts/add_hidrografia.ts",
     "migrate-origem": "tsx scripts/migrate-origem-utilizadores.ts",
-    "geoip:update": "tsx scripts/update-geoip.ts"
+    "geoip:update": "tsx scripts/update-geoip.ts",
+    "testar-analise": "tsx scripts/testar-analise.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.115.0",
@@ -38,6 +39,8 @@
     "next": "^14.2.18",
     "nodemailer": "^9.0.3",
     "otplib": "^13.4.1",
+    "pdf-parse": "^1.1.1",
+    "pdfjs-dist": "^3.11.174",
     "qrcode": "^1.5.4",
     "react": "^18.3.1",
     "react-chartjs-2": "^5.2.0",

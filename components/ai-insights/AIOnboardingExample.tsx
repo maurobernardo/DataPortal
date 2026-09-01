@@ -39,7 +39,7 @@ export function AIOnboardingExample({ onTryIt }: { onTryIt: () => void }) {
   if (dismissed) return null
 
   return (
-    <div className="relative mb-5 rounded-2xl border border-[#CFE3D6] bg-gradient-to-br from-[#F1F8F4] to-white p-4 md:p-5 shadow-sm">
+    <div className="relative mb-5 rounded-2xl border border-[#CFE3D6] bg-[#F1F8F4] p-4 md:p-5 shadow-sm">
       <button
         type="button"
         onClick={dismiss}
@@ -73,7 +73,7 @@ export function AIOnboardingExample({ onTryIt }: { onTryIt: () => void }) {
           <button
             type="button"
             onClick={handleTryIt}
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#064E2C] to-[#1FA365] px-4 py-2 text-xs font-semibold text-white shadow-sm hover:brightness-105 transition-all"
+            className="inline-flex items-center gap-2 rounded-xl bg-[#064E2C] px-4 py-2 text-xs font-semibold text-white shadow-sm hover:brightness-105 transition-all"
           >
             <Wand2 className="w-3.5 h-3.5" />
             Experimentar com estes dados

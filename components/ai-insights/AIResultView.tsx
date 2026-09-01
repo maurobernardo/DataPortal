@@ -220,7 +220,7 @@ export function AIResultView({
         doc.setFontSize(9)
         doc.setTextColor(90)
         for (const s of result.sources) {
-          const line = `- ${s.title}, ${s.source || 'Fonte não especificada'} (${s.year ?? '—'})`
+          const line = `- ${s.title}, ${s.source || 'Fonte não especificada'} (${s.year ?? 'N/D'})`
           const lines = doc.splitTextToSize(line, maxWidth)
           if (y + lines.length * 5 > 285) {
             doc.addPage()
@@ -327,7 +327,7 @@ export function AIResultView({
                   {s.title}
                 </Link>
                 <span className="text-xs text-gray-500">
-                  , {s.source || 'Fonte não especificada'} · {s.year ?? '—'}
+                  , {s.source || 'Fonte não especificada'} · {s.year ?? 'N/D'}
                 </span>
                 {allowSubscriptions && <DatasetSubscribeButton datasetId={s.id} />}
               </li>

@@ -1,6 +1,6 @@
 {
   "crops": ["Maize", "Rice", "Sorghum", "Millet"],
-  "cropLabels": { "Maize": "Milho", "Rice": "Arroz", "Sorghum": "Sorgo", "Millet": "Milheto" },
+  "cropLabels": { "Maize": "Milho", "Rice": "Arroz", "Sorghum": "Sorgo", "Millet": "Mapira" },
   "provinces": ["Niassa", "Cabo Delgado", "Nampula", "Zambezia", "Tete", "Manica", "Sofala", "Inhambane", "Gaza", "Maputo Provincia"],
   "provinceLabels": { "Maputo Provincia": "Maputo Província" },
   "provinceCoords": {

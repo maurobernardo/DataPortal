@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server'
-import { getCurrentAdmin } from '@/lib/auth'
+import { getCurrentAdminSemExigir2FA } from '@/lib/auth'
 import { findUserById, setUserTotpSecret } from '@/lib/db'
 import { generateBackupCodes, generateTotpQrCode, generateTotpSecret } from '@/lib/totp'
 import { logger } from '@/lib/logger'
 
 export async function POST() {
   try {
-    const admin = await getCurrentAdmin()
+    const admin = await getCurrentAdminSemExigir2FA()
     if (!admin) {
       return NextResponse.json({ error: 'Acesso restrito a administradores.' }, { status: 403 })
     }

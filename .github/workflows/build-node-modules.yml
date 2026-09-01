@@ -1,0 +1,39 @@
+name: Construir node_modules para o servidor (Linux)
+
+# Disparado à mão a partir do separador "Actions" no GitHub: não corre em cada push, só quando
+# for mesmo preciso gerar um node_modules pronto para o servidor de produção (Linux, x64).
+#
+# Existe porque o servidor de hosting (CloudLinux, memória limitada por conta) mata o "npm
+# install" a meio por falta de memória, e o node_modules deste computador de desenvolvimento
+# tem binários nativos compilados para Windows (@next/swc-win32-x64-msvc, etc.) que não correm
+# no servidor Linux. Correndo aqui, num runner Ubuntu, o resultado já tem os binários certos
+# e a memória do runner (7 GB) não é problema.
+on:
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Obter o código
+        uses: actions/checkout@v4
+
+      - name: Preparar o Node 22 (a mesma versão do servidor)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Instalar dependências (produção só, igual ao servidor)
+        run: npm ci --omit=dev
+
+      # tar.gz preserva permissões de ficheiro e symlinks correctamente; um .zip normal
+      # costuma perder o bit de "executável" em binários nativos dentro de node_modules.
+      - name: Empacotar node_modules
+        run: tar -czf node_modules.tar.gz node_modules
+
+      - name: Publicar como artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: node_modules-linux-x64
+          path: node_modules.tar.gz
+          retention-days: 14

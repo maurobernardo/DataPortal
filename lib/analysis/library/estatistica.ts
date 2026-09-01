@@ -41,7 +41,14 @@ export type PerfilColuna = {
 }
 
 export function perfilColuna(coluna: string, valores: unknown[]): PerfilColuna {
-  const preenchidos = valores.filter((v) => v != null && String(v).trim() !== '')
+  // A string literal "NaN" (typicamente um artefacto de exportação, ex.: pandas) é ausência de
+  // dado, não um valor categórico — sem isto, uma coluna numérica com muitas células "NaN"
+  // (ex.: uma cultura sem produção registada nalguns distritos) inflava o denominador de
+  // completude, o rácio de conversão numérica caía abaixo dos 90% exigidos, e a coluna era
+  // classificada como categórica: o Planeamento via "milho (categórica): top: NaN (13%), ..."
+  // em vez de "milho (numérica): min=..., máx=...", e não reconhecia a coluna como uma métrica
+  // agregável — exactamente o tipo de coluna que resumo_estatistico precisa de somar por unidade.
+  const preenchidos = valores.filter((v) => v != null && String(v).trim() !== '' && String(v).trim().toLowerCase() !== 'nan')
   const nums = numerosValidos(preenchidos)
   const distintos = new Set(preenchidos.map((v) => String(v).trim()))
 
