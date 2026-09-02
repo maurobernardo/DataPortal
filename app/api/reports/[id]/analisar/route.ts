@@ -45,7 +45,7 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
   // pedida NÃO espera pelo resultado: reserva o processamento (já feito acima), dispara-o e
   // responde já "a processar". A página já sabe perguntar de 4 em 4 segundos se terminou
   // (`EmAnaliseRelatorio`), exactamente para este caso.
-  processarRelatorio(id)
+  processarRelatorio(id, sessao.userId)
     .then(async (resultado) => {
       if (resultado.estado === 'pronto') await concederAcesso(id, sessao.userId)
     })

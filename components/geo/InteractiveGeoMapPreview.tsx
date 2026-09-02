@@ -49,7 +49,11 @@ const TILES: Record<BaseMapKind, { url: string; attribution: string; maxZoom: nu
   sat: {
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     attribution: '&copy; Esri',
-    maxZoom: 18,
+    // 17, não 18: é o zoom nativo real do satélite da Esri em grande parte de Moçambique (medido
+    // ao vivo). Este `maxZoom` funciona aqui como o limite rígido do próprio controlo de zoom
+    // (`layerMax`/`Math.min` mais abaixo), por isso 18 deixava o utilizador chegar a um nível sem
+    // imagem real, mostrando quadrados cinzentos "Map data not yet available".
+    maxZoom: 17,
   },
 }
 

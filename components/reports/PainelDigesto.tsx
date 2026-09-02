@@ -94,6 +94,12 @@ export function PainelDigesto({
   const [aGerarOnePager, setAGerarOnePager] = useState(false)
   const [erroOnePager, setErroOnePager] = useState<string | null>(null)
   const [termoGlossarioAberto, setTermoGlossarioAberto] = useState<number | null>(null)
+  const [demorouDemais, setDemorouDemais] = useState(false)
+  // Incrementado a cada pedido de análise: força a pesquisa automática a recomeçar mesmo quando o
+  // `estado` devolvido é literalmente o mesmo valor de antes (ex.: "Tentar de novo" enquanto o
+  // servidor ainda diz "a processar"), caso em que o React não veria mudança nenhuma no `estado`
+  // sozinho e o `useEffect` do polling nunca voltaria a correr.
+  const [cicloAnalise, setCicloAnalise] = useState(0)
   const intervaloRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   async function descarregarPdf() {
@@ -141,17 +147,34 @@ export function PainelDigesto({
 
   // Enquanto o processamento está a decorrer, verifica de novo a cada poucos segundos: é a única
   // situação em que o estado muda sem uma acção da pessoa que está a ver a página.
+  //
+  // Sem limite, isto perguntava para sempre: um processamento cujo processo do servidor morreu a
+  // meio (visto ao vivo: preso em "a processar" mais de uma hora, em hosting partilhado que pode
+  // reciclar ou matar o processo por falta de memória) deixava a pessoa a olhar para um spinner
+  // sem fim, sem nenhuma saída. Ao fim de 45 tentativas (3 minutos, bem acima do que um relatório
+  // normal demora, mesmo longo), pára de perguntar sozinho e mostra um botão para tentar de novo.
+  const LIMITE_TENTATIVAS_POLLING = 45
   useEffect(() => {
     if (estado !== 'a_processar') {
       if (intervaloRef.current) clearInterval(intervaloRef.current)
+      setDemorouDemais(false)
       return
     }
-    intervaloRef.current = setInterval(() => buscar(idioma), 4000)
+    let tentativas = 0
+    intervaloRef.current = setInterval(() => {
+      tentativas += 1
+      if (tentativas >= LIMITE_TENTATIVAS_POLLING) {
+        if (intervaloRef.current) clearInterval(intervaloRef.current)
+        setDemorouDemais(true)
+        return
+      }
+      buscar(idioma)
+    }, 4000)
     return () => {
       if (intervaloRef.current) clearInterval(intervaloRef.current)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [estado])
+  }, [estado, cicloAnalise])
 
   async function trocarIdioma(alvo: 'pt' | 'en') {
     if (alvo === idioma) return
@@ -179,6 +202,12 @@ export function PainelDigesto({
   async function analisar() {
     setAIniciarAnalise(true)
     setErroAnalise(null)
+    // Sem isto, pedir "Tentar de novo" enquanto o servidor ainda responde "a processar" (dentro
+    // da janela de 8 minutos antes de tratar o processamento anterior como abandonado) deixava o
+    // ecrã preso: o estado voltava a ser exactamente o mesmo valor, o React não via mudança
+    // nenhuma, e a pergunta automática de 4 em 4 segundos nunca recomeçava.
+    setDemorouDemais(false)
+    setCicloAnalise((c) => c + 1)
     try {
       const r = await fetch(`/api/reports/${reportId}/analisar`, { method: 'POST' })
       const d = await r.json()
@@ -257,11 +286,30 @@ export function PainelDigesto({
     )
   }
 
-  if (estado === 'a_processar') {
+  if (estado === 'a_processar' && !demorouDemais) {
     return (
       <div className="rpt-detail-hero">
         <div className="rpt-detail-body">
           <EmAnaliseRelatorio />
+        </div>
+      </div>
+    )
+  }
+
+  if (estado === 'a_processar' && demorouDemais) {
+    return (
+      <div className="rpt-detail-hero">
+        <div className="rpt-detail-body">
+          <h2 className="rpt-digesto-titulo"><BookOpenCheck className="size-4" aria-hidden />Análise deste relatório</h2>
+          <p className="rpt-detail-text">
+            Isto está a demorar muito mais do que o costume. Pode ter havido um problema no
+            processamento. Tente pedir a análise de novo.
+          </p>
+          <button type="button" onClick={analisar} disabled={aIniciarAnalise} className="rpt-btn rpt-btn-primary">
+            {aIniciarAnalise ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <ScanSearch className="size-4" aria-hidden />}
+            {aIniciarAnalise ? 'A começar…' : 'Tentar de novo'}
+          </button>
+          {erroAnalise && <p className="rpt-digesto-erro">{erroAnalise}</p>}
         </div>
       </div>
     )

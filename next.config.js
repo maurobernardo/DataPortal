@@ -42,8 +42,15 @@ const nextConfig = {
     // "worker-src 'self' blob:" explícito, essa criação do worker era recusada em silêncio pelo
     // CSP: a pré-visualização falhava sempre, com a mesma mensagem de erro em qualquer PDF,
     // porque o problema nunca foi um ficheiro específico, era a política do próprio portal.
+    //
+    // img-src/connect-src ganham os domínios do Mapillary (visor 360° em /ruas-360): a API e os
+    // tiles de cobertura vêm de mapillary.com, mas as IMAGENS em si (o que o visor mostra) vêm de
+    // *.fbcdn.net — o Mapillary é da Meta, e serve o conteúdo pesado pela CDN da Facebook, não do
+    // próprio domínio mapillary.com. Visto ao vivo: com só mapillary.com, os pontos no mapa
+    // apareciam (metadados) mas o visor ficava preto para sempre (as imagens bloqueadas em
+    // silêncio pelo CSP, sem nenhum erro visível além da consola).
     const cspBase =
-      "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://translate.google.com https://translate.googleapis.com https://translate-pa.googleapis.com https://www.gstatic.com https://www.google.com; style-src 'self' 'unsafe-inline' https://www.gstatic.com https://fonts.googleapis.com; img-src 'self' data: blob: https://*.tile.openstreetmap.org https://*.opentopomap.org https://*.basemaps.cartocdn.com https://server.arcgisonline.com https://*.arcgis.com https://unpkg.com https://www.gstatic.com; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://*.arcgis.com https://translate.googleapis.com https://translate-pa.googleapis.com https://translate.google.com https://www.google.com wss://www.google.com; frame-src 'self' https://*.arcgis.com https://*.maps.arcgis.com https://app.powerbi.com https://*.powerbi.com https://translate.google.com; worker-src 'self' blob:; base-uri 'self'; form-action 'self'"
+      "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://translate.google.com https://translate.googleapis.com https://translate-pa.googleapis.com https://www.gstatic.com https://www.google.com; style-src 'self' 'unsafe-inline' https://www.gstatic.com https://fonts.googleapis.com; img-src 'self' data: blob: https://*.tile.openstreetmap.org https://*.opentopomap.org https://*.basemaps.cartocdn.com https://server.arcgisonline.com https://*.arcgis.com https://unpkg.com https://www.gstatic.com https://*.mapillary.com https://*.fbcdn.net; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://*.arcgis.com https://translate.googleapis.com https://translate-pa.googleapis.com https://translate.google.com https://www.google.com wss://www.google.com https://*.mapillary.com https://*.fbcdn.net; frame-src 'self' https://*.arcgis.com https://*.maps.arcgis.com https://app.powerbi.com https://*.powerbi.com https://translate.google.com; worker-src 'self' blob:; base-uri 'self'; form-action 'self'"
     return [
       {
         // Páginas de mapa individuais (/maps/[slug]) precisam de "frame-ancestors 'self'": são a

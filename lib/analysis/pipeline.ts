@@ -51,6 +51,13 @@ export type ResultadoPipeline = {
   narrativa_resolvida: ReturnType<typeof resolverNarrativa>
   critica: Critica
   custo_usd: number
+  // Melhor esforço: cobre os estágios chamados directamente por este ficheiro (planeamento,
+  // suficiência, narrativa, crítica) — a maior parte do consumo real. Não inclui os tokens
+  // consumidos dentro de `tentarEnriquecerExterno` nem de `execucao-codigo.ts`, que só devolvem
+  // o custo já convertido em USD, não os tokens brutos; esse custo continua incluído em
+  // `custo_usd`, só não neste total de tokens.
+  tokens_entrada: number
+  tokens_saida: number
   duracao_ms: number
   confianca: ConfiancaAnalise
 }
@@ -135,6 +142,8 @@ export async function executarPipeline(
 ): Promise<ResultadoPipeline> {
   const inicio = Date.now()
   let custo = 0
+  let tokensEntrada = 0
+  let tokensSaida = 0
   // Modo degradado força fontesExternas=false independentemente do que foi pedido: pesquisa
   // externa pode levar até 150s e é mais um ponto de falha — a retentativa quer é terminar.
   if (opcoes.modoDegradado) opcoes = { ...opcoes, fontesExternas: false }
@@ -213,6 +222,8 @@ export async function executarPipeline(
   })
   console.log(`[analise:tempo:detalhe] chamarEstagio(planeamento) visto de fora em ${Date.now() - tAntesChamada}ms`)
   custo += custoUsd(modeloPara('planeamento'), rCompleto.tokens_entrada, rCompleto.tokens_saida)
+  tokensEntrada += rCompleto.tokens_entrada
+  tokensSaida += rCompleto.tokens_saida
   const compreensao: Compreensao = { ...rCompleto.dados, pergunta_original: pergunta }
   const plano: Plano = {
     sub_perguntas: rCompleto.dados.sub_perguntas,
@@ -237,6 +248,8 @@ export async function executarPipeline(
     maxTokens: 8000,
   })
   custo += custoUsd(modeloPara('suficiencia'), rSuficiencia.tokens_entrada, rSuficiencia.tokens_saida)
+  tokensEntrada += rSuficiencia.tokens_entrada
+  tokensSaida += rSuficiencia.tokens_saida
   const suficiencia = rSuficiencia.dados
 
   // ---------- 3b. Portão de viabilidade ----------
@@ -549,23 +562,29 @@ export async function executarPipeline(
     `Avisos da execução (têm de aparecer em o_que_nao_diz se forem materiais):\n${ctx.avisos.join('\n') || 'nenhum'}\n\n` +
     `Cobertura das sub-perguntas:\n${JSON.stringify(suficiencia.cobertura, null, 2)}`
 
-  let narrativa = (
-    await chamarEstagio<Narrativa>({
-      estagio: 'narrativa',
-      sistema: PROMPT_NARRATIVA,
-      contextoEstavel,
-      utilizador: pedidoNarrativa,
-      schema: SCHEMA_NARRATIVA,
-      // Sem isto cai no tecto por omissão de 8000: chega para perguntas simples, mas uma análise
-      // nacional com muitas províncias/distritos e muitos cálculos disponíveis (listaCalcs grande)
-      // pode genuinamente precisar de mais para cobrir numeros_chave + todos os campos de texto.
-      // 12000 ainda truncava em cruzamentos distritais nacionais (ex.: electrificação x área
-      // cultivada por distrito, ~150 distritos) mesmo em modo degradado (plano mínimo). 64000 é o
-      // tecto máximo de output aceite pela API para claude-sonnet-5 (usado neste estágio); pedir
-      // mais do que isso (ex.: 100000) falha logo no pedido em vez de dar mais margem.
-      maxTokens: 64000,
-    })
-  ).dados
+  const rNarrativa = await chamarEstagio<Narrativa>({
+    estagio: 'narrativa',
+    sistema: PROMPT_NARRATIVA,
+    contextoEstavel,
+    utilizador: pedidoNarrativa,
+    schema: SCHEMA_NARRATIVA,
+    // Sem isto cai no tecto por omissão de 8000: chega para perguntas simples, mas uma análise
+    // nacional com muitas províncias/distritos e muitos cálculos disponíveis (listaCalcs grande)
+    // pode genuinamente precisar de mais para cobrir numeros_chave + todos os campos de texto.
+    // 12000 ainda truncava em cruzamentos distritais nacionais (ex.: electrificação x área
+    // cultivada por distrito, ~150 distritos) mesmo em modo degradado (plano mínimo). 64000 é o
+    // tecto máximo de output aceite pela API para claude-sonnet-5 (usado neste estágio); pedir
+    // mais do que isso (ex.: 100000) falha logo no pedido em vez de dar mais margem.
+    maxTokens: 64000,
+  })
+  // Faltava aqui: esta é a chamada mais cara de todo o pipeline (maxTokens 64000, a única do
+  // estágio "narrativa" que corre sempre) e o seu custo nunca tinha sido somado a `custo` — só a
+  // eventual chamada de correcção (mais abaixo) é que era contabilizada. Com isto corrigido,
+  // `custo_usd` deixa de estar sistematicamente subavaliado.
+  custo += custoUsd(modeloPara('narrativa'), rNarrativa.tokens_entrada, rNarrativa.tokens_saida)
+  tokensEntrada += rNarrativa.tokens_entrada
+  tokensSaida += rNarrativa.tokens_saida
+  let narrativa = rNarrativa.dados
 
   // R1 na prática: se a narrativa referir um cálculo inexistente, pede-se uma correcção com a
   // lista exacta em falta. Só se falhar de novo é que a análise é recusada.
@@ -586,6 +605,8 @@ export async function executarPipeline(
       maxTokens: 12000,
     })
     custo += custoUsd(modeloPara('narrativa'), rCorreccao.tokens_entrada, rCorreccao.tokens_saida)
+    tokensEntrada += rCorreccao.tokens_entrada
+    tokensSaida += rCorreccao.tokens_saida
     narrativa = rCorreccao.dados
     resolvida = resolverNarrativa(narrativa, ctx.calcs)
   }
@@ -709,6 +730,8 @@ export async function executarPipeline(
       schema: SCHEMA_CRITICA,
     })
     custo += custoUsd(modeloPara('critica'), rCritica.tokens_entrada, rCritica.tokens_saida)
+    tokensEntrada += rCritica.tokens_entrada
+    tokensSaida += rCritica.tokens_saida
 
     const objeccoes = rCritica.dados.objeccoes ?? []
     const materiais = objeccoes.filter((o) => o.gravidade === 'MATERIAL').map((o) => o.descricao)
@@ -754,6 +777,8 @@ export async function executarPipeline(
     narrativa_resolvida: resolvida,
     critica,
     custo_usd: custo,
+    tokens_entrada: tokensEntrada,
+    tokens_saida: tokensSaida,
     duracao_ms: Date.now() - inicio,
     confianca: calcularConfianca(ctx, plano, suficiencia),
   }

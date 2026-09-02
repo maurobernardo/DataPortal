@@ -247,7 +247,14 @@ function montarDocumento(paginas: { pagina: number; texto: string }[]): { texto:
 
 export async function gerarDigesto(
   paginas: { pagina: number; texto: string }[]
-): Promise<{ digesto: Digesto; truncado: boolean; custoUsd: number }> {
+): Promise<{
+  digesto: Digesto
+  truncado: boolean
+  custoUsd: number
+  modelo: string
+  tokensEntrada: number
+  tokensSaida: number
+}> {
   const { texto, truncado } = montarDocumento(paginas)
   const resposta = await chamarEstagioRelatorio<Digesto>({
     estagio: 'digesto',
@@ -272,5 +279,8 @@ export async function gerarDigesto(
     digesto,
     truncado,
     custoUsd: custoUsd(modeloParaRelatorio('digesto'), resposta.tokens_entrada, resposta.tokens_saida),
+    modelo: modeloParaRelatorio('digesto'),
+    tokensEntrada: resposta.tokens_entrada,
+    tokensSaida: resposta.tokens_saida,
   }
 }

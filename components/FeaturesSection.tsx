@@ -19,6 +19,8 @@ import {
   FileText,
   BrainCircuit,
   Bell,
+  Video,
+  FileSearch,
 } from 'lucide-react'
 import Link from 'next/link'
 import { RevealOnScroll } from './RevealOnScroll'
@@ -144,6 +146,26 @@ const mainFeatures: {
     variant: 'red',
     href: '/relatorios',
   },
+  {
+    icon: FileSearch,
+    title: 'Análise de relatórios por IA',
+    description:
+      'Peça a análise de qualquer relatório com PDF: resumo com os principais pontos, cada um com a página onde se confirma, e perguntas directas ao documento.',
+    tag: 'Novo',
+    num: '12',
+    variant: 'brand',
+    href: '/relatorios',
+  },
+  {
+    icon: Video,
+    title: 'Ruas 360°',
+    description:
+      'Navegue pelas ruas de Maputo e Chimoio captadas em 360° pela nossa equipa, imagem a imagem, com sinais de trânsito e filtros, sem sair do portal.',
+    tag: 'Novo',
+    num: '13',
+    variant: 'amber',
+    href: '/ruas-360',
+  },
 ]
 
 const variantStyles: Record<
@@ -217,7 +239,7 @@ export function FeaturesSection() {
 
           <div className="flex gap-8 md:gap-10 shrink-0">
             {[
-              { n: '11+', label: 'Funcionalidades' },
+              { n: '13+', label: 'Funcionalidades' },
               { n: '100%', label: 'Acesso aberto' },
               { n: '∞', label: 'Formatos' },
             ].map(({ n, label }) => (

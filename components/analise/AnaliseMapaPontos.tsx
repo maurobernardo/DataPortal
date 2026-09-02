@@ -44,11 +44,16 @@ const CAMADAS_BASE = {
     rotulo: 'Rua',
     url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
     atribuicao: '&copy; OpenStreetMap',
+    maxNativeZoom: 19,
   },
   satelite: {
     rotulo: 'Satélite',
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     atribuicao: 'Esri, Maxar, Earthstar Geographics',
+    // O satélite da Esri não tem imagem de alta resolução acima do zoom 17 em grande parte de
+    // Moçambique: sem isto o Leaflet pedia tiles que não existem e mostrava quadrados cinzentos
+    // "Map data not yet available" ao aproximar (mesmo bug já corrigido em VisorRuas360.tsx).
+    maxNativeZoom: 17,
   },
 } as const
 
@@ -462,7 +467,12 @@ export function AnaliseMapaPontos({
       if (camadaBaseRef.current) map.removeLayer(camadaBaseRef.current)
       const cfgBase = CAMADAS_BASE[camadaBase]
       // crossOrigin: sem isto, a exportação para PDF (html2canvas) captura o mapa em branco.
-      camadaBaseRef.current = L.tileLayer(cfgBase.url, { attribution: cfgBase.atribuicao, maxZoom: 19, crossOrigin: true }).addTo(map)
+      camadaBaseRef.current = L.tileLayer(cfgBase.url, {
+        attribution: cfgBase.atribuicao,
+        maxZoom: 19,
+        maxNativeZoom: cfgBase.maxNativeZoom,
+        crossOrigin: true,
+      }).addTo(map)
 
       const ehPontos = camada.tipoGeometria === 'Point' || camada.tipoGeometria === 'MultiPoint'
 

@@ -4,7 +4,7 @@ export const maxDuration = 120
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
-import { obterDigesto, guardarDigesto } from '@/lib/relatorios/persistencia'
+import { obterDigesto, guardarDigesto, registarUsoIaRelatorio } from '@/lib/relatorios/persistencia'
 import { traduzirDigesto } from '@/lib/relatorios/traduzir-digesto'
 import { TraducaoInfielError } from '@/lib/analysis/traducao'
 import { logger } from '@/lib/logger'
@@ -28,8 +28,17 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
   if (!original) return NextResponse.json({ erro: 'Este relatório ainda não tem digesto para traduzir' }, { status: 409 })
 
   try {
-    const traduzido = await traduzirDigesto(original)
+    const { digesto: traduzido, modelo, tokensEntrada, tokensSaida, custoUsd } = await traduzirDigesto(original)
     await guardarDigesto(id, 'en', traduzido)
+    await registarUsoIaRelatorio({
+      reportId: id,
+      utilizadorId: sessao.userId,
+      tipo: 'traducao',
+      modelo,
+      tokensEntrada,
+      tokensSaida,
+      custoUsd,
+    }).catch((erro) => logger.error('erro_registar_uso_ia_relatorio', { error: erro, reportId: id, tipo: 'traducao' }))
     return NextResponse.json({ digesto: traduzido })
   } catch (erro: any) {
     if (erro instanceof TraducaoInfielError) {

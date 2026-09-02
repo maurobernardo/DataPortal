@@ -5,6 +5,7 @@ import Image from 'next/image'
 import {
   AlertCircle,
   AlertTriangle,
+  Bell,
   CheckCircle2,
   Copy,
   Download,
@@ -28,6 +29,8 @@ type ProfileFormProps = {
   totpEnabled: boolean
   pedidoEliminacaoEm: string | null
   totpObrigatorio: boolean
+  /** null = ainda não respondeu ao popup de notificações (fica "Não escolhido" até responder). */
+  receberNotificacoes: boolean | null
 }
 
 export function ProfileForm({
@@ -39,6 +42,7 @@ export function ProfileForm({
   totpEnabled,
   pedidoEliminacaoEm: pedidoEliminacaoEmInicial,
   totpObrigatorio,
+  receberNotificacoes: receberNotificacoesInicial,
 }: ProfileFormProps) {
   const [name, setName] = useState(initialName)
   const [nameSaving, setNameSaving] = useState(false)
@@ -221,6 +225,27 @@ export function ProfileForm({
 
   const [totpDisableOpen, setTotpDisableOpen] = useState(false)
   const [totpDisablePassword, setTotpDisablePassword] = useState('')
+
+  const [receberNotificacoes, setReceberNotificacoes] = useState(receberNotificacoesInicial)
+  const [notificacoesSaving, setNotificacoesSaving] = useState(false)
+
+  async function alterarNotificacoes(receber: boolean) {
+    setNotificacoesSaving(true)
+    const anterior = receberNotificacoes
+    setReceberNotificacoes(receber)
+    try {
+      const res = await fetch('/api/auth/notificacoes', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ receber }),
+      })
+      if (!res.ok) throw new Error()
+    } catch {
+      setReceberNotificacoes(anterior)
+    } finally {
+      setNotificacoesSaving(false)
+    }
+  }
 
   async function handleStartTotpSetup() {
     setTotpError('')
@@ -775,6 +800,44 @@ export function ProfileForm({
           )}
         </div>
       )}
+
+      {/* ── Notificações por email ──────────────────── */}
+      <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5 md:p-6">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <span className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-gray-100 text-gray-600">
+              <Bell className="w-4.5 h-4.5" />
+            </span>
+            <div>
+              <h2 className="text-base font-bold text-gray-900">Notificações por email</h2>
+              <p className="text-xs text-gray-500">
+                Um email sempre que houver um novo dataset, relatório ou dashboard.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={Boolean(receberNotificacoes)}
+            onClick={() => alterarNotificacoes(!receberNotificacoes)}
+            disabled={notificacoesSaving}
+            className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${
+              receberNotificacoes ? 'bg-green-600' : 'bg-gray-300'
+            }`}
+          >
+            <span
+              className={`inline-block h-4.5 w-4.5 transform rounded-full bg-white shadow transition-transform ${
+                receberNotificacoes ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
+          </button>
+        </div>
+        {receberNotificacoes === null && (
+          <p className="text-xs text-amber-600 mt-3">
+            Ainda não escolheu; por agora não está a receber estes emails.
+          </p>
+        )}
+      </div>
 
       {/* ── Dados pessoais e zona de perigo ──────────────────── */}
       <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5 md:p-6">

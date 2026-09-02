@@ -4,9 +4,9 @@ export const maxDuration = 60
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentAdmin, getCurrentUser } from '@/lib/auth'
-import { obterDigesto, obterPaginas, temAcesso } from '@/lib/relatorios/persistencia'
+import { obterDigesto, obterPaginas, registarUsoIaRelatorio, temAcesso } from '@/lib/relatorios/persistencia'
 import { seleccionarPaginas } from '@/lib/relatorios/retrieval'
-import { chamarEstagioRelatorio } from '@/lib/relatorios/router'
+import { chamarEstagioRelatorio, custoUsd, modeloParaRelatorio } from '@/lib/relatorios/router'
 import { logger } from '@/lib/logger'
 import type { Digesto } from '@/lib/relatorios/digesto'
 
@@ -154,6 +154,16 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       // cortado a meio e `chamarEstagioRelatorio` a rejeitar o JSON incompleto resultante.
       maxTokens: 4000,
     })
+    const modelo = modeloParaRelatorio('pergunta')
+    await registarUsoIaRelatorio({
+      reportId: id,
+      utilizadorId: sessao.userId,
+      tipo: 'perguntar',
+      modelo,
+      tokensEntrada: resposta.tokens_entrada,
+      tokensSaida: resposta.tokens_saida,
+      custoUsd: custoUsd(modelo, resposta.tokens_entrada, resposta.tokens_saida),
+    }).catch((erro) => logger.error('erro_registar_uso_ia_relatorio', { error: erro, reportId: id, tipo: 'perguntar' }))
     return NextResponse.json(resposta.dados)
   } catch (erro: any) {
     logger.error('erro_perguntar_relatorio', { error: erro, reportId: id })

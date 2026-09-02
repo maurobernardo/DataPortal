@@ -3,7 +3,7 @@ import { join } from 'path'
 import { findReportById } from '@/lib/db'
 import { extrairPaginas } from './extrair-pdf'
 import { gerarDigesto } from './digesto'
-import { definirEstado, guardarDigesto, guardarPaginas, obterEstado } from './persistencia'
+import { definirEstado, guardarDigesto, guardarPaginas, obterEstado, registarUsoIaRelatorio } from './persistencia'
 import { logger } from '@/lib/logger'
 
 /**
@@ -20,7 +20,13 @@ export type ResultadoProcessamento =
 
 export class RelatorioNaoProcessavelError extends Error {}
 
-export async function processarRelatorio(reportId: number): Promise<ResultadoProcessamento> {
+export async function processarRelatorio(
+  reportId: number,
+  // null = disparado pela equipa no admin, sem uma pessoa concreta a "pagar" pela leitura; a
+  // auditoria de custos (/admin/custos-ia) continua a contar o gasto de qualquer forma, só não o
+  // atribui a ninguém.
+  utilizadorId: number | null = null
+): Promise<ResultadoProcessamento> {
   const relatorio = await findReportById(reportId)
   if (!relatorio) throw new RelatorioNaoProcessavelError('Relatório não encontrado')
   const caminho = String(relatorio.filePath || '').trim()
@@ -45,8 +51,19 @@ export async function processarRelatorio(reportId: number): Promise<ResultadoPro
     }
 
     await guardarPaginas(reportId, extraccao.paginas)
-    const { digesto, truncado } = await gerarDigesto(extraccao.paginas)
+    const { digesto, truncado, custoUsd, modelo, tokensEntrada, tokensSaida } = await gerarDigesto(
+      extraccao.paginas
+    )
     await guardarDigesto(reportId, 'pt', digesto)
+    await registarUsoIaRelatorio({
+      reportId,
+      utilizadorId,
+      tipo: 'digesto',
+      modelo,
+      tokensEntrada,
+      tokensSaida,
+      custoUsd,
+    }).catch((erro) => logger.error('erro_registar_uso_ia_relatorio', { error: erro, reportId, tipo: 'digesto' }))
     await definirEstado(reportId, 'pronto', {
       totalPaginas: extraccao.totalPaginas,
       mensagem: truncado ? 'O documento é muito extenso; o digesto não cobre as últimas páginas.' : undefined,
@@ -60,6 +77,15 @@ export async function processarRelatorio(reportId: number): Promise<ResultadoPro
   }
 }
 
+// Um processamento normal (mesmo um relatório longo) termina em poucos minutos. Passado este
+// tempo, "a_processar" já não significa "alguém está a trabalhar nisto": significa que o processo
+// que o fazia morreu a meio (visto ao vivo: um relatório preso em "a_processar" há mais de uma
+// hora, depois de o processamento passar a correr sem a pedida HTTP à espera dele — em hosting
+// partilhado, o processo Node pode ser reciclado ou morto por falta de memória sem chegar a pôr o
+// estado em "erro"). Sem isto, um relatório assim ficava preso para sempre, sem ninguém conseguir
+// voltar a pedir a análise.
+const MINUTOS_ABANDONO = 8
+
 /**
  * Reserva uma corrida de processamento para um relatório.
  *
@@ -69,7 +95,11 @@ export async function processarRelatorio(reportId: number): Promise<ResultadoPro
  */
 export async function reservarProcessamento(reportId: number): Promise<boolean> {
   const actual = await obterEstado(reportId)
-  if (actual?.estado === 'a_processar') return false
+  if (actual?.estado === 'a_processar') {
+    const minutosParado = (Date.now() - actual.actualizadoEm.getTime()) / 60_000
+    if (minutosParado < MINUTOS_ABANDONO) return false
+    // Abandonado: cai para baixo e reserva de novo, tal como se nada estivesse a processar.
+  }
   await definirEstado(reportId, 'a_processar')
   return true
 }

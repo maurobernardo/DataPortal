@@ -1,4 +1,9 @@
-import { findAllRegisteredUsers, incrementDailyUsage, markDailyUsageAlerted } from '@/lib/db'
+import {
+  findAllRegisteredUsers,
+  findUsersSubscritosNotificacoes,
+  incrementDailyUsage,
+  markDailyUsageAlerted,
+} from '@/lib/db'
 import {
   hasAuthMailConfig,
   sendNewContentNotificationEmail,
@@ -16,7 +21,9 @@ function getSiteUrl(): string {
 }
 
 /**
- * Avisa todos os utilizadores registados sempre que um novo dataset, relatório ou dashboard é
+ * Avisa quem escolheu receber notificações (nunca todos os utilizadores registados: essa era a
+ * versão antiga — o portal enviava email a toda a base de dados sempre que algo novo era
+ * publicado, sem hipótese de recusar) sempre que um novo dataset, relatório ou dashboard é
  * publicado. Corre em segundo plano (nunca bloqueia a resposta da criação do conteúdo) e cada
  * envio falha isoladamente — um endereço inválido não impede os restantes.
  */
@@ -28,7 +35,8 @@ export async function notifyUsersOfNewContent(
   if (!hasAuthMailConfig()) return
 
   const url = `${getSiteUrl()}${path}`
-  const users = await findAllRegisteredUsers()
+  const users = await findUsersSubscritosNotificacoes()
+  if (users.length === 0) return
 
   const results = await Promise.allSettled(
     users.map((u) => sendNewContentNotificationEmail(u.email, contentType, title, url))

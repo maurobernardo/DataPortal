@@ -93,12 +93,20 @@ export async function getCurrentUserProfile() {
 
   const role = normalizeRole(user.role)
 
+  const receberNotificacoesRaw = (user as any).receber_notificacoes
+  const receberNotificacoes =
+    receberNotificacoesRaw === null || receberNotificacoesRaw === undefined
+      ? null
+      : Boolean(receberNotificacoesRaw)
+
   return {
     id: user.id,
     email: user.email,
     name: user.name,
     role,
     emailVerified: Boolean(user.emailVerified),
+    // null = ainda não respondeu à pergunta de notificações (é isto que faz o popup aparecer).
+    receberNotificacoes,
   }
 }
 

@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
-import { AlertTriangle, Brain, Database, ListTree, MessageSquareText, Users } from 'lucide-react'
+import Link from 'next/link'
+import { AlertTriangle, ArrowRight, Brain, Database, DollarSign, ListTree, MessageSquareText, Users } from 'lucide-react'
 import { getCurrentUserProfile } from '@/lib/auth'
 import { getAiInsightUsageSummary } from '@/lib/db'
 import { resumoFalhasRecentes } from '@/lib/analysis/falhas'
@@ -68,6 +69,17 @@ export default async function AiUsagePage() {
                 Consultas de IA por utilizador. Sem limite diário activo neste momento.
               </p>
             </div>
+
+            <Link
+              href="/admin/custos-ia"
+              className="flex items-center justify-between gap-3 bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:border-green-200 hover:bg-green-50/40 transition-colors"
+            >
+              <span className="flex items-center gap-2.5 text-sm font-semibold text-gray-800">
+                <DollarSign className="w-4.5 h-4.5 text-green-600" />
+                Quanto isto custa a sério, em dólares e tokens: ver Custos de IA
+              </span>
+              <ArrowRight className="w-4 h-4 text-gray-400" />
+            </Link>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">

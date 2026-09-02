@@ -352,9 +352,12 @@ export function HealthMapDashboard({
           'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
           { attribution: '© Esri', maxZoom: 16 }
         ),
+        // maxNativeZoom: o satélite da Esri não tem imagem de alta resolução acima do zoom 17 em
+        // grande parte de Moçambique; sem isto, dar zoom além do que existe mostrava quadrados
+        // cinzentos "Map data not yet available" em vez de esticar o último tile real.
         sat: L.tileLayer(
           'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-          { attribution: '© Esri', maxZoom: 18 }
+          { attribution: '© Esri', maxZoom: 18, maxNativeZoom: 17 }
         ),
       }
       tilesRef.current.osm!.addTo(map)

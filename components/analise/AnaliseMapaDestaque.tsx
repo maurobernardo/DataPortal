@@ -18,11 +18,16 @@ const CAMADAS = {
     rotulo: 'Rua',
     url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
     atribuicao: '&copy; OpenStreetMap',
+    maxNativeZoom: 19,
   },
   satelite: {
     rotulo: 'Satélite',
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     atribuicao: 'Esri, Maxar, Earthstar Geographics',
+    // O satélite da Esri não tem imagem de alta resolução acima do zoom 17 em grande parte de
+    // Moçambique: sem isto o Leaflet pedia tiles que não existem e mostrava quadrados cinzentos
+    // "Map data not yet available" ao aproximar (mesmo bug já corrigido em VisorRuas360.tsx).
+    maxNativeZoom: 17,
   },
 } as const
 
@@ -55,7 +60,12 @@ export function AnaliseMapaDestaque({ destaque }: { destaque: Destaque }) {
       const cfg = CAMADAS[camada]
       if (camadaRef.current) mapRef.current.removeLayer(camadaRef.current)
       // crossOrigin: sem isto, a exportação para PDF (html2canvas) captura o mapa em branco.
-      camadaRef.current = L.tileLayer(cfg.url, { attribution: cfg.atribuicao, maxZoom: 19, crossOrigin: true }).addTo(mapRef.current)
+      camadaRef.current = L.tileLayer(cfg.url, {
+        attribution: cfg.atribuicao,
+        maxZoom: 19,
+        maxNativeZoom: cfg.maxNativeZoom,
+        crossOrigin: true,
+      }).addTo(mapRef.current)
 
       mapRef.current.eachLayer((c) => {
         if ((c as any).feature) mapRef.current!.removeLayer(c)

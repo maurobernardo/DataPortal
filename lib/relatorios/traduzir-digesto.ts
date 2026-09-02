@@ -1,4 +1,4 @@
-import { chamarEstagioRelatorio } from './router'
+import { chamarEstagioRelatorio, custoUsd, modeloParaRelatorio } from './router'
 import { numerosDoTexto, numerosPerdidos, TraducaoInfielError } from '@/lib/analysis/traducao'
 import type { Digesto } from './digesto'
 
@@ -134,7 +134,13 @@ function textoTraduzivel(d: Pick<Digesto, 'o_que_e' | 'resumo_curto' | 'resumo_m
   return partes.join(' \n ')
 }
 
-export async function traduzirDigesto(digesto: Digesto): Promise<Digesto> {
+export async function traduzirDigesto(digesto: Digesto): Promise<{
+  digesto: Digesto
+  modelo: string
+  tokensEntrada: number
+  tokensSaida: number
+  custoUsd: number
+}> {
   const entrada = {
     o_que_e: digesto.o_que_e,
     resumo_curto: digesto.resumo_curto,
@@ -162,19 +168,26 @@ export async function traduzirDigesto(digesto: Digesto): Promise<Digesto> {
   // As páginas de cada achado/recomendação vêm do CÓDIGO original, nunca do que a tradução
   // devolveu: um número de página trocado pela tradução apontaria para a página errada do PDF, e
   // ninguém teria como desconfiar disso ao ler o digesto em inglês.
+  const modelo = modeloParaRelatorio('traducao')
   return {
-    ...traduzido,
-    achados: traduzido.achados.map((a, i) => ({
-      ...a,
-      pagina: digesto.achados[i]?.pagina ?? a.pagina,
-      ano: digesto.achados[i]?.ano ?? null,
-    })),
-    recomendacoes: traduzido.recomendacoes.map((r, i) => ({ ...r, pagina: digesto.recomendacoes[i]?.pagina ?? r.pagina })),
-    resultado: { ...traduzido.resultado, pagina: digesto.resultado.pagina },
-    glossario: traduzido.glossario.map((g, i) => ({ ...g, pagina: digesto.glossario[i]?.pagina ?? g.pagina })),
-    // As afirmações numéricas não são traduzidas: são a matéria-prima da verificação contra os
-    // dados do portal, e têm de continuar exactamente como o digesto original as leu.
-    afirmacoes_numericas: digesto.afirmacoes_numericas,
+    digesto: {
+      ...traduzido,
+      achados: traduzido.achados.map((a, i) => ({
+        ...a,
+        pagina: digesto.achados[i]?.pagina ?? a.pagina,
+        ano: digesto.achados[i]?.ano ?? null,
+      })),
+      recomendacoes: traduzido.recomendacoes.map((r, i) => ({ ...r, pagina: digesto.recomendacoes[i]?.pagina ?? r.pagina })),
+      resultado: { ...traduzido.resultado, pagina: digesto.resultado.pagina },
+      glossario: traduzido.glossario.map((g, i) => ({ ...g, pagina: digesto.glossario[i]?.pagina ?? g.pagina })),
+      // As afirmações numéricas não são traduzidas: são a matéria-prima da verificação contra os
+      // dados do portal, e têm de continuar exactamente como o digesto original as leu.
+      afirmacoes_numericas: digesto.afirmacoes_numericas,
+    },
+    modelo,
+    tokensEntrada: resposta.tokens_entrada,
+    tokensSaida: resposta.tokens_saida,
+    custoUsd: custoUsd(modelo, resposta.tokens_entrada, resposta.tokens_saida),
   }
 }
 

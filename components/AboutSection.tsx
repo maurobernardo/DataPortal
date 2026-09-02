@@ -13,6 +13,7 @@ import {
   FileText,
   LayoutDashboard,
   BrainCircuit,
+  Video,
 } from 'lucide-react'
 import { useContactModal } from '@/components/ContactModalProvider'
 import { CountUp } from '@/components/CountUp'
@@ -53,6 +54,12 @@ const PILLARS = [
     label: 'Relatórios',
     desc: 'Estudos e publicações para descarregar ou solicitar, com registo de pedidos de acesso.',
     href: '/relatorios',
+  },
+  {
+    icon: Video,
+    label: 'Ruas 360°',
+    desc: 'Navegue pelas ruas de Maputo e Chimoio captadas em 360° pela nossa equipa, sem sair do portal.',
+    href: '/ruas-360',
   },
 ] as const
 
@@ -190,7 +197,7 @@ export function AboutSection() {
             <div>
               <p className="text-sm font-bold text-gray-900">Data4Moz</p>
               <p className="text-xs text-gray-500">
-                Análise por IA · Geoespacial · Alfanumérico · Dashboards · Mapas inteligentes · Relatórios
+                Análise por IA · Geoespacial · Alfanumérico · Dashboards · Mapas inteligentes · Relatórios · Ruas 360°
               </p>
             </div>
           </div>

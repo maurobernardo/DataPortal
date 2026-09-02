@@ -34,6 +34,7 @@
     "leaflet.heat": "^0.2.0",
     "leaflet.markercluster": "^1.5.3",
     "lucide-react": "^0.468.0",
+    "mapillary-js": "^4.1.2",
     "maxmind": "^5.0.7",
     "mysql2": "^3.22.2",
     "next": "^14.2.18",

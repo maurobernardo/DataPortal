@@ -20,7 +20,12 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: 'Dataset não encontrado' }, { status: 404 })
     }
 
-    const preview = await getDatasetPreview(dataset)
+    // Sem limite de feições: esta é a pré-visualização interactiva mostrada ao público, e cortar
+    // a meio dava uma cobertura nacional a parecer incompleta (visto ao vivo: um dataset com
+    // polígonos por todo o país, mas só as primeiras 500 feições desenhadas, deixando zonas
+    // inteiras em branco). O limite por omissão de `getDatasetPreview` (500) continua a valer
+    // noutros usos dela (miniatura dos cartões, amostra de tabela), só não aqui.
+    const preview = await getDatasetPreview(dataset, { maxFeatures: Infinity })
     registarAcesso(request, 'vista_dataset', { referenciaId: datasetId }).catch(() => {})
 
     // Backfill preguiçoso do badge/bbox em cache. Reavalia sempre que a flag ainda não existe OU

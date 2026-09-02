@@ -4,6 +4,11 @@
 @import "leaflet.markercluster/dist/MarkerCluster.css";
 @import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 
+/* Barra de scroll invisível numa faixa que já é claramente scrollável por outros sinais (setas,
+   gradiente, etc.) — usada onde uma barra do sistema só acrescentaria ruído visual. */
+.no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -448,7 +453,13 @@ summary:focus-visible {
 }
 .pd-nav.scrolled { box-shadow: 0 4px 6px rgba(11,27,20,.05), 0 2px 4px rgba(11,27,20,.04); }
 .pd-nav-inner {
-  max-width: 1360px;
+  /* Ajustado ao vivo depois de o botão de pesquisa sair do cabeçalho: o conteúdo real (logo + 7
+     rótulos com ícone + AI Insights + acções) mede ~1344px de largura própria. Um valor colado a
+     isso (1370px, tentado antes) não dava folga nenhuma — variações normais de fonte/zoom/barra de
+     scroll entre browsers já chegavam para cortar os rótulos a meio. 1420px dá ~75px de margem
+     (perdidos entre logo/links/acções, que o `.pd-nav-links` com `flex: 1 1 auto` centra — mas
+     pouco a ponto de nunca voltar a parecer um vão em branco, como acontecia com o 1480px antigo). */
+  max-width: 1420px;
   margin: 0 auto;
   padding: 0 1rem 0 1.25rem;
   height: 64px;
@@ -520,11 +531,11 @@ summary:focus-visible {
 .pd-nav-link--maps .pd-nav-link-label {
   max-width: 8.5rem;
 }
-/* Acima de 1480px (== o breakpoint de compactNav em Navigation.tsx): rótulos completos com
-   ícones, espaço de sobra confirmado. Abaixo disso — incluindo larguras de portátil muito comuns
-   como 1280/1366px — usa-se o modo compacto (rótulos curtos, sem ícones) das duas regras abaixo,
-   nunca o modo completo espremido a cortar texto a meio. */
-@media (min-width: 1401px) {
+/* Acima de 1460px (== o breakpoint de compactNav em Navigation.tsx): rótulos completos com ícones,
+   espaço de sobra confirmado. Abaixo disso — incluindo larguras de portátil muito comuns como
+   1280/1366px — usa-se o modo compacto (rótulos curtos, sem ícones) das duas regras abaixo, nunca
+   o modo completo espremido a cortar texto a meio. */
+@media (min-width: 1461px) {
   .pd-nav-links {
     gap: 0.25rem;
     padding-right: 0.5rem;

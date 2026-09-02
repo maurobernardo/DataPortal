@@ -28,10 +28,10 @@ comparáveis e úteis para a tomada de decisão, contribuindo para o fortalecime
 uso de dados em Moçambique. Citação da equipa: "Do catálogo ao mapa analítico: dados e decisão no
 mesmo fluxo."
 
-Os 6 pilares/áreas principais do portal (cartões na página inicial): Análise por Inteligência
+Os 7 pilares/áreas principais do portal (cartões na página inicial): Análise por Inteligência
 Artificial (/analise/nova), Dados geoespaciais (/dados-espaciais), Dados alfanuméricos
 (/dados-alfanumericos), Dashboards alfanuméricos (/dashboards-alfanumericos, actualmente
-desactivado), Mapas Inteligentes (/maps), Relatórios (/relatorios).
+desactivado), Mapas Inteligentes (/maps), Relatórios (/relatorios), Ruas 360° (/ruas-360).
 
 Contacto: botão "Fale com a equipa" (abre o modal de contacto) ou e-mail
 portaldedados@data4moz.com. Data4Moz também tem página no LinkedIn.
@@ -67,6 +67,9 @@ formulário muda para pedir "o código de 6 dígitos da sua aplicação autentic
 backup" (botão "Confirmar", e "Voltar ao login" para desistir).
 Depois de entrar: administradores vão para /dashboard; utilizadores normais vão para a página que
 pediam antes de ser levados ao login (parâmetro "next" no link), ou para a página inicial.
+No primeiro login de uma conta (antes de ter respondido alguma vez), aparece um popup a perguntar
+"Quer receber notificações do portal?" (sim/não): a escolha define se recebe por email o aviso de
+novo dataset, relatório ou dashboard publicado. Pode mudar de ideias depois em /perfil.
 
 ## Recuperar senha (/recuperar-senha)
 Só pede o Email; botão "Enviar código" manda um código de 6 dígitos por email. Depois mostra
@@ -112,6 +115,10 @@ Página de gestão completa da conta.
   códigos"); 3) introduzir o código gerado pela app para confirmar ("Confirmar e activar"). Se já
   estiver activa, mostra um selo "Activo" e um botão para desactivar (pede a senha actual).
   Administradores podem ser obrigados a configurar isto antes de continuar a usar o portal.
+- **Notificações por email**: um interruptor (sim/não) para escolher se quer receber por email um
+  aviso sempre que houver um novo dataset, relatório ou dashboard publicado no portal. É a mesma
+  pergunta feita num popup no primeiro login depois de criar conta; aqui pode mudar de ideias a
+  qualquer momento. Enquanto não escolher, o portal não envia esses emails.
 - **Os meus dados**: botão "Exportar os meus dados" descarrega um ficheiro
   dataportal-os-meus-dados.json com os dados pessoais guardados.
 - **Zona de perigo**: botão "Eliminar conta" pede a senha actual e exige escrever a palavra
@@ -379,6 +386,61 @@ original, data), consultável mais tarde em "Meus dashboards":
 
 ## Limites de uso
 Um utilizador autenticado pode fazer até 10 análises por hora.
+
+# RUAS 360° (/ruas-360)
+
+## O que é
+Um visor de ruas em 360°, ao estilo do Street View, mas com imagens captadas pela própria equipa do
+Data Portal. Permite andar pelas ruas de Maputo e de Chimoio imagem a imagem, olhar em qualquer
+direcção, e ver os sinais de trânsito detectados nessas ruas. Tudo acontece dentro do portal, sem
+abrir outro site, e não é preciso ter conta iniciada. Chega-se lá pelo menu do topo, na entrada
+"Ruas 360°". As imagens estão alojadas no Mapillary, que é onde a equipa as publica.
+
+A página tem três partes: o cabeçalho de apresentação, o visor (mapa mais imagem da rua), e no fim
+uma secção "Como usar o visor" com os passos explicados.
+
+## O visor: o que se vê
+Ocupa quase todo o ecrã. Por defeito a imagem da rua é o painel grande e o mapa é uma caixa pequena
+no canto inferior esquerdo. No mapa:
+- Cada ponto verde é uma imagem captada naquele sítio.
+- O círculo azul é a posição actual, e o cone azul mostra para onde a câmara está virada.
+- O mapa acompanha sempre a posição à medida que se avança pela rua (não há botão para desligar).
+
+## Como navegar
+1. Clicar num ponto verde do mapa abre essa rua no visor.
+2. Arrastar a imagem com o rato olha à volta, em qualquer direcção.
+3. As setas no topo do visor avançam ou recuam uma imagem; o botão de reprodução (triângulo)
+   percorre a captura sozinho.
+4. Clicar no painel pequeno passa-o a grande, e clicar no outro volta atrás. O botão "Mapa em
+   grande" (que passa a "Rua em grande") faz exactamente o mesmo.
+
+## Botões no canto superior direito do visor
+- "Maputo" e "Chimoio": escolhem a cidade. Ao trocar, o visor abre logo numa rua dessa cidade.
+- "Mapa" e "Satélite": mudam o fundo do mapa pequeno.
+- "Sinais de trânsito": desenha no mapa os sinais detectados nas imagens (stop, cedência, sentido
+  proibido, limites de velocidade, estacionamento proibido, passadeiras, lombas, semáforos, obras,
+  rotundas, entre outros), cada um com o seu desenho próprio. Clicar num sinal leva o visor à
+  imagem captada mais perto dele, para se ver o sinal na rua. Se o mapa estiver a mostrar uma área
+  muito grande, o botão diz "Aproxime para ver sinais": basta aproximar o mapa. A procura demora
+  alguns segundos e o botão mostra "A procurar sinais…" enquanto trabalha.
+- "Filtros": abre um painel com três filtros. "Tipo de imagem" (Todas, 360°, Normais); "Data da
+  captura" (De/Até, por ano); "Quem captou" (lista de quem tem imagens naquela zona). O número no
+  botão indica quantos filtros estão activos, e há um "Limpar filtros" para repor tudo. Se a
+  combinação escolhida não tiver imagens naquela zona, aparece o aviso "Nenhuma imagem com estes
+  filtros nesta zona". Cada filtro é aplicado no momento em que se escolhe: NÃO existe botão de
+  "aplicar" nem é preciso fechar o painel ou clicar fora dele, e o mapa e a imagem actualizam-se
+  sozinhos. Para limitar a um único ano é preciso pôr esse ano no "De" e o mesmo ano no "Até":
+  deixar o "Até" em "Hoje" inclui também os anos seguintes.
+- "Capturas": lista os percursos gravados naquela zona do mapa, cada um com a fotografia, a data e
+  o número de imagens. Escolher um mostra só esse percurso; "Todas as capturas" volta a mostrar tudo.
+
+## Perguntas frequentes
+- Não é preciso conta nem login para usar o visor.
+- Não há download das imagens a partir desta página.
+- Se o visor ficar escuro ou uma rua demorar a abrir, é o serviço de imagens (Mapillary) a
+  responder devagar; clicar noutro ponto verde e tentar de novo costuma resolver.
+- Se não aparecerem pontos verdes, a zona do mapa onde está não tem capturas: use os botões de
+  cidade ou arraste o mapa para uma rua com cobertura.
 
 # RELATÓRIOS
 

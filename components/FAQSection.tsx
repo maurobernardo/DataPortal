@@ -175,6 +175,49 @@ const FAQ_ITEMS: { question: string; answer: ReactNode }[] = [
     ),
   },
   {
+    question: 'Posso pedir a análise por IA de um relatório?',
+    answer: (
+      <>
+        Sim. Em qualquer{' '}
+        <Link href="/relatorios" className="font-semibold text-[#064E2C] hover:underline">
+          relatório
+        </Link>{' '}
+        com PDF, peça a análise: recebe um resumo com os principais pontos, cada um com a página
+        onde se confirma, pode fazer perguntas directas ao documento, e o resultado é verificado
+        contra os dados do próprio portal.
+      </>
+    ),
+  },
+  {
+    question: 'O que é a página Ruas 360°?',
+    answer: (
+      <>
+        Um visor de ruas em 360°, ao estilo do Street View, mas com imagens captadas pela própria
+        equipa do Data Portal. Permite andar pelas ruas de Maputo e de Chimoio imagem a imagem, ver
+        os sinais de trânsito detectados e filtrar por data, tipo de imagem ou quem captou. Não
+        precisa de conta. Aceda em{' '}
+        <Link href="/ruas-360" className="font-semibold text-[#064E2C] hover:underline">
+          Ruas 360°
+        </Link>
+        , no menu do topo.
+      </>
+    ),
+  },
+  {
+    question: 'Posso escolher se quero receber emails do portal?',
+    answer: (
+      <>
+        Sim. No primeiro login aparece um popup a perguntar se quer receber, por email, o aviso de
+        novo dataset, relatório ou dashboard publicado; enquanto não responder, esses emails não são
+        enviados. Pode mudar de ideias a qualquer momento na secção «Notificações por email» do seu{' '}
+        <Link href="/perfil" className="font-semibold text-[#064E2C] hover:underline">
+          Perfil
+        </Link>
+        .
+      </>
+    ),
+  },
+  {
     question: 'As perguntas que faço à análise por IA são partilhadas com alguém?',
     answer: (
       <>
@@ -304,18 +347,26 @@ export function FAQSection() {
             })}
           </div>
 
-          <div className="flex items-center justify-between gap-4 mt-6">
+          <div className="flex items-center justify-between gap-2 sm:gap-4 mt-6">
             <button
               type="button"
               onClick={() => irPara(pagina - 1)}
               disabled={pagina === 0}
-              className="inline-flex items-center gap-1.5 rounded-full border border-[#CFE3D6] bg-white px-4 py-2 text-[13px] font-bold text-[#064E2C] hover:bg-[#F1F8F4] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white transition-colors"
+              aria-label="Página anterior"
+              className="inline-flex items-center gap-1.5 rounded-full border border-[#CFE3D6] bg-white px-2.5 sm:px-4 py-2 text-[13px] font-bold text-[#064E2C] hover:bg-[#F1F8F4] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white transition-colors shrink-0"
             >
               <ArrowLeft className="h-4 w-4" aria-hidden />
-              Anterior
+              <span className="hidden sm:inline">Anterior</span>
             </button>
 
-            <div className="flex items-center gap-2">
+            {/*
+              Mobile-first: com 9 páginas (18 perguntas / 2 por página), os pontos + os dois botões
+              nunca cabem numa só linha num ecrã de 375px com o texto todo — o botão "Seguinte"
+              saía do ecrã. `overflow-x-auto` é a rede de segurança para qualquer contagem de
+              páginas futura; os pontos mais pequenos e sem gap a mais já evitam precisar dela na
+              prática.
+            */}
+            <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar px-1">
               {Array.from({ length: totalPaginas }, (_, i) => (
                 <button
                   key={i}
@@ -323,8 +374,8 @@ export function FAQSection() {
                   onClick={() => irPara(i)}
                   aria-label={`Ir para perguntas ${i * POR_PAGINA + 1}-${Math.min((i + 1) * POR_PAGINA, FAQ_ITEMS.length)}`}
                   aria-current={pagina === i}
-                  className={`h-2.5 rounded-full transition-all duration-300 ${
-                    pagina === i ? 'w-6 bg-[#064E2C]' : 'w-2.5 bg-[#CFE3D6] hover:bg-[#9FC7AC]'
+                  className={`h-2 sm:h-2.5 rounded-full shrink-0 transition-all duration-300 ${
+                    pagina === i ? 'w-5 sm:w-6 bg-[#064E2C]' : 'w-2 sm:w-2.5 bg-[#CFE3D6] hover:bg-[#9FC7AC]'
                   }`}
                 />
               ))}
@@ -334,9 +385,10 @@ export function FAQSection() {
               type="button"
               onClick={() => irPara(pagina + 1)}
               disabled={pagina === totalPaginas - 1}
-              className="inline-flex items-center gap-1.5 rounded-full border border-[#CFE3D6] bg-white px-4 py-2 text-[13px] font-bold text-[#064E2C] hover:bg-[#F1F8F4] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white transition-colors"
+              aria-label="Página seguinte"
+              className="inline-flex items-center gap-1.5 rounded-full border border-[#CFE3D6] bg-white px-2.5 sm:px-4 py-2 text-[13px] font-bold text-[#064E2C] hover:bg-[#F1F8F4] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white transition-colors shrink-0"
             >
-              Seguinte
+              <span className="hidden sm:inline">Seguinte</span>
               <ArrowRight className="h-4 w-4" aria-hidden />
             </button>
           </div>

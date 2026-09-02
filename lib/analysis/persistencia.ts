@@ -11,6 +11,24 @@ import { compor } from './compositor'
  */
 
 let colunaConfiancaDetalheGarantida = false
+let colunasTokensGarantidas = false
+
+/** Auditoria de custos (painel /admin/custos-ia): tokens brutos por análise, ao lado do
+ *  `custo_usd` já calculado, para se poder decompor por modelo/preço sem reprocessar nada. */
+async function garantirColunasTokens() {
+  if (colunasTokensGarantidas) return
+  try {
+    await db.execute('ALTER TABLE analises ADD COLUMN tokens_entrada INT NULL')
+  } catch {
+    // já existe
+  }
+  try {
+    await db.execute('ALTER TABLE analises ADD COLUMN tokens_saida INT NULL')
+  } catch {
+    // já existe
+  }
+  colunasTokensGarantidas = true
+}
 
 /** PLANO-DATAPROPROMAX.md, Fase 1: o painel de confiança (ligações geográficas, completude,
  *  valores derivados) é um objecto estruturado, não cabe na coluna `confianca` (um único float
@@ -44,6 +62,7 @@ export async function actualizarEstado(id: string, estado: EstadoAnalise): Promi
 
 export async function guardarResultado(r: ResultadoPipeline): Promise<void> {
   await garantirColunaConfiancaDetalhe()
+  await garantirColunasTokens()
   const { contexto } = r
 
   // R5: a ordem dos blocos varia com o arquétipo, calculada aqui porque é o único ponto que já
@@ -58,7 +77,7 @@ export async function guardarResultado(r: ResultadoPipeline): Promise<void> {
     `UPDATE analises SET
        arquetipo = ?, estado = ?, plano = ?, resultados = ?, achados = ?,
        narrativa = ?, dashboard_spec = ?, fontes = ?, confianca = ?, custo_usd = ?, duracao_ms = ?,
-       confianca_detalhe = ?
+       confianca_detalhe = ?, tokens_entrada = ?, tokens_saida = ?
      WHERE id = ?`,
     [
       r.compreensao.arquetipo_sugerido,
@@ -88,6 +107,8 @@ export async function guardarResultado(r: ResultadoPipeline): Promise<void> {
       r.custo_usd,
       r.duracao_ms,
       JSON.stringify(r.confianca),
+      r.tokens_entrada,
+      r.tokens_saida,
       r.analise_id,
     ]
   )
@@ -384,5 +405,120 @@ export async function listarAnalisesDoUtilizador(
     [utilizadorId, limite]
   )) as [any[], unknown]
   return rows as any
+}
+
+export type EstatisticasCustoAnalises = {
+  totais: {
+    nAnalises: number
+    custoTotalUsd: number
+    custoMedioUsd: number
+    tokensEntrada: number
+    tokensSaida: number
+    duracaoMediaMs: number
+  }
+  porUtilizador: {
+    utilizadorId: number | null
+    nome: string | null
+    email: string | null
+    nAnalises: number
+    custoTotalUsd: number
+    custoMedioUsd: number
+  }[]
+  recentes: {
+    id: string
+    pergunta: string
+    nome: string | null
+    email: string | null
+    custoUsd: number | null
+    tokensEntrada: number | null
+    tokensSaida: number | null
+    duracaoMs: number | null
+    criadoEm: string
+  }[]
+}
+
+/**
+ * A base do painel /admin/custos-ia: quanto cada análise custa de facto em tokens da Anthropic,
+ * para decidir quanto cobrar por ela. Só entram análises com `custo_usd` preenchido (estado
+ * 'pronto' ou 'erro' já passado pelo pipeline): uma análise ainda "a planear" não gastou nada
+ * a sério ainda, ou o seu custo ainda não foi persistido.
+ *
+ * `desde`: filtro de período do painel (diário/semanal/mensal/trimestral/semestral/anual/tudo).
+ * Null = sem filtro, o histórico inteiro.
+ */
+export async function obterEstatisticasCustoAnalises(desde: Date | null = null): Promise<EstatisticasCustoAnalises> {
+  const filtroPeriodo = desde ? 'AND criado_em >= ?' : ''
+  const paramsPeriodo = desde ? [desde] : []
+
+  const [totaisRows] = (await db.execute(
+    `SELECT
+       COUNT(*) as nAnalises,
+       COALESCE(SUM(custo_usd), 0) as custoTotalUsd,
+       COALESCE(AVG(custo_usd), 0) as custoMedioUsd,
+       COALESCE(SUM(tokens_entrada), 0) as tokensEntrada,
+       COALESCE(SUM(tokens_saida), 0) as tokensSaida,
+       COALESCE(AVG(duracao_ms), 0) as duracaoMediaMs
+     FROM analises
+     WHERE custo_usd IS NOT NULL ${filtroPeriodo}`,
+    paramsPeriodo
+  )) as [any[], unknown]
+
+  const [porUtilizadorRows] = (await db.execute(
+    `SELECT a.utilizador_id as utilizadorId, u.name as nome, u.email as email,
+       COUNT(*) as nAnalises,
+       COALESCE(SUM(a.custo_usd), 0) as custoTotalUsd,
+       COALESCE(AVG(a.custo_usd), 0) as custoMedioUsd
+     FROM analises a
+     LEFT JOIN users u ON u.id = a.utilizador_id
+     WHERE a.custo_usd IS NOT NULL ${filtroPeriodo}
+     GROUP BY a.utilizador_id, u.name, u.email
+     ORDER BY custoTotalUsd DESC
+     LIMIT 50`,
+    paramsPeriodo
+  )) as [any[], unknown]
+
+  const [recentesLista] = (await db.execute(
+    `SELECT a.id, a.pergunta, u.name as nome, u.email as email,
+       a.custo_usd as custoUsd, a.tokens_entrada as tokensEntrada, a.tokens_saida as tokensSaida,
+       a.duracao_ms as duracaoMs, a.criado_em as criadoEm
+     FROM analises a
+     LEFT JOIN users u ON u.id = a.utilizador_id
+     WHERE a.custo_usd IS NOT NULL ${filtroPeriodo}
+     ORDER BY a.criado_em DESC
+     LIMIT 50`,
+    paramsPeriodo
+  )) as [any[], unknown]
+
+  const t = totaisRows[0] || {}
+
+  return {
+    totais: {
+      nAnalises: Number(t.nAnalises) || 0,
+      custoTotalUsd: Number(t.custoTotalUsd) || 0,
+      custoMedioUsd: Number(t.custoMedioUsd) || 0,
+      tokensEntrada: Number(t.tokensEntrada) || 0,
+      tokensSaida: Number(t.tokensSaida) || 0,
+      duracaoMediaMs: Number(t.duracaoMediaMs) || 0,
+    },
+    porUtilizador: porUtilizadorRows.map((row: any) => ({
+      utilizadorId: row.utilizadorId,
+      nome: row.nome,
+      email: row.email,
+      nAnalises: Number(row.nAnalises) || 0,
+      custoTotalUsd: Number(row.custoTotalUsd) || 0,
+      custoMedioUsd: Number(row.custoMedioUsd) || 0,
+    })),
+    recentes: recentesLista.map((row: any) => ({
+      id: row.id,
+      pergunta: row.pergunta,
+      nome: row.nome,
+      email: row.email,
+      custoUsd: row.custoUsd != null ? Number(row.custoUsd) : null,
+      tokensEntrada: row.tokensEntrada,
+      tokensSaida: row.tokensSaida,
+      duracaoMs: row.duracaoMs,
+      criadoEm: row.criadoEm,
+    })),
+  }
 }
 

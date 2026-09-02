@@ -2862,16 +2862,24 @@
   flex-direction: column;
   gap: 2px;
   font-size: 11px;
+  /* Sem isto, um valor sem espaço nenhum para quebrar (uma média com muitas casas decimais, por
+     exemplo) força a coluna da grelha a alargar além da própria célula — o item de grid, por
+     omissão, nunca encolhe abaixo da largura do seu conteúdo, mesmo com a faixa a dizer 1fr. */
+  min-width: 0;
 }
 
 .geo-interactive-map__stat-chip span {
   color: var(--pd-ink-500);
+  overflow-wrap: anywhere;
 }
 
 .geo-interactive-map__stat-chip strong {
   color: var(--pd-ink-900);
   font-size: 13px;
   font-weight: 700;
+  /* "anywhere" (não só "break-word") porque um número gigante sem hífen nem espaço nenhum não tem
+     onde quebrar de outra forma; sem isto o texto simplesmente saía do cartão. */
+  overflow-wrap: anywhere;
 }
 
 .geo-interactive-map__hint--footer {

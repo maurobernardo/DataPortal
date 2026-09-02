@@ -9,10 +9,16 @@ const TILES = {
   map: {
     url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxNativeZoom: 19,
   },
   satellite: {
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     attribution: 'Tiles &copy; Esri',
+    // O satélite da Esri não tem imagem de alta resolução acima do zoom 17 em grande parte de
+    // Moçambique: sem isto o Leaflet pedia tiles que não existem e mostrava quadrados cinzentos
+    // "Map data not yet available" ao aproximar. Com `maxNativeZoom`, estica o último tile real
+    // em vez de pedir um que nunca chega (mesmo bug e correcção já feitos em VisorRuas360.tsx).
+    maxNativeZoom: 17,
   },
 }
 
@@ -78,6 +84,7 @@ export function DatasetMapPreview({
       tileRef.current = L.tileLayer(TILES.map.url, {
         attribution: TILES.map.attribution,
         maxZoom: 19,
+        maxNativeZoom: TILES.map.maxNativeZoom,
       }).addTo(map)
 
       if (geojson) {
@@ -149,6 +156,7 @@ export function DatasetMapPreview({
       tileRef.current = L.tileLayer(TILES[baseMap].url, {
         attribution: TILES[baseMap].attribution,
         maxZoom: 19,
+        maxNativeZoom: TILES[baseMap].maxNativeZoom,
       }).addTo(mapRef.current)
 
       if (geojsonRef.current) {

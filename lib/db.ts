@@ -209,6 +209,16 @@ export async function ensureUsersTable(): Promise<void> {
   }
 
   try {
+    // NULL de propósito (não DEFAULT 0/1): é o valor "ainda não perguntámos", que é o que faz o
+    // popup de "quer receber notificações?" aparecer no primeiro login a seguir a esta migração
+    // (contas já existentes) ou ao registo (contas novas). Depois de responder fica sempre 0 ou 1,
+    // nunca mais NULL, e o popup não volta a aparecer.
+    await db.execute(`ALTER TABLE users ADD COLUMN receber_notificacoes TINYINT(1) NULL DEFAULT NULL`)
+  } catch {
+    /* coluna já existe */
+  }
+
+  try {
     const [legacyRows] = (await db.execute('SELECT COUNT(*) as total FROM users')) as [
       { total: number }[],
       unknown,
@@ -314,6 +324,32 @@ export async function findAllRegisteredUsers() {
 export async function setUserActive(userId: number, active: boolean) {
   await ensureUsersTable()
   await db.execute('UPDATE users SET active = ? WHERE id = ?', [active ? 1 : 0, userId])
+}
+
+/** null = ainda não respondeu (é isto que faz o popup aparecer); true/false = já escolheu. */
+export async function getPreferenciaNotificacoes(userId: number): Promise<boolean | null> {
+  await ensureUsersTable()
+  const [rows] = (await db.execute('SELECT receber_notificacoes FROM users WHERE id = ? LIMIT 1', [
+    userId,
+  ])) as [any[], unknown]
+  const valor = rows[0]?.receber_notificacoes
+  return valor === null || valor === undefined ? null : Boolean(valor)
+}
+
+export async function setPreferenciaNotificacoes(userId: number, receber: boolean) {
+  await ensureUsersTable()
+  await db.execute('UPDATE users SET receber_notificacoes = ? WHERE id = ?', [receber ? 1 : 0, userId])
+}
+
+/** Só quem respondeu SIM: usada exclusivamente para os emails de "novo conteúdo publicado"
+ *  (notifyUsersOfNewContent em lib/notifications.ts) — nunca para avisos de segurança da própria
+ *  conta (verificação de email, redefinição de senha, 2FA), que continuam a usar o email sempre. */
+export async function findUsersSubscritosNotificacoes() {
+  await ensureUsersTable()
+  const [rows] = (await db.execute(
+    `SELECT id, name, email FROM users WHERE receber_notificacoes = 1 AND active = 1`
+  )) as [any[], unknown]
+  return rows.map((row) => ({ id: row.id, name: row.name, email: row.email }))
 }
 
 export async function isUserActive(userId: number): Promise<boolean> {

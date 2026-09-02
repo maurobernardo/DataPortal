@@ -6,6 +6,7 @@ import {
   BarChart3,
   Brain,
   Database,
+  DollarSign,
   Globe2,
   Home,
   Settings,
@@ -15,6 +16,7 @@ import {
   MapPinned,
   MessageSquare,
   FileText,
+  FileSearch,
   Users,
   ScrollText,
   Lightbulb,
@@ -68,6 +70,12 @@ export function AdminSidebar({ user, activeTab }: AdminSidebarProps) {
       active: pathname === '/dashboard/ia-utilizacao',
     },
     {
+      icon: DollarSign,
+      label: 'Custos de IA',
+      href: '/admin/custos-ia',
+      active: pathname === '/admin/custos-ia',
+    },
+    {
       icon: Lightbulb,
       label: 'Sugestões de Datasets',
       href: '/admin/sugestoes-datasets',
@@ -84,6 +92,12 @@ export function AdminSidebar({ user, activeTab }: AdminSidebarProps) {
       label: 'Utilizadores',
       href: '/admin/utilizadores',
       active: pathname === '/admin/utilizadores',
+    },
+    {
+      icon: FileSearch,
+      label: 'Uso dos Relatórios',
+      href: '/admin/relatorios-uso',
+      active: pathname === '/admin/relatorios-uso',
     },
     {
       icon: Trash2,

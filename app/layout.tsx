@@ -4,6 +4,7 @@ import './globals.css'
 import { ConditionalNavigation } from '@/components/ConditionalNavigation'
 import { ConditionalFooter } from '@/components/ConditionalFooter'
 import { TermsConsentModal } from '@/components/TermsConsentModal'
+import { NotificationsConsentModal } from '@/components/NotificationsConsentModal'
 import { ContactModalProvider } from '@/components/ContactModalProvider'
 import { ChatbotAjuda } from '@/components/ChatbotAjuda'
 import { GoogleTranslate } from '@/components/GoogleTranslate'
@@ -50,6 +51,7 @@ export default function RootLayout({
           <GoogleTranslate />
           <ConditionalNavigation />
           <TermsConsentModal />
+          <NotificationsConsentModal />
           <main className="min-h-screen overflow-x-clip">
             {children}
           </main>

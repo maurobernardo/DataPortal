@@ -62,6 +62,7 @@ export default async function ProfilePage({
           totpEnabled={Boolean(user.totp_enabled)}
           pedidoEliminacaoEm={user.pedido_eliminacao_em ? new Date(user.pedido_eliminacao_em).toISOString() : null}
           totpObrigatorio={user.role === 'admin' && !user.totp_enabled && searchParams?.configurar2fa === 'obrigatorio'}
+          receberNotificacoes={(user as any).receber_notificacoes === null || (user as any).receber_notificacoes === undefined ? null : Boolean((user as any).receber_notificacoes)}
         />
       </div>
     </div>

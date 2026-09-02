@@ -1,0 +1,619 @@
+/* Ruas 360° — visor de street-view do próprio portal (/ruas-360) */
+
+.ruas360-page {
+  font-family: var(--pd-font-sans);
+  color: var(--pd-ink-700);
+  background: #f8faf8;
+  min-height: 100vh;
+}
+
+/* Hero completo, no mesmo molde das outras páginas do portal (catálogo de relatórios, geoespacial):
+   mesma altura, mesma pílula de eyebrow, mesmo verde de acento no título. */
+.ruas360-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+@media (min-width: 1024px) {
+  .ruas360-inner { padding: 0 32px; }
+}
+
+.ruas360-hero {
+  position: relative;
+  padding: 44px 0 36px;
+  min-height: 260px;
+  display: flex;
+  align-items: center;
+}
+@media (min-width: 768px) {
+  .ruas360-hero { padding: 48px 0 40px; }
+}
+@media (min-width: 1024px) {
+  .ruas360-hero { padding: 52px 0 44px; }
+}
+
+.ruas360-hero > .ruas360-inner {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+}
+
+.ruas360-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #EAF5EE;
+  margin-bottom: 12px;
+  padding: 6px 12px;
+  border-radius: 100px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+}
+
+.ruas360-hero h1 {
+  font-size: clamp(32px, 5vw, 44px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #fff;
+  line-height: 1.08;
+  margin-bottom: 12px;
+}
+
+.ruas360-hero h1 .accent { color: #7FD7A4; }
+
+.ruas360-hero-lede {
+  font-size: 17px;
+  color: rgba(255, 255, 255, 0.82);
+  max-width: 640px;
+  line-height: 1.55;
+  margin-bottom: 20px;
+}
+
+.ruas360-hero-destaques {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.ruas360-hero-destaques span {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.78);
+  padding: 6px 12px;
+  border-radius: 100px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.ruas360-main {
+  padding: 0;
+}
+
+/* Secção "Como usar", por baixo do visor. */
+.ruas360-guia {
+  padding: 40px 0 56px;
+  background: #f8faf8;
+  border-top: 1px solid #E2E8E5;
+}
+
+.ruas360-guia h2 {
+  font-size: clamp(22px, 3vw, 28px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--pd-ink-900, #0B1B14);
+  margin-bottom: 6px;
+}
+
+.ruas360-guia-lede {
+  font-size: 15px;
+  color: var(--pd-ink-500);
+  margin-bottom: 24px;
+  max-width: 620px;
+}
+
+.ruas360-passos {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+@media (min-width: 640px) {
+  .ruas360-passos { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 1024px) {
+  .ruas360-passos { grid-template-columns: repeat(4, 1fr); }
+}
+
+.ruas360-passo {
+  background: var(--pd-surface-0, #fff);
+  border: 1px solid #E2E8E5;
+  border-radius: 14px;
+  padding: 18px;
+  /* Sem isto, uma palavra longa no texto do passo alarga a coluna da grelha em vez de quebrar. */
+  min-width: 0;
+}
+
+.ruas360-passo-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.ruas360-passo-numero {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: var(--pd-green-700, #064E2C);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.ruas360-passo-icone { color: var(--pd-green-700, #064E2C); opacity: 0.55; }
+
+.ruas360-passo h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--pd-ink-900, #0B1B14);
+  margin-bottom: 6px;
+}
+
+.ruas360-passo p {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--pd-ink-700);
+  margin: 0;
+}
+
+/*
+ * O mesmo layout do mapillary.com: a foto ocupa o ecrã inteiro, o mapa é só um "onde estou"
+ * pequeno, flutuante, num canto — não uma coluna ao lado a disputar metade do espaço. Antes disto
+ * era uma grelha 50/50 (mapa | visor), que era exactamente o oposto do pedido de "ocupar o ecrã
+ * todo para dar mais visibilidade".
+ */
+/* Altura em vh e não o ecrã todo menos o cabeçalho: agora há um hero completo por cima e uma
+   secção de instruções por baixo, e o visor tem de continuar a ser a parte dominante da página
+   sem esconder que há mais conteúdo a seguir. */
+.ruas360-layout {
+  position: relative;
+  height: min(84vh, 880px);
+  min-height: 520px;
+}
+
+.ruas360-painel-visor {
+  position: absolute;
+  inset: 0;
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+}
+
+/*
+ * A barra de controlos flutua no canto superior direito, por cima do visor — o mesmo sítio onde o
+ * próprio mapillary.com põe o selector de camadas/filtros, para ficar visível sem tapar a imagem
+ * nem disputar espaço com a dica central ou o mapa de cobertura (que já ocupa o canto inferior
+ * esquerdo).
+ */
+.ruas360-controlos {
+  position: absolute;
+  z-index: 25;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.ruas360-controlo-grupo {
+  display: flex;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 4px;
+  border-radius: 10px;
+  box-shadow: var(--pd-shadow-sm);
+}
+
+.ruas360-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pd-ink-700);
+  background: transparent;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 7px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.ruas360-chip:hover { background: #EAF5EE; }
+
+.ruas360-chip.active {
+  background: var(--pd-green-700, #064E2C);
+  color: #fff;
+}
+
+/* Chips que vivem sozinhos (não dentro de um grupo) trazem o seu próprio fundo e sombra. */
+.ruas360-chip-solto {
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: var(--pd-shadow-sm);
+  padding: 8px 12px;
+}
+
+.ruas360-chip-solto.active-sinais {
+  background: #C2540A;
+  color: #fff;
+}
+
+/*
+ * O painel de capturas: cada linha mostra a miniatura, a data e quantas imagens tem nesta zona, em
+ * vez de um id opaco de sequência (o Mapillary não dá nomes às capturas). É a mesma leitura que o
+ * painel "All captures" do mapillary.com oferece: reconhece-se a captura pela fotografia, não pelo
+ * identificador.
+ */
+.ruas360-capturas {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 264px;
+  max-height: min(340px, 50vh);
+  overflow-y: auto;
+  background: rgba(255, 255, 255, 0.97);
+  border-radius: 10px;
+  padding: 6px;
+  box-shadow: 0 8px 24px rgba(11, 27, 20, 0.25);
+}
+
+.ruas360-captura,
+.ruas360-captura-todas {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+}
+
+.ruas360-captura-todas {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--pd-ink-700);
+  padding: 8px;
+}
+
+.ruas360-captura:hover,
+.ruas360-captura-todas:hover { background: #EAF5EE; }
+
+.ruas360-captura.active,
+.ruas360-captura-todas.active {
+  background: var(--pd-green-700, #064E2C);
+  color: #fff;
+}
+
+.ruas360-captura-imagem {
+  width: 72px;
+  height: 44px;
+  object-fit: cover;
+  border-radius: 6px;
+  flex-shrink: 0;
+  background: #E2E8E5;
+}
+
+.ruas360-captura-imagem-vazia { display: block; }
+
+/* Painel de filtros: mesma caixa branca das capturas, para os dois lerem como o mesmo sistema. */
+.ruas360-filtros {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 264px;
+  background: rgba(255, 255, 255, 0.97);
+  border-radius: 10px;
+  padding: 12px;
+  box-shadow: 0 8px 24px rgba(11, 27, 20, 0.25);
+  text-align: left;
+}
+
+.ruas360-filtro-grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ruas360-filtro-titulo {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--pd-ink-500);
+}
+
+.ruas360-filtro-opcoes {
+  display: flex;
+  gap: 4px;
+}
+
+.ruas360-filtro-opcao {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--pd-ink-700);
+  background: #F1F5F3;
+  border: none;
+  padding: 7px 4px;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.ruas360-filtro-opcao:hover { background: #EAF5EE; }
+
+.ruas360-filtro-opcao.active {
+  background: var(--pd-green-700, #064E2C);
+  color: #fff;
+}
+
+.ruas360-filtro-datas {
+  display: flex;
+  gap: 8px;
+}
+
+.ruas360-filtro-datas label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 1;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pd-ink-700);
+}
+
+.ruas360-filtro-datas select,
+.ruas360-filtro-autor {
+  flex: 1;
+  min-width: 0;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pd-ink-700);
+  background: #F1F5F3;
+  border: none;
+  border-radius: 7px;
+  padding: 6px 4px;
+  cursor: pointer;
+}
+
+.ruas360-filtro-limpar {
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: #B91C1C;
+  background: transparent;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.ruas360-captura-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.ruas360-captura-data {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ruas360-captura-total {
+  font-size: 11px;
+  opacity: 0.75;
+}
+
+/* O ícone do sinal é um SVG desenhado à mão dentro de um divIcon do Leaflet: sem fundo nem borda
+   do próprio Leaflet, para o sinal aparecer tal como é. */
+.ruas360-sinal {
+  background: transparent;
+  border: none;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
+}
+
+/* O carro: sem fundo do Leaflet, com sombra para se destacar por cima dos pontos verdes, e com o
+   cone de direcção a rodar suavemente entre imagens em vez de saltar. */
+.ruas360-carro {
+  background: transparent;
+  border: none;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.45));
+}
+
+.ruas360-carro-cone {
+  transition: transform 300ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ruas360-carro-cone { transition: none; }
+}
+
+.ruas360-painel-mapa {
+  position: absolute;
+  z-index: 20;
+  bottom: 16px;
+  left: 16px;
+  width: min(460px, calc(100% - 32px));
+  height: min(440px, 60vh);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(11, 27, 20, 0.25);
+}
+
+/*
+ * Em telemóvel, 440px de altura era mais do que a caixa do visor toda: o cartão do mapa chegava a
+ * sobrepor-se à pilha de botões do canto superior direito (medido ao vivo num ecrã de 375px). Um
+ * tecto bem mais baixo aqui evita a sobreposição sem mexer no valor pedido para ecrãs largos.
+ */
+@media (max-width: 640px) {
+  .ruas360-painel-mapa {
+    width: min(150px, 42%);
+    height: min(110px, 16vh);
+    bottom: 12px;
+    left: 12px;
+  }
+}
+
+/*
+ * Vista trocada ("Mapa em grande"): o mapa passa a ocupar o ecrã e a rua encolhe para o canto,
+ * exactamente as mesmas duas caixas a trocar de papel. Substituiu um botão "Ampliar mapa" que ficava
+ * dentro da caixa do mapa: os painéis internos do Leaflet vão até z-index 800 e tapavam-no sempre,
+ * por isso o controlo passou para a barra de cima, onde nada do Leaflet lhe chega.
+ */
+.ruas360-layout.mapa-principal .ruas360-painel-mapa {
+  inset: 0;
+  width: auto;
+  height: auto;
+  z-index: 1;
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+}
+
+.ruas360-layout.mapa-principal .ruas360-painel-visor {
+  inset: auto;
+  bottom: 16px;
+  left: 16px;
+  width: min(420px, calc(100% - 32px));
+  height: min(300px, 45vh);
+  z-index: 20;
+  border: 1px solid #E2E8E5;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(11, 27, 20, 0.25);
+}
+
+.ruas360-painel {
+  border: 1px solid #E2E8E5;
+  background: var(--pd-surface-0);
+  overflow: hidden;
+  min-height: 0;
+}
+
+.ruas360-mapa-canvas,
+.ruas360-visor-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.ruas360-estado {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--pd-ink-700);
+  background: rgba(255, 255, 255, 0.95);
+  padding: 8px 12px;
+  border-radius: 10px;
+  box-shadow: var(--pd-shadow-sm);
+  z-index: 10;
+}
+
+.ruas360-estado-erro {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  color: #B91C1C;
+}
+
+.ruas360-erro-tecnico {
+  font-size: 11px;
+  color: var(--pd-ink-500);
+}
+
+/* No canto de cima, não em baixo: a caixa do mapa flutuante já ocupa o canto inferior esquerdo,
+   e sobrepor os dois textos ali ficava ilegível. */
+.ruas360-dica {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12.5px;
+  color: var(--pd-ink-700);
+  background: rgba(255, 255, 255, 0.95);
+  padding: 8px 14px;
+  border-radius: 10px;
+  box-shadow: var(--pd-shadow-sm);
+  z-index: 15;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Dica de "clique para ampliar" no painel pequeno. z-index acima de 800 porque os painéis internos
+   do Leaflet chegam lá; pointer-events: none para nunca ficar entre o clique e o conteúdo. */
+.ruas360-ampliar-dica {
+  position: absolute;
+  z-index: 900;
+  top: 8px;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--pd-ink-700);
+  background: rgba(255, 255, 255, 0.92);
+  padding: 4px 8px;
+  border-radius: 7px;
+  box-shadow: var(--pd-shadow-sm);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+.ruas360-painel:hover .ruas360-ampliar-dica { opacity: 1; }
+
+/* Sem hover (tacto), a dica fica sempre visível: é a única pista de que o painel é clicável. */
+@media (hover: none) {
+  .ruas360-ampliar-dica { opacity: 1; }
+}
+
+.ruas360-dica-vazia {
+  color: #92400E;
+  background: rgba(254, 243, 199, 0.97);
+}
+
+.ruas360-aviso {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 18px;
+  background: var(--pd-surface-0);
+  border: 1px solid #E2E8E5;
+  border-radius: 12px;
+  color: var(--pd-ink-700);
+  font-size: 14px;
+}
+
+.ruas360-aviso svg { color: var(--pd-green-700); flex-shrink: 0; }
