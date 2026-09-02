@@ -38,15 +38,22 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
     return NextResponse.json({ estado: 'a_processar' })
   }
 
-  try {
-    const resultado = await processarRelatorio(id)
-    if (resultado.estado === 'pronto') await concederAcesso(id, sessao.userId)
-    return NextResponse.json(resultado)
-  } catch (erro: any) {
-    if (erro instanceof RelatorioNaoProcessavelError) {
-      return NextResponse.json({ erro: erro.message }, { status: 409 })
-    }
-    logger.error('erro_analisar_relatorio', { error: erro, reportId: id })
-    return NextResponse.json({ erro: 'Não foi possível analisar este relatório agora' }, { status: 500 })
-  }
+  // Um relatório longo (o gatilho real disto: um de 196 páginas) pode levar bem mais de um minuto
+  // a processar, e o proxy à frente da aplicação em hosting partilhado costuma ter um limite de
+  // tempo bem mais curto do que isso — visto ao vivo: o browser recebia uma página de erro em HTML
+  // a meio, mesmo com o processamento a continuar e a terminar bem no servidor. Por isso esta
+  // pedida NÃO espera pelo resultado: reserva o processamento (já feito acima), dispara-o e
+  // responde já "a processar". A página já sabe perguntar de 4 em 4 segundos se terminou
+  // (`EmAnaliseRelatorio`), exactamente para este caso.
+  processarRelatorio(id)
+    .then(async (resultado) => {
+      if (resultado.estado === 'pronto') await concederAcesso(id, sessao.userId)
+    })
+    .catch((erro: any) => {
+      if (!(erro instanceof RelatorioNaoProcessavelError)) {
+        logger.error('erro_analisar_relatorio', { error: erro, reportId: id })
+      }
+    })
+
+  return NextResponse.json({ estado: 'a_processar' })
 }
