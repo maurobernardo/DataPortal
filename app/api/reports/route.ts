@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createReport, findAllReports } from '@/lib/db'
+import { createReport, findAllReports, validarCamposTextoReport } from '@/lib/db'
 import { getCurrentAdmin } from '@/lib/auth'
 import { notifyUsersOfNewContent } from '@/lib/notifications'
 import { logger } from '@/lib/logger'
@@ -45,6 +45,11 @@ export async function POST(request: NextRequest) {
         { error: 'Campos obrigatórios faltando' },
         { status: 400 }
       )
+    }
+
+    const erroTexto = validarCamposTextoReport(data)
+    if (erroTexto) {
+      return NextResponse.json({ error: erroTexto }, { status: 400 })
     }
 
     const report = await createReport({

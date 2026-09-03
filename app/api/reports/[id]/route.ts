@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { deleteReport, findReportById, updateReport } from '@/lib/db'
+import { deleteReport, findReportById, updateReport, validarCamposTextoReport } from '@/lib/db'
 import { getCurrentAdmin } from '@/lib/auth'
 import { logger } from '@/lib/logger'
 
@@ -21,6 +21,11 @@ export async function PUT(
         { error: 'Campos obrigatórios faltando' },
         { status: 400 }
       )
+    }
+
+    const erroTexto = validarCamposTextoReport(data)
+    if (erroTexto) {
+      return NextResponse.json({ error: erroTexto }, { status: 400 })
     }
 
     const report = await updateReport(id, {

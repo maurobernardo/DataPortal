@@ -101,7 +101,10 @@ export function ReportForm() {
         body: JSON.stringify(payload),
       })
 
-      if (!response.ok) throw new Error('Erro ao salvar relatório')
+      if (!response.ok) {
+        const corpo = await response.json().catch(() => null)
+        throw new Error(corpo?.error || 'Erro ao salvar relatório')
+      }
 
       router.refresh()
       loadReports()
@@ -121,9 +124,9 @@ export function ReportForm() {
       setEditingId(null)
       setFilePath(null)
       setFileSize(null)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving report:', error)
-      showFeedback('Erro ao salvar relatório', 'error')
+      showFeedback(error?.message || 'Erro ao salvar relatório', 'error')
     } finally {
       setSubmitting(false)
     }

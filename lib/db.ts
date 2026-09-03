@@ -1413,6 +1413,33 @@ export async function findReportById(id: number) {
   return rows[0] || null
 }
 
+// Colunas de texto curto da tabela `Report` (title, coverage, author, partners) são VARCHAR(191)
+// — o limite clássico do Prisma para permitir um índice utf8mb4 dentro do máximo de 767 bytes do
+// MySQL/MariaDB mais antigo. Nunca foi validado do lado da aplicação: um título ou lista de
+// parceiros mais longa do que isso rebentava com "Data too long for column" directo da base de
+// dados, um erro 500 sem explicação nenhuma para quem estava a preencher o formulário.
+export const REPORT_TEXT_FIELD_MAX = 500
+
+export function validarCamposTextoReport(data: {
+  title?: string
+  coverage?: string
+  author?: string | null
+  partners?: string | null
+}): string | null {
+  const campos: [string, string | null | undefined][] = [
+    ['Título', data.title],
+    ['Cobertura', data.coverage],
+    ['Autor', data.author],
+    ['Parceiros', data.partners],
+  ]
+  for (const [rotulo, valor] of campos) {
+    if (valor && valor.length > REPORT_TEXT_FIELD_MAX) {
+      return `${rotulo} tem ${valor.length} caracteres; o máximo permitido é ${REPORT_TEXT_FIELD_MAX}.`
+    }
+  }
+  return null
+}
+
 export async function createReport(data: any) {
   await ensureReportSectorColumn()
   const [result] = await db.execute(
