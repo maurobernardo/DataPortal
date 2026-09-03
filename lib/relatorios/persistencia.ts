@@ -70,7 +70,39 @@ async function garantirTabelas() {
       KEY idx_uso_ia_criado (criado_em)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`
   )
+  // O estado de processamento em `relatorio_estado` é global (uma linha por relatório): correcto
+  // para não repetir a mesma chamada cara à IA duas vezes sobre o mesmo PDF, mas isso sozinho
+  // deixava uma fuga: uma conta B que nunca pediu nada, ao abrir a página enquanto a conta A tinha
+  // uma análise em curso, via directamente "a processar" — visto ao vivo em produção. Esta tabela
+  // é o "eu pedi isto" por conta: só quem tem uma linha aqui é que pode ver o estado real global;
+  // toda a gente sem linha continua a ver sempre "pendente" (o botão "Analisar"), mesmo que outra
+  // pessoa esteja a processar o mesmo relatório neste preciso momento.
+  await db.execute(
+    `CREATE TABLE IF NOT EXISTS relatorio_pedido (
+      report_id INT NOT NULL,
+      utilizador_id BIGINT NOT NULL,
+      criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (report_id, utilizador_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`
+  )
   tabelasGarantidas = true
+}
+
+export async function registarPedido(reportId: number, utilizadorId: number): Promise<void> {
+  await garantirTabelas()
+  await db.execute(
+    'INSERT IGNORE INTO relatorio_pedido (report_id, utilizador_id) VALUES (?, ?)',
+    [reportId, utilizadorId]
+  )
+}
+
+export async function temPedido(reportId: number, utilizadorId: number): Promise<boolean> {
+  await garantirTabelas()
+  const [linhas] = (await db.execute(
+    'SELECT 1 FROM relatorio_pedido WHERE report_id = ? AND utilizador_id = ? LIMIT 1',
+    [reportId, utilizadorId]
+  )) as [any[], unknown]
+  return linhas.length > 0
 }
 
 export type TipoUsoIaRelatorio = 'digesto' | 'perguntar' | 'traducao'

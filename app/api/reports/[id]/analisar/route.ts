@@ -4,7 +4,7 @@ export const maxDuration = 300
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
-import { concederAcesso, obterDigesto } from '@/lib/relatorios/persistencia'
+import { concederAcesso, obterDigesto, registarPedido } from '@/lib/relatorios/persistencia'
 import { processarRelatorio, reservarProcessamento, RelatorioNaoProcessavelError } from '@/lib/relatorios/processar'
 import { logger } from '@/lib/logger'
 
@@ -27,6 +27,11 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
 
   const id = Number(params.id)
   if (!Number.isFinite(id)) return NextResponse.json({ erro: 'Identificador inválido' }, { status: 400 })
+
+  // Marca "esta conta pediu isto", ANTES de qualquer outra coisa: é o que permite a esta conta
+  // ver o estado real do processamento a seguir (ver /digesto). Sem isto, uma conta que nunca
+  // pediu nada continuava a poder ver "a processar" de outra pessoa.
+  await registarPedido(id, sessao.userId)
 
   const jaPronto = await obterDigesto(id, 'pt')
   if (jaPronto) {
