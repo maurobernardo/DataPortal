@@ -1,14 +1,5 @@
-import {
-  Video,
-  MapPin,
-  MousePointerClick,
-  PlayCircle,
-  TrafficCone,
-  ArrowLeftRight,
-  SlidersHorizontal,
-  Images,
-  Navigation,
-} from 'lucide-react'
+import Link from 'next/link'
+import { Video, Send } from 'lucide-react'
 import { VisorRuas360 } from '@/components/mapillary/VisorRuas360'
 import '../ruas-360.css'
 
@@ -20,52 +11,44 @@ export const metadata = {
 
 const PASSOS = [
   {
-    icone: MapPin,
-    titulo: 'Escolha a cidade',
+    titulo: 'Comece por escolher a cidade',
     texto:
-      'No canto superior direito do visor, os botões "Maputo" e "Chimoio" levam o mapa para a cidade que quer ver. O visor abre logo numa rua dessa cidade.',
+      'Maputo ou Chimoio, ali no canto superior direito do visor. O mapa salta logo para lá, já numa rua dessa cidade.',
   },
   {
-    icone: MousePointerClick,
-    titulo: 'Clique num ponto verde',
+    titulo: 'Depois é só clicar num ponto verde',
     texto:
-      'Cada ponto verde no mapa é uma imagem captada no local. Clique num deles para ver essa rua no visor, tal como quem lá esteve.',
+      'Cada ponto verde é uma rua já captada. Clique num deles e está lá, a ver exactamente o que quem gravou viu.',
   },
   {
-    icone: PlayCircle,
-    titulo: 'Ande pela rua',
+    titulo: 'E andar pela rua à vontade',
     texto:
-      'Arraste a imagem para olhar em redor, em qualquer direcção. Use as setas no topo do visor para avançar imagem a imagem, ou o botão de reprodução para percorrer a rua sozinho.',
+      'Arraste a imagem para olhar em qualquer direcção. As setas no topo avançam imagem a imagem, ou deixe o botão de reprodução percorrer a rua sozinho.',
   },
   {
-    icone: Navigation,
-    titulo: 'Siga a posição no mapa',
+    titulo: 'O mapa mostra sempre onde está',
     texto:
-      'O círculo azul mostra onde está e o cone azul para onde a câmara está virada. O mapa acompanha sempre a sua posição enquanto avança pela rua.',
+      'O círculo azul é a sua posição, e o cone mostra para onde a câmara está virada. Os dois acompanham cada passo que dá pela rua.',
   },
   {
-    icone: TrafficCone,
-    titulo: 'Veja os sinais de trânsito',
+    titulo: 'Quer ver os sinais de trânsito?',
     texto:
-      'O botão "Sinais de trânsito" desenha no mapa os sinais detectados: stop, cedência, limites de velocidade, passadeiras e outros. Aproxime o mapa para eles aparecerem, e clique num sinal para ver a rua onde ele está.',
+      'Ligue "Sinais de trânsito" e eles aparecem no mapa: stop, cedência, limites de velocidade, passadeiras. Aproxime para os ver melhor, e clique num para ir direito a essa rua.',
   },
   {
-    icone: ArrowLeftRight,
-    titulo: 'Troque mapa e rua',
+    titulo: 'Mapa e rua trocam de lugar quando quiser',
     texto:
-      'Clique no painel pequeno para o pôr em grande, e no outro para voltar atrás. O botão "Mapa em grande" faz o mesmo. Entre "Mapa" e "Satélite" escolhe o fundo do mapa.',
+      'Clique no painel pequeno para o pôr em grande, ou use o botão "Mapa em grande". E entre "Mapa" e "Satélite" escolhe o fundo que preferir.',
   },
   {
-    icone: SlidersHorizontal,
-    titulo: 'Filtre o que aparece',
+    titulo: 'Se quiser, também pode filtrar',
     texto:
-      'Em "Filtros" pode ver só imagens 360° ou só normais, limitar a um período pela data da captura, e escolher quem captou. O contador no botão mostra quantos filtros estão activos.',
+      'Só imagens 360°, só normais, um período de datas, ou quem captou: tudo em "Filtros", com um contador a mostrar quantos estão activos.',
   },
   {
-    icone: Images,
-    titulo: 'Escolha uma captura',
+    titulo: 'E voltar a uma captura antiga',
     texto:
-      'O botão "Capturas" lista os percursos gravados naquela zona, cada um com a fotografia, a data e o número de imagens. Escolher um mostra só esse percurso no mapa.',
+      'Em "Capturas" estão todos os percursos já gravados naquela zona, cada um com data, foto e número de imagens. Escolha um e o mapa mostra só esse.',
   },
 ]
 
@@ -94,6 +77,13 @@ export default function Ruas360Page() {
             <span>Sinais de trânsito</span>
             <span>Mapa e satélite</span>
           </div>
+          <Link
+            href="/servicos?assunto=Levantamento%20Ruas%20360%C2%B0#consultoria"
+            className="ruas360-hero-cta"
+          >
+            <Send className="size-4" aria-hidden />
+            Solicitar este serviço para a sua cidade
+          </Link>
         </div>
       </section>
 
@@ -101,26 +91,31 @@ export default function Ruas360Page() {
         <VisorRuas360 />
       </div>
 
+      <Link
+        href="/servicos?assunto=Levantamento%20Ruas%20360%C2%B0#consultoria"
+        className="ruas360-flutuante"
+        aria-label="Solicitar o serviço de Ruas 360° para a sua zona"
+      >
+        <Send className="size-4" aria-hidden />
+        <span>Solicitar este serviço</span>
+      </Link>
+
       <section className="ruas360-guia">
         <div className="ruas360-inner">
           <h2>Como usar o visor</h2>
           <p className="ruas360-guia-lede">
-            Oito passos para tirar tudo o que o visor tem. Nenhum precisa de conta iniciada.
+            Não precisa de conta para nada disto: é só abrir o visor e seguir estes passos.
           </p>
           <ol className="ruas360-passos">
-            {PASSOS.map((passo, indice) => {
-              const Icone = passo.icone
-              return (
-                <li key={passo.titulo} className="ruas360-passo">
-                  <div className="ruas360-passo-topo">
-                    <span className="ruas360-passo-numero">{indice + 1}</span>
-                    <Icone className="size-5 ruas360-passo-icone" aria-hidden />
-                  </div>
+            {PASSOS.map((passo, indice) => (
+              <li key={passo.titulo} className="ruas360-passo">
+                <span className="ruas360-passo-numero">{indice + 1}</span>
+                <div className="ruas360-passo-corpo">
                   <h3>{passo.titulo}</h3>
                   <p>{passo.texto}</p>
-                </li>
-              )
-            })}
+                </div>
+              </li>
+            ))}
           </ol>
         </div>
       </section>

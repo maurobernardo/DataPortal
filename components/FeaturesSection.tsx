@@ -295,7 +295,7 @@ export function FeaturesSection() {
                   <p className="text-[15px] text-gray-600 leading-relaxed">{f.description}</p>
                   <Link
                     href={f.href}
-                    className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-[#064E2C] transition-all group-hover:gap-2"
+                    className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-[#064E2C]/[0.06] px-3 py-1.5 text-sm font-semibold text-[#064E2C] transition-all group-hover:gap-2.5 group-hover:bg-[#064E2C]/10"
                   >
                     Explorar recursos
                     <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />

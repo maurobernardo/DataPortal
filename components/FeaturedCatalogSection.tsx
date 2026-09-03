@@ -2,7 +2,8 @@
 
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
-import { ArrowRight, Clock3, Download, Eye, ChevronDown, ChevronUp } from 'lucide-react'
+import { ArrowRight, Clock3, Download, Eye, ChevronDown, ChevronUp, LayoutGrid } from 'lucide-react'
+import { getCategoryIcon } from '@/lib/ai-category-icons'
 
 type FeaturedDataset = {
   id: number
@@ -20,6 +21,17 @@ type FeaturedDataset = {
 function toK(n: number) {
   if (n >= 1000) return `${(n / 1000).toFixed(1)}k`
   return `${n}`
+}
+
+// O `line-clamp` do CSS corta exactamente no limite da caixa, a meio de uma palavra ou frase, sem
+// reticências visíveis nalguns casos (confirmado ao vivo nestes cartões) — parece um texto
+// truncado por acidente, não uma descrição resumida de propósito. Cortar aqui, sempre numa
+// fronteira de palavra e sempre com "…" no fim, deixa claro que há mais texto por trás do link.
+function truncar(texto: string, maxChars: number) {
+  if (texto.length <= maxChars) return texto
+  const cortado = texto.slice(0, maxChars)
+  const ultimoEspaco = cortado.lastIndexOf(' ')
+  return `${cortado.slice(0, ultimoEspaco > 0 ? ultimoEspaco : maxChars).trimEnd()}…`
 }
 
 export function FeaturedCatalogSection({ datasets }: { datasets: FeaturedDataset[] }) {
@@ -95,10 +107,11 @@ export function FeaturedCatalogSection({ datasets }: { datasets: FeaturedDataset
                       (tab === 'Geoespacial' && d.dataType === 'geoespacial') ||
                       (tab === 'Alfanumérico' && d.dataType === 'alfanumerico')
                   ).length
+            const TabIcon = tab === 'Todos' ? LayoutGrid : getCategoryIcon(tab)
             return (
               <button
                 key={tab}
-                className={`px-4 py-3 text-sm whitespace-nowrap border-b-2 -mb-px rounded-t-lg transition-colors ${
+                className={`inline-flex items-center gap-1.5 px-4 py-3 text-sm whitespace-nowrap border-b-2 -mb-px rounded-t-lg transition-colors ${
                   activeTab === tab
                     ? 'text-[#064E2C] border-[#064E2C] font-semibold bg-white/80'
                     : 'text-[#4A5A52] border-transparent hover:text-[#0B1B14] hover:bg-white/50'
@@ -108,6 +121,7 @@ export function FeaturedCatalogSection({ datasets }: { datasets: FeaturedDataset
                   setShowAll(false)
                 }}
               >
+                <TabIcon size={15} className={activeTab === tab ? 'text-[#064E2C]' : 'text-[#8B9A91]'} aria-hidden />
                 {tab}{' '}
                 <span className={`text-xs font-medium ${activeTab === tab ? 'text-[#064E2C]/80' : 'text-[#6B7C72]'}`}>
                   ({count})
@@ -137,10 +151,10 @@ export function FeaturedCatalogSection({ datasets }: { datasets: FeaturedDataset
                 </span>
               </div>
               <h3 className="pd-card-desc-clamp-2 font-bold text-[18px] md:text-xl leading-snug text-[#0B1B14] mb-3 group-hover:text-[#064E2C] transition-colors">
-                {d.title}
+                {truncar(d.title, 70)}
               </h3>
-              <p className="pd-card-desc-clamp-4 text-[15px] leading-relaxed text-[#37403C] mb-5 flex-1">
-                {d.description || 'Sem descrição disponível.'}
+              <p className="text-[15px] leading-relaxed text-[#37403C] mb-5 flex-1">
+                {truncar(d.description || 'Sem descrição disponível.', 150)}
               </p>
               <div className="flex flex-wrap items-center gap-2 mb-5">
                 <span className="inline-flex items-center rounded-lg border border-[#CFE3D6] bg-[#F1F8F4] px-2.5 py-1.5 text-[12px] font-semibold text-[#064E2C]">

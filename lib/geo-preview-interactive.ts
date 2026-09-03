@@ -426,7 +426,14 @@ export function analyzeGeoFields(features: GeoFeature[]): FieldMeta[] {
   for (const [key, set] of Array.from(stringValues.entries())) {
     const cats = Array.from(set).sort((a, b) => a.localeCompare(b, 'pt-BR'))
     const role = inferAdminRole(key)
-    const maxCats = role ? 250 : 50
+    // 50 chegava enquanto a pré-visualização só carregava uma amostra de 500 elementos: com o
+    // dataset completo, um campo real (não um ID quase único por linha) pode legitimamente ter
+    // mais de 50 valores distintos — visto ao vivo com "Tipos de Solo": mais de 50 classes FAO
+    // reais em Moçambique, que faziam este campo ser rejeitado por inteiro e a opção "Cores por
+    // classe FAO" desaparecer do selector "Alterar Visualização". Mesmo limite de
+    // `detectCategoryField` mais abaixo (`CATEGORIA_MAX_VALORES`), para um campo nunca passar aqui
+    // e depois ser rejeitado outra vez lá.
+    const maxCats = role ? 250 : CATEGORIA_MAX_VALORES
     if (cats.length < 2 || cats.length > maxCats) continue
     stringFields.push({
       key,
@@ -465,6 +472,13 @@ export function detectAdminFilters(fields: FieldMeta[]) {
   return { provincia, distrito, posto }
 }
 
+// Partilhado com o limite de `stringFields` mais acima: 30 chegava enquanto a pré-visualização só
+// carregava uma amostra de 500 elementos, mas com o dataset completo um campo categórico real (não
+// um ID quase único por linha) pode legitimamente ter mais de 30 valores — visto ao vivo com
+// "Tipos de Solo": mais de 30 classes FAO reais em Moçambique, que faziam esta função nunca
+// escolher esse campo como a categoria activa, mesmo depois de ele já passar no filtro anterior.
+const CATEGORIA_MAX_VALORES = 150
+
 export function detectCategoryField(fields: FieldMeta[]): FieldMeta | undefined {
   const prefer = [
     'facility_type',
@@ -485,7 +499,7 @@ export function detectCategoryField(fields: FieldMeta[]): FieldMeta | undefined 
         x.kind === 'string' &&
         x.categories &&
         x.categories.length >= 2 &&
-        x.categories.length <= 30
+        x.categories.length <= CATEGORIA_MAX_VALORES
     )
     if (f) return f
   }
@@ -494,12 +508,12 @@ export function detectCategoryField(fields: FieldMeta[]): FieldMeta | undefined 
       f.adminRole === 'categoria' &&
       f.categories &&
       f.categories.length >= 2 &&
-      f.categories.length <= 30
+      f.categories.length <= CATEGORIA_MAX_VALORES
   )
   if (byRole) return byRole
 
   const stringFields = fields.filter(
-    (f) => f.kind === 'string' && f.categories && f.categories.length >= 2 && f.categories.length <= 30
+    (f) => f.kind === 'string' && f.categories && f.categories.length >= 2 && f.categories.length <= CATEGORIA_MAX_VALORES
   )
   let best: FieldMeta | undefined
   let bestScore = 0
@@ -743,13 +757,19 @@ export function featureTitle(feature: GeoFeature) {
   return first ? fixEncodingText(first[1]) : 'Elemento geográfico'
 }
 
+// Pontos bem mais finos do que antes de propósito: a 8px de raio, um dataset com muitos pontos
+// próximos (ex.: fontes de água, unidades sanitárias, centenas espalhadas por uma bacia
+// hidrográfica) sobrepunha-se todo e virava uma mancha sólida colorida em vez de mostrar a
+// distribuição real dos pontos — visto ao vivo, comparado com o mesmo dataset no ArcGIS/QGIS, onde
+// os pontos ficam pequenos e distintos mesmo em grande número. Os escalões por população mantêm
+// alguma variação de tamanho, só reduzida na mesma proporção.
 export function pointRadiusFromPop(pop: number | null, equalSize: boolean) {
-  if (equalSize || pop === null) return 8
-  if (pop > 500_000) return 18
-  if (pop > 200_000) return 14
-  if (pop > 100_000) return 11
-  if (pop > 50_000) return 8
-  return 6
+  if (equalSize || pop === null) return 3
+  if (pop > 500_000) return 8
+  if (pop > 200_000) return 6.5
+  if (pop > 100_000) return 5
+  if (pop > 50_000) return 4
+  return 3
 }
 
 export function detectPopulationKey(fields: FieldMeta[]) {

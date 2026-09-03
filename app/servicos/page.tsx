@@ -106,6 +106,16 @@ export default async function ServicosPage() {
       icon: 'download' as const,
       badge: { texto: 'Em breve', classe: 'soon' as const },
     },
+    {
+      numero: '09',
+      titulo: 'Ruas 360°',
+      desc: 'Ruas de Maputo e Chimoio captadas em 360°, com sinais de trânsito georreferenciados, navegáveis no portal.',
+      meta: 'Maputo e Chimoio',
+      who: 'Planeamento · Trânsito',
+      href: '/ruas-360',
+      icon: 'ruas360' as const,
+      badge: { texto: 'Novo', classe: 'new' as const },
+    },
   ]
 
   const consulta = [
@@ -136,6 +146,13 @@ export default async function ServicosPage() {
       out: 'Entregável: API activa + monitorização',
       href: '#consultoria',
       icon: 'integracao' as const,
+    },
+    {
+      titulo: 'Levantamento Ruas 360°',
+      desc: 'Captação de novas ruas ou zonas em imagens 360°, com sinais de trânsito georreferenciados.',
+      out: 'Entregável: percurso navegável no visor + dados de sinalização',
+      href: '#consultoria',
+      icon: 'recolha' as const,
     },
   ]
 

@@ -458,6 +458,10 @@ export function NovaAnaliseClient({ datasets }: { datasets: DatasetParaEscolha[]
   // mais categorias só estica a página normalmente, não cria uma zona presa a arrastar.
   function estaExpandido(chave: number | string, indice: number) {
     if (chave in manualExpanded) return manualExpanded[chave]
+    // A pesquisar, os grupos com resultado devem abrir-se sozinhos: quem não sabe em que
+    // categoria o dataset está fica sem perceber que "não há nada" só porque o grupo está
+    // fechado, quando na verdade o resultado lá está.
+    if (temFiltro) return true
     return indice === 0
   }
 

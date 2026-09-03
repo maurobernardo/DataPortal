@@ -522,10 +522,12 @@ export function InteractiveGeoMapPreview({
               : baseMap === 'sat'
                 ? '#ffffff'
                 : hs.stroke
+          // Contorno mais fino do que antes (era 2/2.5px) para acompanhar o raio bem menor: num
+          // ponto de 3px, um contorno de 2px era mais contorno do que preenchimento.
           return L.circleMarker(latlng, {
             radius: pointRadiusFromPop(pop, !sizeByPop),
             color: strokeColor,
-            weight: colorMode === 'destaque' ? 2 : 2.5,
+            weight: colorMode === 'destaque' ? 1 : 1.5,
             fillColor: fill,
             fillOpacity: colorMode === 'destaque' ? 0.82 : 0.88,
           })

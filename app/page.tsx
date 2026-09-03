@@ -1,5 +1,6 @@
 import { Suspense } from 'react'
-import { db, countDatasets } from '@/lib/db'
+import { db, countDatasets, contarServicos } from '@/lib/db'
+import { MAP_CATALOG } from '@/lib/maps-catalog'
 import { getDatasetPreview } from '@/lib/dataset-preview'
 import { HeroSection } from '@/components/HeroSection'
 import { FeaturedCatalogSection } from '@/components/FeaturedCatalogSection'
@@ -66,7 +67,7 @@ async function getMostViewedDatasets() {
 }
 
 export default async function Home() {
-  const [stats, mostViewed] = await Promise.all([getStats(), getMostViewedDatasets()])
+  const [stats, mostViewed, contagens] = await Promise.all([getStats(), getMostViewedDatasets(), contarServicos()])
 
   // Pré-visualização real (geometria a sério, não um ícone genérico) só para o dataset em
   // destaque do hero, e só quando ele é geoespacial: gerada aqui no servidor (reaproveitando o
@@ -128,7 +129,14 @@ export default async function Home() {
         destaquePreview={destaquePreview}
       />
       <FeaturedCatalogSection datasets={featuredDatasets} />
-      <AboutSection />
+      <AboutSection
+        totalDatasets={Number(stats.datasets || 0)}
+        geoespaciais={contagens.geoespaciais}
+        alfanumericos={contagens.alfanumericos}
+        dashboards={contagens.dashboards}
+        mapas={MAP_CATALOG.length}
+        relatorios={contagens.relatorios}
+      />
       <FeaturesSection />
       <PartnersCarouselSection />
       <FAQSection />

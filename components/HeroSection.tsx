@@ -474,7 +474,7 @@ export function HeroSection({
           setSuggestionItems(
             strings.map((s) => ({
               label: s,
-              href: `/catalogo?search=${encodeURIComponent(s)}`,
+              href: `/dados-espaciais?search=${encodeURIComponent(s)}`,
             }))
           )
         }
@@ -537,7 +537,7 @@ export function HeroSection({
               onSubmit={(e) => {
                 e.preventDefault()
                 if (!query.trim()) return
-                window.location.href = `/catalogo?search=${encodeURIComponent(query.trim())}`
+                window.location.href = `/dados-espaciais?search=${encodeURIComponent(query.trim())}`
               }}
             >
               <div className="pd-hero-search" ref={searchBarRef}>

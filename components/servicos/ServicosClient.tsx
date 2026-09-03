@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { FormEvent, useState } from 'react'
+import { FormEvent, useEffect, useState } from 'react'
 import { RevealOnScroll } from '@/components/RevealOnScroll'
 import '../../app/servicos.css'
 
@@ -12,7 +12,7 @@ type ServicoTool = {
   meta: string
   who: string
   href: string
-  icon: 'geo' | 'alfa' | 'mapa' | 'dash' | 'ia' | 'relatorio' | 'alerta' | 'download'
+  icon: 'geo' | 'alfa' | 'mapa' | 'dash' | 'ia' | 'relatorio' | 'alerta' | 'download' | 'ruas360'
   badge?: { texto: string; classe: 'new' | 'pro' | 'soon' }
 }
 
@@ -81,6 +81,14 @@ function Icon({ tipo }: { tipo: ServicoTool['icon'] | ServicoConsulta['icon'] })
           <path d="M7 10l5 5 5-5M12 15V3" />
         </svg>
       )
+    case 'ruas360':
+      return (
+        <svg viewBox="0 0 24 24">
+          <ellipse cx="12" cy="13" rx="9" ry="5" />
+          <circle cx="12" cy="13" r="2.6" />
+          <path d="M7 6.5C8.7 5.6 10.3 5 12 5s3.3.6 5 1.5" />
+        </svg>
+      )
     case 'recolha':
       return (
         <svg viewBox="0 0 24 24">
@@ -145,6 +153,15 @@ export function ServicosClient({
   const [feedback, setFeedback] = useState<{ type: 'ok' | 'err'; msg: string } | null>(null)
   const [form, setForm] = useState({ name: '', org: '', email: '', subject: 'Recolha de dados sob encomenda', message: '' })
 
+  // Um link "Solicitar este serviço" noutra página (ex.: Ruas 360°) traz o assunto já escolhido
+  // via ?assunto=..., para quem chega já saber a que se refere sem ter de encontrar a opção certa
+  // no menu. Lido no cliente (não em searchParams do servidor) para não obrigar toda a página a
+  // Suspense só por causa deste caso.
+  useEffect(() => {
+    const assunto = new URLSearchParams(window.location.search).get('assunto')
+    if (assunto) setForm((p) => ({ ...p, subject: assunto }))
+  }, [])
+
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     if (loading) return
@@ -200,9 +217,12 @@ export function ServicosClient({
               <Link className="btn btn-amber pd-press" href="/analise/nova">
                 Experimentar a análise por IA →
               </Link>
-              <Link className="btn btn-ghost-d pd-press" href="#consultoria">
+              <a
+                className="btn btn-ghost-d pd-press"
+                href="mailto:portaldedados@data4moz.com?subject=Falar%20com%20um%20especialista&body=Ol%C3%A1%2C%0A%0AGostaria%20de%20falar%20com%20um%20especialista%20do%20Data%20Portal%20sobre%3A%0A%0A"
+              >
                 Falar com um especialista
-              </Link>
+              </a>
             </div>
           </RevealOnScroll>
           <RevealOnScroll delayMs={280}>
@@ -251,7 +271,7 @@ export function ServicosClient({
                 Licença aberta, com citação
               </li>
             </ul>
-            <Link href="/catalogo" className="go">
+            <Link href="/dados-espaciais" className="go">
               Ver catálogo completo →
             </Link>
           </div>
@@ -330,7 +350,7 @@ export function ServicosClient({
               </p>
             </div>
           </div>
-          <div className="grid-4">
+          <div className="grid-3">
             {ferramentas.map((f, i) => (
               <RevealOnScroll key={f.numero} delayMs={Math.min(i, 7) * 50}>
                 <Link href={f.href} className={`card pd-card-lift${f.href === '#' ? ' disabled' : ''}`}>
@@ -520,7 +540,7 @@ export function ServicosClient({
             recolha nova?
           </p>
           <div className="sb-actions">
-            <Link className="btn btn-sm btn-ghost-d pd-press" href="/catalogo">
+            <Link className="btn btn-sm btn-ghost-d pd-press" href="/dados-espaciais">
               Ver catálogo
             </Link>
             <Link className="btn btn-sm btn-amber pd-press" href="#consultoria">

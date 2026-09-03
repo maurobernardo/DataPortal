@@ -27,15 +27,21 @@ function levenshtein(a: string, b: string) {
   return dp[a.length][b.length]
 }
 
-type TitleRow = { title: string; dataType: string }
+type TitleRow = { id: number; title: string; dataType: string }
 
-/** Para termos de fonte/palavra-chave: descobre se só existem datasets de um tipo e devolve o href certo. */
+/**
+ * Para termos de fonte/palavra-chave: descobre se só existem datasets de um tipo e devolve o href
+ * certo. Nunca aponta para "/catalogo": essa página é antiga, não segue o visual actual do
+ * portal, e mostrava categorias repetidas quando os dois tipos de dados partilhavam o mesmo nome.
+ * Quando o termo aparece nos dois tipos, "/dados-espaciais" (o catálogo mais usado) é a escolha
+ * por omissão, em vez de mandar a pessoa para essa página antiga.
+ */
 async function hrefForPoolTerm(term: string): Promise<string> {
   const t = term.trim()
-  if (!t) return `/catalogo?search=${encodeURIComponent(term)}`
+  if (!t) return `/dados-espaciais?search=${encodeURIComponent(term)}`
   const tl = t.toLowerCase()
   const [rows] = (await db.execute(
-    `SELECT DISTINCT dataType FROM Dataset 
+    `SELECT DISTINCT dataType FROM Dataset
      WHERE LOWER(TRIM(COALESCE(source,''))) = ?
         OR (keywords IS NOT NULL AND LOWER(keywords) LIKE CONCAT('%', ?, '%'))`,
     [tl, tl]
@@ -48,7 +54,7 @@ async function hrefForPoolTerm(term: string): Promise<string> {
     const base = dt === 'alfanumerico' ? '/dados-alfanumericos' : '/dados-espaciais'
     return `${base}?search=${encodeURIComponent(t)}`
   }
-  return `/catalogo?search=${encodeURIComponent(t)}`
+  return `/dados-espaciais?search=${encodeURIComponent(t)}`
 }
 
 async function searchDashboards(q: string, limit = 3): Promise<PortalSearchEntry[]> {
@@ -132,10 +138,11 @@ export async function GET(request: NextRequest) {
       })(),
       (async () => {
         const [rows] = await db.execute(
-          `SELECT DISTINCT title, dataType FROM Dataset ${titleWhere} ORDER BY title ASC LIMIT 40`,
+          `SELECT id, title, dataType FROM Dataset ${titleWhere} ORDER BY title ASC LIMIT 40`,
           titleValues
         ) as any
         return (rows as any[]).map((r) => ({
+          id: Number(r.id),
           title: String(r.title || '').trim(),
           dataType: String(r.dataType || 'geoespacial'),
         })).filter((r: TitleRow) => r.title.length > 0)
@@ -168,17 +175,15 @@ export async function GET(request: NextRequest) {
     // Home (sem dataType): mapas, dashboards, relatórios e datasets
     let entries: Array<{ label: string; href: string }> = []
     if (!dataType) {
-      const hrefForType = (dt: string, label: string) => {
-        const base = dt === 'alfanumerico' ? '/dados-alfanumericos' : '/dados-espaciais'
-        return `${base}?search=${encodeURIComponent(label)}`
-      }
-
+      // Um título que corresponde a um dataset concreto leva directo à página desse dataset, não
+      // ao catálogo com um filtro de pesquisa — poupa a pessoa de ter de encontrá-lo outra vez
+      // numa lista, quando já se sabe exactamente qual é.
       const datasetEntries: PortalSearchEntry[] = []
       for (const p of titlePairs) {
         if (!p.title.toLowerCase().includes(q)) continue
         datasetEntries.push({
           label: p.title,
-          href: hrefForType(p.dataType, p.title),
+          href: `/dataset/${p.id}`,
           kind: p.dataType === 'alfanumerico' ? 'alfanumerico' : 'geoespacial',
         })
       }

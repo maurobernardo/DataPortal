@@ -18,53 +18,72 @@ import {
 import { useContactModal } from '@/components/ContactModalProvider'
 import { CountUp } from '@/components/CountUp'
 
-const PILLARS = [
-  {
-    icon: BrainCircuit,
-    label: 'Análise por Inteligência Artificial',
-    desc: 'Pergunta em português e recebe um dashboard com números reais, calculados na hora, com proveniência auditável.',
-    href: '/analise/nova',
-  },
-  {
-    icon: Globe2,
-    label: 'Dados geoespaciais',
-    desc: 'Catálogo de camadas, pré-visualização em mapa e download em formatos interoperáveis.',
-    href: '/dados-espaciais',
-  },
-  {
-    icon: Database,
-    label: 'Dados alfanuméricos',
-    desc: 'Indicadores, tabelas e séries temporais com metadados e pesquisa por tema ou fonte.',
-    href: '/dados-alfanumericos',
-  },
-  {
-    icon: LayoutDashboard,
-    label: 'Dashboards alfanuméricos',
-    desc: 'Painéis interactivos (Power BI, ArcGIS, etc.) integrados no portal para consulta rápida.',
-    href: '/dashboards-alfanumericos',
-  },
-  {
-    icon: MapPin,
-    label: 'Mapas inteligentes',
-    desc: 'Experiências com mapa Leaflet, KPIs, filtros cruzados e análise territorial integrada.',
-    href: '/maps',
-  },
-  {
-    icon: FileText,
-    label: 'Relatórios',
-    desc: 'Estudos e publicações para descarregar ou solicitar, com registo de pedidos de acesso.',
-    href: '/relatorios',
-  },
-  {
-    icon: Video,
-    label: 'Ruas 360°',
-    desc: 'Navegue pelas ruas de Maputo e Chimoio captadas em 360° pela nossa equipa, sem sair do portal.',
-    href: '/ruas-360',
-  },
-] as const
+type ContagensPortal = {
+  totalDatasets: number
+  geoespaciais: number
+  alfanumericos: number
+  dashboards: number
+  mapas: number
+  relatorios: number
+}
 
-export function AboutSection() {
+function PILARES({ geoespaciais, alfanumericos, dashboards, mapas, relatorios }: ContagensPortal) {
+  return [
+    {
+      icon: Globe2,
+      label: 'Dados geoespaciais',
+      desc: 'Catálogo de camadas, pré-visualização em mapa e download em formatos interoperáveis.',
+      href: '/dados-espaciais',
+      stat: `${geoespaciais} camadas`,
+    },
+    {
+      icon: Database,
+      label: 'Dados alfanuméricos',
+      desc: 'Indicadores, tabelas e séries temporais com metadados e pesquisa por tema ou fonte.',
+      href: '/dados-alfanumericos',
+      stat: `${alfanumericos} conjuntos`,
+    },
+    {
+      icon: LayoutDashboard,
+      label: 'Dashboards alfanuméricos',
+      desc: 'Painéis interactivos (Power BI, ArcGIS, etc.) integrados no portal para consulta rápida.',
+      href: '/dashboards-alfanumericos',
+      stat: `${dashboards} painéis`,
+    },
+    {
+      icon: MapPin,
+      label: 'Mapas inteligentes',
+      desc: 'Experiências com mapa Leaflet, KPIs, filtros cruzados e análise territorial integrada.',
+      href: '/maps',
+      stat: `${mapas} publicados`,
+    },
+    {
+      icon: FileText,
+      label: 'Relatórios',
+      desc: 'Estudos e publicações para descarregar ou solicitar, com registo de pedidos de acesso.',
+      href: '/relatorios',
+      stat: `${relatorios} publicados`,
+    },
+    {
+      icon: Video,
+      label: 'Ruas 360°',
+      desc: 'Navegue pelas ruas de Maputo e Chimoio captadas em 360° pela nossa equipa, sem sair do portal.',
+      href: '/ruas-360',
+      stat: '2 cidades',
+    },
+  ] as const
+}
+
+export function AboutSection({
+  totalDatasets,
+  geoespaciais,
+  alfanumericos,
+  dashboards,
+  mapas,
+  relatorios,
+}: ContagensPortal) {
   const { openContact } = useContactModal()
+  const pilares = PILARES({ totalDatasets, geoespaciais, alfanumericos, dashboards, mapas, relatorios })
   return (
     <section
       id="sobre"
@@ -92,18 +111,50 @@ export function AboutSection() {
           </p>
         </div>
 
-        <div
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5 mb-14 animate-slide-up"
+        {/* Faixa da IA (produto mais novo, o único que responde em vez de só listar) acima da
+            grelha, em vez de ao lado dela: ao lado, o cartão tinha de esticar até à altura da
+            grelha de 6 módulos e ficava com espaço a mais, ou desalinhado quando o conteúdo não
+            enchia essa altura. Como faixa, tem só a altura que o seu próprio conteúdo precisa. */}
+        <Link
+          href="/analise/nova"
+          className="group flex flex-col md:flex-row md:items-center gap-5 md:gap-8 rounded-2xl bg-[#064E2C] p-6 md:p-7 mb-4 md:mb-5 animate-slide-up shadow-[0_10px_30px_rgba(6,78,44,0.18)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_40px_rgba(6,78,44,0.26)]"
           style={{ animationDelay: '0.15s' }}
         >
-          {PILLARS.map(({ icon: Icon, label, desc, href }) => (
+          <div className="w-12 h-12 shrink-0 flex items-center justify-center rounded-xl bg-white/10 border border-white/15">
+            <BrainCircuit className="w-[22px] h-[22px] text-[#F2C744]" strokeWidth={2} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-lg md:text-xl font-extrabold text-white tracking-tight leading-snug mb-1">
+              Análise por Inteligência Artificial
+            </p>
+            <p className="text-[14px] text-[#CFE3D6] leading-relaxed">
+              Pergunta em português e recebe um dashboard com números reais, calculados na hora
+              sobre os {totalDatasets} conjuntos de dados do portal, com proveniência auditável até
+              à página de origem.
+            </p>
+          </div>
+          <div className="flex items-center gap-4 shrink-0 md:pl-6 md:border-l md:border-white/15">
+            <span className="text-[13px] font-semibold text-white/80 whitespace-nowrap">{totalDatasets} datasets</span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white text-[#064E2C] px-3.5 py-1.5 text-xs font-bold group-hover:gap-2.5 transition-all whitespace-nowrap">
+              Perguntar <ArrowRight className="w-3.5 h-3.5" />
+            </span>
+          </div>
+        </Link>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5 mb-14 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+          {pilares.map(({ icon: Icon, label, desc, href, stat }) => (
             <Link
               key={label}
               href={href}
-              className="group rounded-2xl border border-[#E2E8E5] bg-white p-6 md:p-7 shadow-sm transition-all duration-300 hover:border-[#CFE3D6] hover:shadow-[0_10px_30px_rgba(6,78,44,0.08)] hover:-translate-y-0.5"
+              className="group rounded-2xl border border-[#E2E8E5] bg-white p-6 shadow-sm transition-all duration-300 hover:border-[#CFE3D6] hover:shadow-[0_10px_30px_rgba(6,78,44,0.08)] hover:-translate-y-0.5"
             >
-              <div className="w-11 h-11 flex items-center justify-center rounded-xl bg-[#F1F8F4] border border-[#CFE3D6] mb-4 group-hover:bg-[#E7F3EB] group-hover:scale-105 transition-all duration-200">
-                <Icon className="w-[18px] h-[18px] stroke-[#064E2C]" strokeWidth={2} />
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-11 h-11 flex items-center justify-center rounded-xl bg-[#F1F8F4] border border-[#CFE3D6] group-hover:bg-[#E7F3EB] group-hover:scale-105 transition-all duration-200">
+                  <Icon className="w-[18px] h-[18px] stroke-[#064E2C]" strokeWidth={2} />
+                </div>
+                <span className="rounded-full bg-[#F1F8F4] px-2.5 py-1 text-[11px] font-bold text-[#064E2C] tabular-nums">
+                  {stat}
+                </span>
               </div>
               <p className="text-base font-bold text-gray-900 mb-2 tracking-tight group-hover:text-[#064E2C] transition-colors">
                 {label}

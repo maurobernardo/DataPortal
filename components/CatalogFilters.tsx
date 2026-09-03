@@ -98,13 +98,22 @@ export function CatalogFilters({
        rounded-2xl border border-red-200/75 bg-gradient-to-b from-red-100/95 via-rose-50/90 to-orange-50/45
        shadow-[0_10px_36px_-12px_rgba(173,5,31,0.18)] p-6 space-y-8`
 
+  // "pointer-events-none"/"-auto" e "-translate-x-full"/"translate-x-0" nunca podem estar os dois
+  // presentes ao mesmo tempo para o mesmo breakpoint: com as duas classes no elemento, quem
+  // decide não é a ordem no JSX, é a ordem em que o Tailwind gerou as regras no CSS final — e
+  // "pointer-events-none" pode ganhar mesmo com "pointer-events-auto" também presente. Isso
+  // deixava o painel a abrir visualmente (a transformação resolvia-se bem) mas surdo a toques: o
+  // painel parecia aberto e não filtrava nada ao tocar. Escolher só uma classe por estado, nunca
+  // as duas ao mesmo tempo, evita depender dessa ordem.
   const asideClass = isCatalog
     ? [
         'geo-filters-aside w-full',
         'max-md:fixed max-md:left-0 max-md:top-0 max-md:bottom-0 max-md:z-[60]',
         'max-md:w-[min(20rem,calc(100vw-1rem))] max-md:max-w-[85vw] max-md:h-full max-md:max-h-[100dvh]',
-        'max-md:-translate-x-full max-md:pointer-events-none max-md:transition-transform max-md:duration-300 max-md:ease-in-out',
-        isMobileOpen ? 'max-md:translate-x-0 max-md:pointer-events-auto' : '',
+        'max-md:transition-transform max-md:duration-300 max-md:ease-in-out',
+        isMobileOpen
+          ? 'max-md:translate-x-0 max-md:pointer-events-auto'
+          : 'max-md:-translate-x-full max-md:pointer-events-none',
         'md:!static md:z-auto md:inset-auto md:h-auto md:max-h-none md:!translate-x-0 md:pointer-events-auto md:w-full md:max-w-none',
       ]
         .filter(Boolean)

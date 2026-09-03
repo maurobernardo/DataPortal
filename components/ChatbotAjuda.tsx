@@ -28,7 +28,10 @@ export function ChatbotAjuda() {
   // layout raiz e nunca desmonta entre navegações — corta ali fazia o React chamar menos hooks ao
   // entrar em /admin vindo de qualquer outra rota, rebentando com "Rendered fewer hooks than
   // expected" (confirmado ao vivo em produção nessa transição exacta).
-  const escondidoNoAdmin = pathname === '/admin' || pathname?.startsWith('/admin/')
+  // Também escondido em /ruas-360: o botão flutuante de "Solicitar este serviço" fica no mesmo
+  // canto do ecrã e os dois sobrepunham-se.
+  const escondidoNoAdmin =
+    pathname === '/admin' || pathname?.startsWith('/admin/') || pathname === '/ruas-360'
 
   useEffect(() => {
     try {
