@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { FileText, Save, X, Edit, Trash2, Loader2, Plus, CheckCircle2, XCircle, Upload, ExternalLink, ScanSearch, ScaleIcon } from 'lucide-react'
+import { FileText, Save, X, Edit, Trash2, Loader2, Plus, CheckCircle2, XCircle, Upload, ExternalLink, ScanSearch, ScaleIcon, Globe2, User, Users } from 'lucide-react'
 import { PainelVerificacao } from './reports/PainelVerificacao'
 
 interface Report {
@@ -544,88 +544,90 @@ export function ReportForm() {
                   className="bg-gradient-to-br from-gray-50 to-green-50 p-4 rounded-xl border border-gray-200 hover:border-green-300 transition-all duration-300 hover-lift animate-slide-up group"
                   style={{ animationDelay: `${index * 0.05}s` }}
                 >
-                  <div className="flex justify-between items-start gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="px-2 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded-full">
-                          {report.year}
-                        </span>
-                      </div>
-                      <h3 className="font-bold text-gray-800 mb-1 group-hover:text-green-600 transition line-clamp-1">
-                        {report.title}
-                      </h3>
-                      {report.detailsText && (
-                        <p className="text-xs text-gray-500 mb-2 line-clamp-2">
-                          {report.detailsText}
-                        </p>
-                      )}
-                      <div className="flex items-center gap-3 text-xs text-gray-500">
-                        <span className="flex items-center gap-1">
-                          <FileText className="w-3 h-3" />
-                          {report.coverage}
-                        </span>
-                        {report.author && (
-                          <span className="flex items-center gap-1">
-                            <FileText className="w-3 h-3" />
-                            {report.author}
-                          </span>
-                        )}
-                        {report.partners && (
-                          <span className="flex items-center gap-1">
-                            <FileText className="w-3 h-3" />
-                            {report.partners}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap gap-2 flex-shrink-0 justify-end">
-                      {report.filePath && (
-                        <>
-                          <a
-                            href={report.filePath}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="flex items-center gap-1 px-3 py-2 bg-white text-green-700 border border-green-200 text-sm rounded-lg hover:bg-green-50 transition-all duration-300 shadow-sm"
-                          >
-                            <ExternalLink className="w-3 h-3" />
-                            <span>Abrir</span>
-                          </a>
-                          <button
-                            onClick={() => handleProcessar(report.id)}
-                            disabled={aProcessar === report.id}
-                            className="flex items-center gap-1 px-3 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition-all duration-300 hover:scale-105 shadow-md disabled:opacity-60 disabled:hover:scale-100"
-                          >
-                            {aProcessar === report.id ? (
-                              <Loader2 className="w-3 h-3 animate-spin" />
-                            ) : (
-                              <ScanSearch className="w-3 h-3" />
-                            )}
-                            <span>{aProcessar === report.id ? 'A processar...' : 'Processar'}</span>
-                          </button>
-                          <button
-                            onClick={() => setVerificacaoAbertaId((prev) => (prev === report.id ? null : report.id))}
-                            className="flex items-center gap-1 px-3 py-2 bg-amber-500 text-white text-sm rounded-lg hover:bg-amber-600 transition-all duration-300 hover:scale-105 shadow-md"
-                          >
-                            <ScaleIcon className="w-3 h-3" />
-                            <span>Verificar</span>
-                          </button>
-                        </>
-                      )}
-                      <button
-                        onClick={() => handleEdit(report)}
-                        className="flex items-center gap-1 px-3 py-2 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 transition-all duration-300 hover:scale-105 shadow-md"
-                      >
-                        <Edit className="w-3 h-3" />
-                        <span>Editar</span>
-                      </button>
-                      <button
-                        onClick={() => handleDelete(report.id)}
-                        className="flex items-center gap-1 px-3 py-2 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 transition-all duration-300 hover:scale-105 shadow-md"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                        <span>Excluir</span>
-                      </button>
-                    </div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="px-2 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded-full">
+                      {report.year}
+                    </span>
+                  </div>
+                  <h3 className="font-bold text-gray-800 mb-1 group-hover:text-green-600 transition line-clamp-1">
+                    {report.title}
+                  </h3>
+                  {report.detailsText && (
+                    <p className="text-xs text-gray-500 mb-2 line-clamp-2">
+                      {report.detailsText}
+                    </p>
+                  )}
+                  {/* Uma linha só, cada dado com o seu próprio ícone (não o mesmo repetido três
+                      vezes): cobertura, autor e parceiros ficam lado a lado, e só quebram para uma
+                      segunda linha se o espaço realmente não chegar, em vez de empilhar sempre. */}
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500 mb-3">
+                    <span className="flex items-center gap-1">
+                      <Globe2 className="w-3 h-3 shrink-0" />
+                      {report.coverage}
+                    </span>
+                    {report.author && (
+                      <span className="flex items-center gap-1">
+                        <User className="w-3 h-3 shrink-0" />
+                        {report.author}
+                      </span>
+                    )}
+                    {report.partners && (
+                      <span className="flex items-center gap-1 min-w-0">
+                        <Users className="w-3 h-3 shrink-0" />
+                        <span className="truncate">{report.partners}</span>
+                      </span>
+                    )}
+                  </div>
+                  {/* Faixa própria, com toda a largura do cartão: espremidas ao lado do título (como
+                      estava antes) as 5 acções quebravam para uma segunda linha desalinhada em
+                      qualquer coluna que não fosse muito larga. */}
+                  <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-200/70">
+                    {report.filePath && (
+                      <>
+                        <a
+                          href={report.filePath}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center gap-1 px-3 py-2 bg-white text-green-700 border border-green-200 text-sm rounded-lg hover:bg-green-50 transition-all duration-300 shadow-sm"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          <span>Abrir</span>
+                        </a>
+                        <button
+                          onClick={() => handleProcessar(report.id)}
+                          disabled={aProcessar === report.id}
+                          className="flex items-center gap-1 px-3 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition-all duration-300 hover:scale-105 shadow-md disabled:opacity-60 disabled:hover:scale-100"
+                        >
+                          {aProcessar === report.id ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <ScanSearch className="w-3 h-3" />
+                          )}
+                          <span>{aProcessar === report.id ? 'A processar...' : 'Processar'}</span>
+                        </button>
+                        <button
+                          onClick={() => setVerificacaoAbertaId((prev) => (prev === report.id ? null : report.id))}
+                          className="flex items-center gap-1 px-3 py-2 bg-amber-500 text-white text-sm rounded-lg hover:bg-amber-600 transition-all duration-300 hover:scale-105 shadow-md"
+                        >
+                          <ScaleIcon className="w-3 h-3" />
+                          <span>Verificar</span>
+                        </button>
+                      </>
+                    )}
+                    <button
+                      onClick={() => handleEdit(report)}
+                      className="flex items-center gap-1 px-3 py-2 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 transition-all duration-300 hover:scale-105 shadow-md"
+                    >
+                      <Edit className="w-3 h-3" />
+                      <span>Editar</span>
+                    </button>
+                    <button
+                      onClick={() => handleDelete(report.id)}
+                      className="flex items-center gap-1 px-3 py-2 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 transition-all duration-300 hover:scale-105 shadow-md ml-auto"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      <span>Excluir</span>
+                    </button>
                   </div>
                   {verificacaoAbertaId === report.id && (
                     <div className="mt-4 pt-4 border-t border-gray-200">

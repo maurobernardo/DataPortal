@@ -9,7 +9,19 @@ function getAllowedOrigins(): string[] {
     .filter(Boolean)
 }
 
-function applySecurityHeaders(response: NextResponse, pathname?: string): NextResponse {
+function applySecurityHeaders(response: NextResponse, pathname?: string, isApiRoute?: boolean): NextResponse {
+  // Nenhuma resposta de /api/* pode ser guardada em cache por um proxy à frente da aplicação
+  // (comum em hosting partilhado tipo cPanel/CloudLinux, com LiteSpeed a fazer cache por URL sem
+  // saber que o conteúdo depende de quem está a pedir). Visto ao vivo: a resposta de
+  // /api/reports/[id]/digesto ficava em cache depois de UMA pessoa desbloquear o resumo, e todos
+  // os outros utilizadores logados passavam a receber essa mesma resposta em cache, vendo o
+  // resumo de um relatório pago sem nunca o terem pedido. `dynamic = 'force-dynamic'` nas rotas
+  // só desliga a cache interna do Next, não impede um proxy externo de guardar a resposta —
+  // só um cabeçalho `Cache-Control` explícito faz isso.
+  if (isApiRoute) {
+    response.headers.set('Cache-Control', 'private, no-store, no-cache, must-revalidate')
+    response.headers.set('Pragma', 'no-cache')
+  }
   // /embed/* é a única família de páginas pensada para ser incorporada por sites de terceiros
   // (ver next.config.js) — X-Frame-Options: DENY é um header antigo que alguns navegadores ainda
   // respeitam por cima da CSP moderna, e "DENY" bloquearia sempre, tornando o "frame-ancestors *"
@@ -69,7 +81,7 @@ export function middleware(request: NextRequest) {
     }
     preflight.headers.set('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS')
     preflight.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-    return applySecurityHeaders(preflight, pathname)
+    return applySecurityHeaders(preflight, pathname, isApiRoute)
   }
 
   const response = NextResponse.next()
@@ -79,7 +91,7 @@ export function middleware(request: NextRequest) {
     response.headers.set('Vary', 'Origin')
   }
 
-  return applySecurityHeaders(response, pathname)
+  return applySecurityHeaders(response, pathname, isApiRoute)
 }
 
 export const config = {
