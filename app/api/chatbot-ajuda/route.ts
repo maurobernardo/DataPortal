@@ -71,11 +71,19 @@ export async function POST(request: NextRequest) {
       .trim() || 'Não consegui responder agora. Tenta de novo daqui a pouco.'
 
     // Rede de segurança: as instruções no system prompt (sem travessão, sem markdown) não são
-    // garantidas a 100% (confirmado ao vivo em ambos os casos). Aplicar aqui garante a regra
-    // sempre, sem depender só do modelo se lembrar dela em cada resposta. Os asteriscos nunca são
-    // precisos em texto normal (nem multiplicação aparece nestas respostas), por isso remover
-    // todos é seguro: fica só o texto que estava a negrito, sem os marcadores.
-    const texto = bruto.replace(/\s*—\s*/g, ': ').replace(/\*/g, '')
+    // garantidas a 100% (confirmado ao vivo, incluindo cardinais "##" numa resposta real, apesar
+    // de o system prompt já os proibir explicitamente). Aplicar aqui garante a regra sempre, sem
+    // depender só do modelo se lembrar dela em cada resposta.
+    const texto = bruto
+      .replace(/\s*—\s*/g, ': ')
+      // Cabeçalhos markdown ("## Título", "# Título" no início da linha): fica só o texto, sem
+      // os cardinais. Sem isto o utilizador via literalmente "## O que encontras" no chat.
+      .replace(/^#{1,6}\s*/gm, '')
+      // Marcadores de lista markdown ("- item", "* item"): o próprio system prompt já pede
+      // "1. 2. 3." para listas, isto é só a rede de segurança para quando o modelo não segue.
+      .replace(/^[-*]\s+/gm, '')
+      .replace(/`/g, '')
+      .replace(/\*/g, '')
 
     return NextResponse.json({ texto })
   } catch (erro) {
