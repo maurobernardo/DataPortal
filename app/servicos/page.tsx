@@ -108,7 +108,7 @@ export default async function ServicosPage() {
     },
     {
       numero: '09',
-      titulo: 'Ruas 360°',
+      titulo: 'Mapeamento 360°',
       desc: 'Ruas de Maputo e Chimoio captadas em 360°, com sinais de trânsito georreferenciados, navegáveis no portal.',
       meta: 'Maputo e Chimoio',
       who: 'Planeamento · Trânsito',
@@ -148,11 +148,12 @@ export default async function ServicosPage() {
       icon: 'integracao' as const,
     },
     {
-      titulo: 'Levantamento Ruas 360°',
-      desc: 'Captação de novas ruas ou zonas em imagens 360°, com sinais de trânsito georreferenciados.',
-      out: 'Entregável: percurso navegável no visor + dados de sinalização',
-      href: '#consultoria',
-      icon: 'recolha' as const,
+      titulo: 'Mapeamento e Levantamento 360°',
+      desc: 'Captação em 360° de ruas ou instalações, com sinais de trânsito georreferenciados.',
+      out: 'Entregável: percurso navegável no visor',
+      href: '/ruas-360',
+      icon: 'ruas360' as const,
+      featured: true,
     },
   ]
 

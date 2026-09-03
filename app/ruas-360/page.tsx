@@ -4,7 +4,7 @@ import { VisorRuas360 } from '@/components/mapillary/VisorRuas360'
 import '../ruas-360.css'
 
 export const metadata = {
-  title: 'Ruas 360° | Data Portal',
+  title: 'Mapeamento e Levantamento 360° | Data Portal',
   description:
     'Navegue pelas ruas de Maputo e Chimoio captadas em 360° pela equipa do Data Portal, rua a rua, com sinais de trânsito e filtros, sem sair do portal.',
 }
@@ -61,7 +61,7 @@ export default function Ruas360Page() {
         <div className="ruas360-inner">
           <div className="ruas360-eyebrow">
             <Video className="size-3.5" aria-hidden />
-            Captado pela nossa equipa
+            Mapeamento e Levantamento 360°
           </div>
           <h1>
             As ruas de Maputo e Chimoio, <span className="accent">em 360°.</span>
@@ -78,7 +78,7 @@ export default function Ruas360Page() {
             <span>Mapa e satélite</span>
           </div>
           <Link
-            href="/servicos?assunto=Levantamento%20Ruas%20360%C2%B0#consultoria"
+            href="/servicos?assunto=Mapeamento%20e%20Levantamento%20360%C2%B0#consultoria"
             className="ruas360-hero-cta"
           >
             <Send className="size-4" aria-hidden />
@@ -92,9 +92,9 @@ export default function Ruas360Page() {
       </div>
 
       <Link
-        href="/servicos?assunto=Levantamento%20Ruas%20360%C2%B0#consultoria"
+        href="/servicos?assunto=Mapeamento%20e%20Levantamento%20360%C2%B0#consultoria"
         className="ruas360-flutuante"
-        aria-label="Solicitar o serviço de Ruas 360° para a sua zona"
+        aria-label="Solicitar o serviço de Mapeamento e Levantamento 360° para a sua zona"
       >
         <Send className="size-4" aria-hidden />
         <span>Solicitar este serviço</span>

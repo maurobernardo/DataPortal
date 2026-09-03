@@ -66,7 +66,7 @@ function PILARES({ geoespaciais, alfanumericos, dashboards, mapas, relatorios }:
     },
     {
       icon: Video,
-      label: 'Ruas 360°',
+      label: 'Mapeamento e Levantamento 360°',
       desc: 'Navegue pelas ruas de Maputo e Chimoio captadas em 360° pela nossa equipa, sem sair do portal.',
       href: '/ruas-360',
       stat: '2 cidades',
@@ -248,7 +248,7 @@ export function AboutSection({
             <div>
               <p className="text-sm font-bold text-gray-900">Data4Moz</p>
               <p className="text-xs text-gray-500">
-                Análise por IA · Geoespacial · Alfanumérico · Dashboards · Mapas inteligentes · Relatórios · Ruas 360°
+                Análise por IA · Geoespacial · Alfanumérico · Dashboards · Mapas inteligentes · Relatórios · Mapeamento 360°
               </p>
             </div>
           </div>

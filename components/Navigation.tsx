@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
-import { Menu, X, Database, FileText, Map, MapPinned, Home, LogIn, UserPlus, LayoutGrid, ShieldCheck, PlusCircle, ArrowRight, Video } from 'lucide-react'
+import { Menu, X, Database, FileText, Map, MapPinned, Home, LogIn, UserPlus, LayoutGrid, ShieldCheck, PlusCircle, ArrowRight, Search } from 'lucide-react'
 import Image from 'next/image'
 import { NavUserMenu } from '@/components/NavUserMenu'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
@@ -35,11 +35,11 @@ export function Navigation() {
   }, [])
 
   useEffect(() => {
-    // O cabeçalho completo (logo + 7 links incluindo "Ruas 360°" + AI + idioma + Entrar) precisa
-    // de mais espaço do que quando só havia 6 links. Este limiar acompanha `.pd-nav-inner` (ver
-    // globals.css): tentar um valor colado à medida exacta do conteúdo (sem folga) partiu ao
-    // primeiro browser/zoom com métricas de fonte ligeiramente diferentes das medidas — por isso
-    // 1460px, não o mínimo teórico, para sobrar sempre alguma margem real.
+    // O cabeçalho completo (logo + links + AI + idioma + Entrar) precisa de mais espaço do que
+    // cabe num ecrã estreito. Este limiar acompanha `.pd-nav-inner` (ver globals.css): tentar um
+    // valor colado à medida exacta do conteúdo (sem folga) partiu ao primeiro browser/zoom com
+    // métricas de fonte ligeiramente diferentes das medidas — por isso 1460px, não o mínimo
+    // teórico, para sobrar sempre alguma margem real.
     const mq = window.matchMedia('(max-width: 1460px)')
     const update = () => setCompactNav(mq.matches)
     update()
@@ -96,7 +96,6 @@ export function Navigation() {
     { href: '/dados-espaciais', label: 'Geoespaciais', compactLabel: 'Geo', icon: Map },
     { href: '/dados-alfanumericos', label: 'Alfanuméricos', compactLabel: 'Alfanum.', icon: Database },
     { href: '/maps', label: 'Mapas Inteligentes', compactLabel: 'Mapas', icon: MapPinned },
-    { href: '/ruas-360', label: 'Ruas 360°', compactLabel: 'Ruas 360°', icon: Video },
     { href: '/relatorios', label: 'Relatórios', compactLabel: 'Relat.', icon: FileText },
     { href: '/servicos', label: 'Serviços', compactLabel: 'Serviços', icon: LayoutGrid },
   ]
@@ -143,10 +142,17 @@ export function Navigation() {
               </div>
             </div>
             <div className="pd-nav-actions" aria-label="Acções">
-              {/* O botão de pesquisa saiu do cabeçalho para lhe dar mais espaço (com 7 links de
-                  navegação já não sobrava folga nenhuma); o atalho ⌘K/Ctrl+K continua a abrir a
-                  pesquisa na mesma, ouvido directamente em CommandPalette.tsx, sem depender deste
-                  botão. */}
+              {/* Dispara o mesmo CommandPalette do atalho ⌘K/Ctrl+K (ouvido em CommandPalette.tsx
+                  via o evento "pd:open-search"), para quem não sabe do atalho de teclado. */}
+              <button
+                type="button"
+                className="pd-nav-search-btn"
+                onClick={() => window.dispatchEvent(new CustomEvent('pd:open-search'))}
+                aria-label="Pesquisar no portal"
+                title="Pesquisar (Ctrl+K)"
+              >
+                <Search size={17} strokeWidth={2} aria-hidden />
+              </button>
               {/* Sempre compacto no cabeçalho (só ícone / só iniciais): o nome, email e idioma por
                   extenso continuam visíveis no painel que abre ao clicar — o cabeçalho não precisa
                   de repetir essa informação, só de dar acesso a ela. */}

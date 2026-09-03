@@ -16,8 +16,11 @@
   --forest-700: #175a41;
   --forest-600: #1f7752;
 
-  --paper: #faf6ec;
-  --paper-dim: #f2ecdc;
+  /* Antes creme (#faf6ec / #f2ecdc): a paleta do portal ficou só verde/amarelo/branco, e o creme
+     destoava nesta página e em "Minhas análises" (que partilha esta folha). Os contrastes
+     documentados abaixo (--ink-faint) só melhoram com um fundo mais claro, nunca pioram. */
+  --paper: #ffffff;
+  --paper-dim: #ffffff;
   --card: #ffffff;
 
   --ink: #1a2118;
@@ -33,8 +36,10 @@
    */
   --ink-faint: #5c6459;
 
-  --line: #e4dcc6;
-  --line-soft: #eee8d6;
+  /* Antes tons de creme (#e4dcc6 / #eee8d6), a condizer com o --paper creme que já não existe:
+     bordas e fundos inertes (ex.: botão "Analisar" desactivado) ficam verde-acinzentado. */
+  --line: #CFE0D5;
+  --line-soft: #E3EDE7;
 
   --gold: #c7962c;
   --gold-soft: #f4e3b8;

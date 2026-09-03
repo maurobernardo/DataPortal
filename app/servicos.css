@@ -64,26 +64,6 @@
   .svc .hero-scrim{background:linear-gradient(180deg,rgba(4,54,31,.95) 0%,rgba(4,54,31,.9) 55%,rgba(4,54,31,.75) 100%)}
 }
 
-/* ---------- PATHS: já não sobrepõem o hero (a sobreposição negativa cobria as estatísticas de
-   confiança quando o hero ficou mais baixo sem o widget de demonstração) ---------- */
-.svc .paths{margin-top:44px;position:relative;z-index:5;display:grid;grid-template-columns:repeat(3,1fr);gap:20px;align-items:stretch}
-.svc .path{height:100%;background:rgba(255,255,255,.62);backdrop-filter:blur(14px) saturate(160%);-webkit-backdrop-filter:blur(14px) saturate(160%);
-  border:1px solid rgba(255,255,255,.7);border-radius:var(--r-l);padding:26px;box-shadow:var(--sh-3);
-  display:flex;flex-direction:column;gap:12px;position:relative;overflow:hidden;text-align:left}
-.svc .path .cap{position:absolute;inset:0 0 auto 0;height:4px}
-.svc .path.p1 .cap{background:var(--green-600)} .svc .path.p2 .cap{background:var(--amber)} .svc .path.p3 .cap{background:var(--green-900)}
-.svc .path .k{display:flex;align-items:center;justify-content:space-between}
-.svc .path h3{font-size:20px;text-align:left}
-.svc .path .price{font-size:13px;font-weight:700;color:var(--green-700)}
-.svc .path ul{margin:2px 0 0;padding-left:0;list-style:none;display:grid;gap:8px}
-.svc .path li{font-size:14px;color:var(--muted);display:flex;gap:9px;align-items:flex-start;text-align:left}
-.svc .tick{flex:0 0 16px;height:16px;margin-top:3px;border-radius:50%;background:var(--green-100);display:grid;place-items:center}
-.svc .tick svg{width:9px;height:9px;stroke:var(--green-700);stroke-width:3;fill:none}
-.svc .path .go{margin-top:auto;align-self:flex-start;padding:9px 15px;border-radius:100px;background:rgba(6,78,44,.07);font-size:14px;font-weight:700;color:var(--green-800);display:flex;align-items:center;gap:7px;transition:background .15s ease}
-.svc .path .go:hover{background:rgba(6,78,44,.13)}
-.svc .path{padding-bottom:22px}
-.svc .paths > .reveal-on-scroll{height:100%}
-
 /* ---------- SECTIONS ---------- */
 .svc section{padding:42px 0}
 .svc .sec-head{display:flex;justify-content:space-between;align-items:flex-end;gap:40px;margin-bottom:34px}
@@ -139,27 +119,68 @@
   letter-spacing:.06em;text-transform:uppercase;padding:5px 12px;border-radius:20px}
 .svc .plan .btn{margin-top:auto;justify-content:center}
 
-/* ---------- CONSULTING BAND ---------- */
-.svc .band{background:#102c1c;color:#fff;position:relative;overflow:hidden}
+/* ---------- CONSULTING BAND: fundo branco (é a primeira secção depois do hero, que já é verde
+   escuro — duas secções escuras seguidas pesava demais). O círculo de fundo fica verde, não âmbar
+   (o amarelo já está a mais a usar-se noutros sítios da página). ---------- */
+.svc .band{background:var(--paper);color:var(--ink);position:relative;overflow:hidden;border-bottom:1px solid var(--line)}
 .svc .band:before{content:"";position:absolute;width:620px;height:620px;right:-180px;top:-200px;border-radius:50%;
-  background:rgba(224,162,51,.12)}
+  background:rgba(6,78,44,.06)}
 .svc .band .wrap{position:relative;z-index:2}
+/* .band-alt: a versão escura original do "band" (fundo verde escuro, círculo âmbar mais forte),
+   agora usada pela secção de Confiança em vez da de Consultoria — a página precisa de pelo menos
+   uma secção escura para não ficar toda plana, só já não é a primeira depois do hero. */
+.svc .band-alt{background:#102c1c;color:#fff;border-bottom:none}
+.svc .band-alt:before{background:rgba(224,162,51,.12)}
+.svc .band-alt .gov div{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14)}
+.svc .band-alt .gov b{color:#fff}
+.svc .band-alt .gov p{color:#BDD0C3}
 .svc .cap-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:34px;align-items:stretch}
-.svc .cap-card{height:100%;background:rgba(255,255,255,.07);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
-  border:1px solid rgba(255,255,255,.16);border-radius:var(--r-l);padding:24px;
-  display:flex;flex-direction:column;gap:11px;text-align:left}
-.svc .cap-card h3{color:#fff;text-align:left}
-.svc .cap-card p{font-size:14px;color:#BDD0C3;line-height:1.55;flex:1}
-.svc .cap-card .out{font-size:11.5px;color:#8FA997;border-top:1px solid rgba(255,255,255,.13);padding-top:11px;margin-top:auto}
-.svc .cap-card .ico{background:rgba(224,162,51,.15);color:var(--amber)}
-.svc .leadbox{margin-top:36px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.16);border-radius:var(--r-xl);
+/* Sem altura mínima fixa aqui: uma altura igual para todos os 5 cartões só se consegue à custa de
+   um deles (o mais curto) ficar com uma sobra visível no fundo — experimentado e chumbado. Cada
+   cartão fica com a altura que o seu próprio conteúdo pede; "align-items:stretch" continua a
+   igualar os cartões DENTRO da mesma linha da grelha (as descrições foram equilibradas para que as
+   duas linhas fiquem parecidas, ver "Mapeamento e Levantamento 360°" mais abaixo). */
+.svc .cap-card{background:#fff;border:1px solid var(--line);border-radius:var(--r-l);padding:24px;
+  display:flex;flex-direction:column;gap:11px;text-align:left;box-shadow:var(--sh-1);transition:.18s}
+.svc .cap-card:hover{transform:translateY(-3px);box-shadow:var(--sh-2);border-color:var(--green-200)}
+.svc .cap-card h3{color:var(--ink);text-align:left}
+/* Sem "flex:1"/"margin-top:auto" aqui: isso esticava o parágrafo e empurrava a linha "Entregável"
+   para o fundo do cartão mais alto da grelha, deixando um bloco em branco isolado entre o texto e
+   o traço, bem visível num cartão com descrição curta. Assim, o texto e a linha ficam sempre
+   juntos, e o espaço a mais (quando o cartão estica para igualar o mais alto) fica como margem no
+   fundo do cartão — não como um vão a meio. */
+.svc .cap-card p{font-size:14px;color:var(--muted);line-height:1.55}
+.svc .cap-card .out{font-size:11.5px;color:var(--muted-2);border-top:1px solid var(--line);padding-top:11px;margin-top:14px}
+.svc .cap-card .ico{background:var(--green-100);color:var(--green-800)}
+/* Cartão do Mapeamento 360°, destacado dos outros quatro: fundo verde de marca (o único cartão
+   escuro da grelha), para não se confundir com "mais um serviço sob consulta" — é o único que
+   leva a uma experiência já pronta a explorar, não a um pedido de proposta. */
+.svc .cap-card.feat{background:var(--green-800);border-color:var(--green-900)}
+.svc .cap-card.feat h3{color:#fff}
+.svc .cap-card.feat p{color:#CFE3D6}
+.svc .cap-card.feat .out{color:#9FB6A6;border-top-color:rgba(255,255,255,.16)}
+.svc .cap-card.feat .ico{background:rgba(242,199,68,.18);color:#F2C744}
+.svc .cap-card.feat .go-btn{margin-top:2px;display:inline-flex;align-items:center;gap:6px;padding:9px 14px;
+  border-radius:9px;background:#fff;color:var(--green-800);font-size:13px;font-weight:700;width:fit-content;transition:.15s}
+.svc .cap-card.feat:hover .go-btn{gap:9px}
+/* Escuro de propósito, como estava antes — mesmo com a secção à volta agora branca, este cartão
+   fica como um "recorte" da cor de marca dentro da página, não precisa de seguir o fundo branco à
+   volta. */
+.svc .leadbox{margin-top:36px;background:#102c1c;border:1px solid #1B3F2B;border-radius:var(--r-xl);
   padding:30px;display:grid;grid-template-columns:1fr 1.05fr;gap:38px;align-items:center}
+.svc .leadbox .eyebrow{color:var(--green-200) !important}
+.svc .leadbox h3{color:#fff !important}
+.svc .leadbox .lede{color:#BDD0C3 !important}
+.svc .leadbox .src .chip{background:rgba(255,255,255,.12) !important;color:#DCE8E0 !important;border:none}
 .svc .field{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.2);border-radius:11px;padding:13px 15px;
-  font-size:14px;color:#D8E4DB;width:100%;font-family:inherit}
-.svc .field::placeholder{color:#9FB6A6}
-.svc .f-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}
-.svc .f-grid .span{grid-column:1/-1}
+  font-size:14px;color:#D8E4DB;width:100%;font-family:inherit;transition:border-color .15s,box-shadow .15s}
+.svc .field::placeholder{color:#8FA997}
+.svc .field:focus{outline:none;border-color:var(--amber);box-shadow:0 0 0 3px rgba(212,160,23,.18)}
 .svc select.field option{color:#11251A}
+.svc .f-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.svc .f-field{display:flex;flex-direction:column;gap:6px}
+.svc .f-field label{font-size:12px;font-weight:700;color:#9FB6A6}
+.svc .f-field.span{grid-column:1/-1}
 
 /* ---------- PERSONAS ---------- */
 .svc .persona{background:#fff;border:1px solid var(--line);border-radius:var(--r-l);padding:24px;display:flex;flex-direction:column;gap:12px}
@@ -187,7 +208,7 @@
 .svc .gov p{font-size:13px;color:var(--muted)}
 
 /* ---------- CTA ---------- */
-.svc .finalcta{background:var(--amber-soft);border-top:1px solid #EFE0C4}
+.svc .finalcta{background:var(--paper);border-top:1px solid var(--line)}
 .svc .cta-in{display:flex;justify-content:space-between;align-items:center;gap:40px;flex-wrap:wrap}
 
 .svc .feedback{border-radius:11px;padding:12px 14px;font-size:13px;font-weight:600}
@@ -211,14 +232,14 @@
 
 @media(max-width:1040px){
   .svc .hero-in{grid-template-columns:1fr;gap:44px}
-  .svc .paths,.svc .plan-grid,.svc .cap-grid,.svc .grid-4,.svc .gov{grid-template-columns:1fr 1fr}
+  .svc .plan-grid,.svc .cap-grid,.svc .grid-4,.svc .gov{grid-template-columns:1fr 1fr}
   .svc .leadbox{grid-template-columns:1fr}
   .svc .layer{grid-template-columns:1fr;gap:14px}
 }
 @media(max-width:680px){
   .svc .wrap{padding:0 20px}
   section{padding:30px 0}
-  .svc .paths,.svc .plan-grid,.svc .cap-grid,.svc .grid-4,.svc .grid-3,.svc .grid-2,.svc .gov{grid-template-columns:1fr}
+  .svc .plan-grid,.svc .cap-grid,.svc .grid-4,.svc .grid-3,.svc .grid-2,.svc .gov{grid-template-columns:1fr}
   .svc .plan.feat{transform:none}
   .svc .hero{padding:56px 0 140px}
   .svc .sec-head{flex-direction:column;align-items:flex-start;gap:16px}

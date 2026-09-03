@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { FormEvent, useEffect, useState } from 'react'
 import { RevealOnScroll } from '@/components/RevealOnScroll'
+import { Ruas360PromoModal } from './Ruas360PromoModal'
 import '../../app/servicos.css'
 
 type ServicoTool = {
@@ -21,7 +22,11 @@ type ServicoConsulta = {
   desc: string
   out: string
   href: string
-  icon: 'recolha' | 'consultoria' | 'formacao' | 'integracao'
+  icon: 'recolha' | 'consultoria' | 'formacao' | 'integracao' | 'ruas360'
+  /** Único cartão desta grelha que não é um pedido por formulário: leva logo à experiência já
+   *  pronta (o visor), por isso ganha destaque visual próprio e não entra nas opções do formulário
+   *  de pedido de proposta abaixo. */
+  featured?: boolean
 }
 
 function Icon({ tipo }: { tipo: ServicoTool['icon'] | ServicoConsulta['icon'] }) {
@@ -128,16 +133,6 @@ function ArrowIcon() {
   )
 }
 
-function Tick() {
-  return (
-    <span className="tick">
-      <svg viewBox="0 0 12 12">
-        <polyline points="2,6 5,9 10,3" />
-      </svg>
-    </span>
-  )
-}
-
 export function ServicosClient({
   totalDatasets,
   organizacoes,
@@ -153,7 +148,7 @@ export function ServicosClient({
   const [feedback, setFeedback] = useState<{ type: 'ok' | 'err'; msg: string } | null>(null)
   const [form, setForm] = useState({ name: '', org: '', email: '', subject: 'Recolha de dados sob encomenda', message: '' })
 
-  // Um link "Solicitar este serviço" noutra página (ex.: Ruas 360°) traz o assunto já escolhido
+  // Um link "Solicitar este serviço" noutra página (ex.: Mapeamento e Levantamento 360°) traz o assunto já escolhido
   // via ?assunto=..., para quem chega já saber a que se refere sem ter de encontrar a opção certa
   // no menu. Lido no cliente (não em searchParams do servidor) para não obrigar toda a página a
   // Suspense só por causa deste caso.
@@ -192,6 +187,7 @@ export function ServicosClient({
 
   return (
     <div className="svc">
+      <Ruas360PromoModal />
       {/* HERO: fotografia real de fundo, sem widget de demonstração */}
       <header className="hero">
         <div className="hero-bg" aria-hidden />
@@ -244,98 +240,145 @@ export function ServicosClient({
         </div>
       </header>
 
-      {/* 3 CAMINHOS */}
-      <div className="wrap">
-        <div className="paths">
-          <RevealOnScroll delayMs={0}>
-          <div className="path p1">
-            <span className="cap" />
-            <div className="k">
-              <h3>Explorar</h3>
-              <span className="price">Gratuito</span>
+      {/* CONSULTORIA: primeira secção a seguir ao hero — fundo branco de propósito, para não
+          empilhar duas secções escuras seguidas. */}
+      <section id="consultoria" className="band">
+        <div className="wrap">
+          <div className="sec-head">
+            <div>
+              <span className="eyebrow">Serviços sob consulta</span>
+              <h2>Quando a resposta ainda não está no catálogo.</h2>
+              <p className="lede">
+                {consulta.length} linhas de trabalho conduzidas pela equipa Data4Moz, com entregáveis
+                definidos, prazos acordados e transferência de conhecimento incluída.
+              </p>
             </div>
-            <p className="lede" style={{ fontSize: 14.5 }}>
-              Catálogo aberto, mapas e dashboards. Sem registo para consultar.
-            </p>
-            <ul>
-              <li>
-                <Tick />
-                {totalDatasets} datasets geoespaciais e alfanuméricos
-              </li>
-              <li>
-                <Tick />
-                Mapas inteligentes e dashboards públicos
-              </li>
-              <li>
-                <Tick />
-                Licença aberta, com citação
-              </li>
-            </ul>
-            <Link href="/dados-espaciais" className="go">
-              Ver catálogo completo →
-            </Link>
           </div>
-          </RevealOnScroll>
-          <RevealOnScroll delayMs={80}>
-          <div className="path p2">
-            <span className="cap" />
-            <div className="k">
-              <h3>Perguntar</h3>
-              <span className="price">Análise por IA</span>
+          <div className="cap-grid">
+            {consulta.map((c, i) =>
+              c.featured ? (
+                <RevealOnScroll key={c.titulo} delayMs={Math.min(i, 5) * 60}>
+                  <Link href={c.href} className="cap-card feat pd-card-lift">
+                    <span className="ico">
+                      <Icon tipo={c.icon} />
+                    </span>
+                    <h3>{c.titulo}</h3>
+                    <p>{c.desc}</p>
+                    <span className="out">{c.out}</span>
+                    <span className="go-btn">
+                      Explorar visor <ArrowIcon />
+                    </span>
+                  </Link>
+                </RevealOnScroll>
+              ) : (
+                <RevealOnScroll key={c.titulo} delayMs={Math.min(i, 5) * 60}>
+                  <div className="cap-card">
+                    <span className="ico">
+                      <Icon tipo={c.icon} />
+                    </span>
+                    <h3>{c.titulo}</h3>
+                    <p>{c.desc}</p>
+                    <span className="out">{c.out}</span>
+                  </div>
+                </RevealOnScroll>
+              )
+            )}
+          </div>
+
+          <div className="leadbox">
+            <div>
+              <span className="eyebrow">Pedido de proposta</span>
+              <h3 style={{ fontSize: 26, margin: '10px 0 12px', letterSpacing: '-.025em' }}>
+                Diga-nos a decisão que tem pela frente.
+              </h3>
+              <p className="lede" style={{ fontSize: 15 }}>
+                Respondemos em menos de 48 horas úteis com âmbito, prazo e orçamento indicativo. Sem
+                compromisso.
+              </p>
+              <div className="src" style={{ marginTop: 18 }}>
+                <span className="chip">Resposta &lt;48h</span>
+                <span className="chip">portaldedados@data4moz.com</span>
+                <span className="chip">PT / EN</span>
+              </div>
             </div>
-            <p className="lede" style={{ fontSize: 14.5 }}>
-              Para quem precisa de uma resposta agora, com números auditáveis.
-            </p>
-            <ul>
-              <li>
-                <Tick />
-                Pergunta em português, sem código
-              </li>
-              <li>
-                <Tick />
-                Cada número rastreável até ao dado de origem
-              </li>
-              <li>
-                <Tick />
-                Dashboard gerado na hora
-              </li>
-            </ul>
-            <Link href="/analise/nova" className="go">
-              Fazer uma pergunta →
-            </Link>
+            <form onSubmit={handleSubmit} className="proposta-form">
+              <div className="f-grid">
+                <div className="f-field">
+                  <label htmlFor="pf-nome">Nome</label>
+                  <input
+                    id="pf-nome"
+                    className="field"
+                    placeholder="O seu nome"
+                    required
+                    value={form.name}
+                    onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+                  />
+                </div>
+                <div className="f-field">
+                  <label htmlFor="pf-org">Organização</label>
+                  <input
+                    id="pf-org"
+                    className="field"
+                    placeholder="Opcional"
+                    value={form.org}
+                    onChange={(e) => setForm((p) => ({ ...p, org: e.target.value }))}
+                  />
+                </div>
+                <div className="f-field span">
+                  <label htmlFor="pf-email">Email institucional</label>
+                  <input
+                    id="pf-email"
+                    className="field"
+                    type="email"
+                    placeholder="nome@organizacao.co.mz"
+                    required
+                    value={form.email}
+                    onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
+                  />
+                </div>
+                <div className="f-field span">
+                  <label htmlFor="pf-assunto">O que precisa</label>
+                  <select
+                    id="pf-assunto"
+                    className="field"
+                    value={form.subject}
+                    onChange={(e) => setForm((p) => ({ ...p, subject: e.target.value }))}
+                  >
+                    {consulta
+                      .filter((c) => !c.featured)
+                      .map((c) => (
+                        <option key={c.titulo} value={c.titulo}>
+                          {c.titulo}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+                <div className="f-field span">
+                  <label htmlFor="pf-mensagem">Descreva a decisão ou o problema</label>
+                  <textarea
+                    id="pf-mensagem"
+                    className="field"
+                    placeholder="Ex.: precisamos de mapear a cobertura de água em 3 distritos até Novembro…"
+                    required
+                    rows={3}
+                    style={{ resize: 'vertical' }}
+                    value={form.message}
+                    onChange={(e) => setForm((p) => ({ ...p, message: e.target.value }))}
+                  />
+                </div>
+              </div>
+              {feedback && (
+                <div className={`feedback ${feedback.type === 'ok' ? 'ok' : 'err'}`} style={{ marginTop: 12 }}>
+                  {feedback.msg}
+                </div>
+              )}
+              <button type="submit" disabled={loading} className="btn btn-amber pd-press" style={{ width: "100%", justifyContent: "center", marginTop: 14 }}>
+                {loading ? 'A enviar…' : 'Enviar pedido →'}
+              </button>
+            </form>
           </div>
-          </RevealOnScroll>
-          <RevealOnScroll delayMs={160}>
-          <div className="path p3">
-            <span className="cap" />
-            <div className="k">
-              <h3>Contratar</h3>
-              <span className="price">Proposta em 48h</span>
-            </div>
-            <p className="lede" style={{ fontSize: 14.5 }}>
-              Quando o dado não existe, ou a decisão exige análise dedicada.
-            </p>
-            <ul>
-              <li>
-                <Tick />
-                Recolha de dados à medida e inquéritos
-              </li>
-              <li>
-                <Tick />
-                Consultoria estratégica e formação
-              </li>
-              <li>
-                <Tick />
-                Integração de dados em tempo real
-              </li>
-            </ul>
-            <Link href="#consultoria" className="go">
-              Ver serviços sob consulta →
-            </Link>
-          </div>
-          </RevealOnScroll>
         </div>
-      </div>
+      </section>
 
       {/* FERRAMENTAS */}
       <section id="ferramentas">
@@ -375,120 +418,15 @@ export function ServicosClient({
         </div>
       </section>
 
-      {/* CONSULTORIA */}
-      <section id="consultoria" className="band">
+      {/* CONFIANÇA: a secção escura da página (a cor que "Serviços sob consulta" tinha, antes de
+          passar para o topo em branco) — a página inteira não pode ficar plana, e este é um bom
+          sítio para o contraste: fecha o argumento com autoridade, não com mais um formulário. */}
+      <section id="confianca" className="band band-alt">
         <div className="wrap">
           <div className="sec-head">
             <div>
-              <span className="eyebrow on-dark">Serviços sob consulta</span>
-              <h2 style={{ color: '#fff' }}>Quando a resposta ainda não está no catálogo.</h2>
-              <p className="lede on-dark">
-                {consulta.length} linhas de trabalho conduzidas pela equipa Data4Moz, com entregáveis
-                definidos, prazos acordados e transferência de conhecimento incluída.
-              </p>
-            </div>
-          </div>
-          <div className="cap-grid">
-            {consulta.map((c, i) => (
-              <RevealOnScroll key={c.titulo} delayMs={Math.min(i, 5) * 60}>
-                <div className="cap-card">
-                  <span className="ico">
-                    <Icon tipo={c.icon} />
-                  </span>
-                  <h3>{c.titulo}</h3>
-                  <p>{c.desc}</p>
-                  <span className="out">{c.out}</span>
-                </div>
-              </RevealOnScroll>
-            ))}
-          </div>
-
-          <div className="leadbox">
-            <div>
-              <span className="eyebrow on-dark">Pedido de proposta</span>
-              <h3 style={{ color: '#fff', fontSize: 26, margin: '10px 0 12px', letterSpacing: '-.025em' }}>
-                Diga-nos a decisão que tem pela frente.
-              </h3>
-              <p className="lede on-dark" style={{ fontSize: 15 }}>
-                Respondemos em menos de 48 horas úteis com âmbito, prazo e orçamento indicativo. Sem
-                compromisso.
-              </p>
-              <div className="src" style={{ marginTop: 18 }}>
-                <span className="chip" style={{ background: 'rgba(255,255,255,.12)', color: '#DCE8E0' }}>
-                  Resposta &lt;48h
-                </span>
-                <span className="chip" style={{ background: 'rgba(255,255,255,.12)', color: '#DCE8E0' }}>
-                  portaldedados@data4moz.com
-                </span>
-                <span className="chip" style={{ background: 'rgba(255,255,255,.12)', color: '#DCE8E0' }}>
-                  PT / EN
-                </span>
-              </div>
-            </div>
-            <form onSubmit={handleSubmit}>
-              <div className="f-grid">
-                <input
-                  className="field"
-                  placeholder="Nome"
-                  required
-                  value={form.name}
-                  onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-                />
-                <input
-                  className="field"
-                  placeholder="Organização"
-                  value={form.org}
-                  onChange={(e) => setForm((p) => ({ ...p, org: e.target.value }))}
-                />
-                <input
-                  className="field span"
-                  type="email"
-                  placeholder="Email institucional"
-                  required
-                  value={form.email}
-                  onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
-                />
-                <select
-                  className="field span"
-                  value={form.subject}
-                  onChange={(e) => setForm((p) => ({ ...p, subject: e.target.value }))}
-                >
-                  {consulta.map((c) => (
-                    <option key={c.titulo} value={c.titulo}>
-                      {c.titulo}
-                    </option>
-                  ))}
-                </select>
-                <textarea
-                  className="field span"
-                  placeholder="Descreva a decisão ou o problema…"
-                  required
-                  rows={3}
-                  style={{ paddingBottom: 12, resize: 'vertical' }}
-                  value={form.message}
-                  onChange={(e) => setForm((p) => ({ ...p, message: e.target.value }))}
-                />
-              </div>
-              {feedback && (
-                <div className={`feedback ${feedback.type === 'ok' ? 'ok' : 'err'}`} style={{ marginTop: 12 }}>
-                  {feedback.msg}
-                </div>
-              )}
-              <button type="submit" disabled={loading} className="btn btn-amber pd-press" style={{ width: "100%", justifyContent: "center", marginTop: 12 }}>
-                {loading ? 'A enviar…' : 'Enviar pedido →'}
-              </button>
-            </form>
-          </div>
-        </div>
-      </section>
-
-      {/* CONFIANÇA */}
-      <section id="confianca">
-        <div className="wrap">
-          <div className="sec-head">
-            <div>
-              <span className="eyebrow">Confiança</span>
-              <h2>Porque é que pode citar estes números.</h2>
+              <span className="eyebrow on-dark">Confiança</span>
+              <h2 style={{ color: '#fff' }}>Porque é que pode citar estes números.</h2>
             </div>
           </div>
           <div className="gov">

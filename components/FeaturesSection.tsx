@@ -158,7 +158,7 @@ const mainFeatures: {
   },
   {
     icon: Video,
-    title: 'Ruas 360°',
+    title: 'Mapeamento e Levantamento 360°',
     description:
       'Navegue pelas ruas de Maputo e Chimoio captadas em 360° pela nossa equipa, imagem a imagem, com sinais de trânsito e filtros, sem sair do portal.',
     tag: 'Novo',

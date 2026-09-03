@@ -453,17 +453,18 @@ summary:focus-visible {
 }
 .pd-nav.scrolled { box-shadow: 0 4px 6px rgba(11,27,20,.05), 0 2px 4px rgba(11,27,20,.04); }
 .pd-nav-inner {
-  /* Ajustado ao vivo depois de o botão de pesquisa sair do cabeçalho: o conteúdo real (logo + 7
-     rótulos com ícone + AI Insights + acções) mede ~1344px de largura própria. Um valor colado a
-     isso (1370px, tentado antes) não dava folga nenhuma — variações normais de fonte/zoom/barra de
-     scroll entre browsers já chegavam para cortar os rótulos a meio. 1420px dá ~75px de margem
-     (perdidos entre logo/links/acções, que o `.pd-nav-links` com `flex: 1 1 auto` centra — mas
-     pouco a ponto de nunca voltar a parecer um vão em branco, como acontecia com o 1480px antigo). */
-  max-width: 1420px;
+  /* Três colunas — logo / links / acções —, cada bloco lateral com a mesma largura reservada
+     (1fr), é o que centra os links de verdade em relação ao cabeçalho inteiro, sem o vão
+     assimétrico que dava ao tentar centrar via "position:absolute" a 50% da barra: esse método
+     ignorava que o logótipo e o bloco de acções não têm a mesma largura, por isso o "centro"
+     matemático da barra não coincidia com o centro visual entre os dois. Com grid, cada lado
+     empurra os links para o meio a partir da sua própria largura, não da largura da barra toda. */
+  max-width: 1300px;
   margin: 0 auto;
   padding: 0 1rem 0 1.25rem;
   height: 64px;
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 0.75rem;
 }
@@ -497,18 +498,16 @@ summary:focus-visible {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* "display:contents" desmancha esta div como caixa: os seus dois filhos (links e acções) passam
+   a participar directamente na grid de ".pd-nav-inner", como se esta div nem existisse — mantém a
+   estrutura em JSX (útil para o esconder tudo de uma vez em ecrã pequeno) sem interferir na grelha
+   de 3 colunas do desktop. */
 .pd-nav-right {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  margin-left: auto;
-  min-width: 0;
-  flex: 1 1 auto;
-  justify-content: flex-end;
+  display: contents;
 }
-@media (min-width: 1100px) {
+@media (max-width: 900px) {
   .pd-nav-right {
-    gap: 0.5rem;
+    display: none !important;
   }
 }
 .pd-nav-links {
@@ -516,10 +515,11 @@ summary:focus-visible {
   gap: 0.35rem;
   align-items: center;
   min-width: 0;
-  flex: 1 1 auto;
   flex-wrap: nowrap;
-  justify-content: center;
-  padding-right: 0.35rem;
+  justify-self: center;
+}
+.pd-nav-actions {
+  justify-self: end;
 }
 .pd-nav-link-label {
   white-space: nowrap;
@@ -570,6 +570,24 @@ summary:focus-visible {
   gap: 0.6rem;
   flex-shrink: 0;
   padding-left: 0.15rem;
+}
+.pd-nav-search-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  color: var(--brand-primary);
+  border: 1px solid rgba(6, 78, 44, 0.25);
+  background: #fff;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s, border-color 0.15s;
+}
+.pd-nav-search-btn:hover {
+  background: var(--pd-green-50);
+  border-color: var(--brand-primary);
 }
 .pd-nav-auth {
   display: flex;

@@ -31,7 +31,8 @@ mesmo fluxo."
 Os 7 pilares/áreas principais do portal (cartões na página inicial): Análise por Inteligência
 Artificial (/analise/nova), Dados geoespaciais (/dados-espaciais), Dados alfanuméricos
 (/dados-alfanumericos), Dashboards alfanuméricos (/dashboards-alfanumericos, actualmente
-desactivado), Mapas Inteligentes (/maps), Relatórios (/relatorios), Ruas 360° (/ruas-360).
+desactivado), Mapas Inteligentes (/maps), Relatórios (/relatorios), Mapeamento e Levantamento 360°
+(/ruas-360).
 
 Contacto: botão "Fale com a equipa" (abre o modal de contacto) ou e-mail
 portaldedados@data4moz.com. Data4Moz também tem página no LinkedIn.
@@ -387,14 +388,15 @@ original, data), consultável mais tarde em "Meus dashboards":
 ## Limites de uso
 Um utilizador autenticado pode fazer até 10 análises por hora.
 
-# RUAS 360° (/ruas-360)
+# MAPEAMENTO E LEVANTAMENTO 360° (/ruas-360)
 
 ## O que é
 Um visor de ruas em 360°, ao estilo do Street View, mas com imagens captadas pela própria equipa do
 Data Portal. Permite andar pelas ruas de Maputo e de Chimoio imagem a imagem, olhar em qualquer
 direcção, e ver os sinais de trânsito detectados nessas ruas. Tudo acontece dentro do portal, sem
-abrir outro site, e não é preciso ter conta iniciada. Chega-se lá pelo menu do topo, na entrada
-"Ruas 360°". As imagens estão alojadas no Mapillary, que é onde a equipa as publica.
+abrir outro site, e não é preciso ter conta iniciada. Chega-se lá pela página de Serviços, no
+cartão "Mapeamento e Levantamento 360°". As imagens estão alojadas no Mapillary, que é onde a
+equipa as publica.
 
 A página tem três partes: o cabeçalho de apresentação, o visor (mapa mais imagem da rua), e no fim
 uma secção "Como usar o visor" com os passos explicados.

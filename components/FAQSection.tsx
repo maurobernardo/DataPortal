@@ -189,7 +189,7 @@ const FAQ_ITEMS: { question: string; answer: ReactNode }[] = [
     ),
   },
   {
-    question: 'O que é a página Ruas 360°?',
+    question: 'O que é o Mapeamento e Levantamento 360°?',
     answer: (
       <>
         Um visor de ruas em 360°, ao estilo do Street View, mas com imagens captadas pela própria
@@ -197,9 +197,9 @@ const FAQ_ITEMS: { question: string; answer: ReactNode }[] = [
         os sinais de trânsito detectados e filtrar por data, tipo de imagem ou quem captou. Não
         precisa de conta. Aceda em{' '}
         <Link href="/ruas-360" className="font-semibold text-[#064E2C] hover:underline">
-          Ruas 360°
+          Mapeamento e Levantamento 360°
         </Link>
-        , no menu do topo.
+        , na página de Serviços.
       </>
     ),
   },
