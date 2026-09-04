@@ -21,6 +21,7 @@ import {
   ScrollText,
   Lightbulb,
   Trash2,
+  ShieldAlert,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
@@ -74,6 +75,12 @@ export function AdminSidebar({ user, activeTab }: AdminSidebarProps) {
       label: 'Custos de IA',
       href: '/admin/custos-ia',
       active: pathname === '/admin/custos-ia',
+    },
+    {
+      icon: ShieldAlert,
+      label: 'Qualidade dos Dados',
+      href: '/admin/qualidade-dados',
+      active: pathname === '/admin/qualidade-dados',
     },
     {
       icon: Lightbulb,

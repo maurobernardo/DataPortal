@@ -4,7 +4,7 @@ export const maxDuration = 60
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentAdmin, getCurrentUser } from '@/lib/auth'
-import { obterDigesto, temAcesso } from '@/lib/relatorios/persistencia'
+import { guardarEstadoVerificacao, guardarReferenciaVerificacao, obterDigesto, temAcesso } from '@/lib/relatorios/persistencia'
 import { serieDoPortal } from '@/lib/relatorios/dados-portal'
 import { verificarAfirmacao } from '@/lib/relatorios/verificar-afirmacao'
 import { logger } from '@/lib/logger'
@@ -65,6 +65,36 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       afirmacao: a,
       veredicto: verificarAfirmacao(a, valoresPortal),
     }))
+
+    // Esta escolha (dataset + colunas) fica como referência: é o que permite ao lote periódico
+    // (verificacao-periodica.ts) repetir sozinha a MESMA comparação mais tarde, sem precisar de
+    // ninguém a escolher de novo, e apanhar se o dataset mudar depois de hoje.
+    try {
+      await guardarReferenciaVerificacao({
+        reportId: id,
+        datasetId,
+        nivelGeo,
+        colunaMetrica: corpo?.colunaMetrica || undefined,
+        colunaIndicador: corpo?.colunaIndicador || undefined,
+        valorIndicador: corpo?.valorIndicador || undefined,
+        colunaTempo: corpo?.colunaTempo || undefined,
+        unidadeMetrica: corpo?.unidadeMetrica || undefined,
+      })
+      const confirma = resultados.filter((r: any) => r.veredicto.estado === 'confirma').length
+      const diverge = resultados.filter((r: any) => r.veredicto.estado === 'diverge').length
+      const naoComparavel = resultados.length - confirma - diverge
+      await guardarEstadoVerificacao(id, {
+        totalAfirmacoes: resultados.length,
+        totalConfirma: confirma,
+        totalDiverge: diverge,
+        totalNaoComparavel: naoComparavel,
+        estado: diverge > 0 ? 'divergente' : 'ok',
+      })
+    } catch (erroReferencia: any) {
+      // Guardar a referência é um extra (permite o lote periódico); uma falha aqui não pode
+      // impedir quem pediu a verificação agora de ver o resultado que já tem.
+      logger.error('erro_guardar_referencia_verificacao', { error: erroReferencia, reportId: id })
+    }
 
     return NextResponse.json({ resultados })
   } catch (erro: any) {

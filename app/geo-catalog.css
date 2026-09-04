@@ -2922,6 +2922,15 @@
 .geo-interactive-map--panel .geo-interactive-map__controls {
   padding: 8px 10px;
   gap: 6px 8px;
+  /* A base grava "position: sticky; top: 0" para o mapa em ecrã cheio, onde o próprio cartão do
+     mapa é a área que rola (faz sentido a barra ficar presa ao TOPO DESSE cartão). Aqui o painel
+     vive dentro de uma página inteira que rola por trás — sem um ascendente com overflow próprio,
+     "sticky" cola-se à janela do browser inteira, não ao cartão, e como o z-index (720) é maior
+     do que o do cabeçalho do site (50), ficava a tapá-lo ao rolar a página. A mesma correcção que
+     ".geo-interactive-map--detail" já tinha. */
+  position: relative;
+  top: auto;
+  z-index: 5;
 }
 
 .geo-interactive-map--map-only {

@@ -55,7 +55,7 @@ export type VeredictoAfirmacao =
  *  raramente cita um número com a mesma precisão exacta de um recálculo directo do dataset. */
 export const TOLERANCIA_PADRAO = 0.05
 
-function normalizarTexto(t: string): string {
+export function normalizarTexto(t: string): string {
   return t
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
@@ -134,7 +134,7 @@ function valorNoPeriodo(candidatos: ValorPortal[], periodo: number | null): Valo
   return distintos.size === 1 ? candidatos[0] : 'ambiguo'
 }
 
-function compararValores(
+export function compararValores(
   valorRelatorio: number,
   valorPortal: number,
   unidade: string,

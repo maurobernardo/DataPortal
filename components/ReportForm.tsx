@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { FileText, Save, X, Edit, Trash2, Loader2, Plus, CheckCircle2, XCircle, Upload, ExternalLink, ScanSearch, ScaleIcon, Globe2, User, Users } from 'lucide-react'
+import { FileText, Save, X, Edit, Trash2, Loader2, Plus, CheckCircle2, XCircle, Upload, ExternalLink, ScanSearch, ScaleIcon, Globe2, User, Users, AlertTriangle } from 'lucide-react'
 import { PainelVerificacao } from './reports/PainelVerificacao'
 
 interface Report {
@@ -48,6 +48,9 @@ export function ReportForm() {
   const [erroFicheiro, setErroFicheiro] = useState<string | null>(null)
   const [aProcessar, setAProcessar] = useState<number | null>(null)
   const [verificacaoAbertaId, setVerificacaoAbertaId] = useState<number | null>(null)
+  const [estadosVerificacao, setEstadosVerificacao] = useState<
+    Record<number, { estado: 'ok' | 'divergente'; totalDiverge: number; verificadoEm: string }>
+  >({})
 
   function showFeedback(message: string, type: 'success' | 'error') {
     setToastMessage(message)
@@ -68,6 +71,16 @@ export function ReportForm() {
       const response = await fetch('/api/reports')
       const data = await response.json()
       setReports(data)
+      // Selo de "verificação desactualizada" na lista, sem esperar por um clique em "Verificar":
+      // só para os relatórios que já têm uma referência de comparação guardada (a maioria não
+      // tem, e a API devolve simplesmente nenhum estado para esses, sem erro).
+      const ids = Array.isArray(data) ? data.map((r: Report) => r.id) : []
+      if (ids.length > 0) {
+        fetch(`/api/admin/reports/verificacao-estados?ids=${ids.join(',')}`)
+          .then((r) => r.json())
+          .then((d) => setEstadosVerificacao(d?.estados || {}))
+          .catch(() => {})
+      }
     } catch (error) {
       console.error('Error loading reports:', error)
     } finally {
@@ -615,6 +628,15 @@ export function ReportForm() {
                           <ScaleIcon className="w-3 h-3" />
                           <span>Verificar</span>
                         </button>
+                        {estadosVerificacao[report.id]?.estado === 'divergente' && (
+                          <span
+                            className="flex items-center gap-1 px-3 py-2 bg-amber-50 text-amber-800 border border-amber-200 text-xs font-semibold rounded-lg"
+                            title={`Última reverificação automática: ${new Date(estadosVerificacao[report.id].verificadoEm).toLocaleString('pt-PT')}`}
+                          >
+                            <AlertTriangle className="w-3 h-3" />
+                            <span>Verificação desactualizada ({estadosVerificacao[report.id].totalDiverge})</span>
+                          </span>
+                        )}
                       </>
                     )}
                     <button

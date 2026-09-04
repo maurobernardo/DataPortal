@@ -85,6 +85,36 @@ async function garantirTabelas() {
       PRIMARY KEY (report_id, utilizador_id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`
   )
+  // A escolha de QUAL dataset/coluna verifica as afirmações de um relatório é feita por uma
+  // pessoa da equipa em PainelVerificacao.tsx (automatizar essa escolha é um problema de
+  // descoberta à parte, fora daqui) — mas, uma vez escolhida, guarda-se como referência: é o que
+  // permite ao lote periódico repetir a MESMA comparação sozinho, e apanhar quando o dataset de
+  // referência muda depois de o relatório já ter sido validado.
+  await db.execute(
+    `CREATE TABLE IF NOT EXISTS relatorio_verificacao_ref (
+      report_id INT PRIMARY KEY,
+      dataset_id INT NOT NULL,
+      nivel_geo VARCHAR(10) NOT NULL,
+      coluna_metrica VARCHAR(190) NULL,
+      coluna_indicador VARCHAR(190) NULL,
+      valor_indicador VARCHAR(300) NULL,
+      coluna_tempo VARCHAR(190) NULL,
+      unidade_metrica VARCHAR(100) NULL,
+      criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      actualizado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`
+  )
+  await db.execute(
+    `CREATE TABLE IF NOT EXISTS relatorio_verificacao_estado (
+      report_id INT PRIMARY KEY,
+      total_afirmacoes INT NOT NULL,
+      total_confirma INT NOT NULL,
+      total_diverge INT NOT NULL,
+      total_nao_comparavel INT NOT NULL,
+      estado VARCHAR(12) NOT NULL,
+      verificado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`
+  )
   tabelasGarantidas = true
 }
 
@@ -438,4 +468,114 @@ export async function obterEstatisticasCustoRelatorios(
       criadoEm: row.criadoEm,
     })),
   }
+}
+
+export type ReferenciaVerificacao = {
+  reportId: number
+  datasetId: number
+  nivelGeo: 'admin1' | 'admin2' | 'admin3'
+  colunaMetrica?: string
+  colunaIndicador?: string
+  valorIndicador?: string
+  colunaTempo?: string
+  unidadeMetrica?: string
+}
+
+/** Grava (ou substitui) a comparação de referência de um relatório — chamado sempre que alguém da
+ *  equipa corre uma verificação manual em PainelVerificacao.tsx, transformando essa escolha na
+ *  comparação que o lote periódico repete sozinho dali em diante. */
+export async function guardarReferenciaVerificacao(ref: ReferenciaVerificacao): Promise<void> {
+  await garantirTabelas()
+  await db.execute(
+    `INSERT INTO relatorio_verificacao_ref
+       (report_id, dataset_id, nivel_geo, coluna_metrica, coluna_indicador, valor_indicador, coluna_tempo, unidade_metrica)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+     ON DUPLICATE KEY UPDATE
+       dataset_id = VALUES(dataset_id), nivel_geo = VALUES(nivel_geo), coluna_metrica = VALUES(coluna_metrica),
+       coluna_indicador = VALUES(coluna_indicador), valor_indicador = VALUES(valor_indicador),
+       coluna_tempo = VALUES(coluna_tempo), unidade_metrica = VALUES(unidade_metrica), actualizado_em = NOW()`,
+    [
+      ref.reportId,
+      ref.datasetId,
+      ref.nivelGeo,
+      ref.colunaMetrica || null,
+      ref.colunaIndicador || null,
+      ref.valorIndicador || null,
+      ref.colunaTempo || null,
+      ref.unidadeMetrica || null,
+    ]
+  )
+}
+
+/** Referências de verificação por antiguidade (nunca verificadas primeiro, depois as mais
+ *  antigas) — para o lote periódico avançar por todos os relatórios com referência guardada. */
+export async function referenciasVerificacaoPorAntiguidade(limite: number): Promise<ReferenciaVerificacao[]> {
+  await garantirTabelas()
+  const [linhas] = (await db.execute(
+    `SELECT r.report_id, r.dataset_id, r.nivel_geo, r.coluna_metrica, r.coluna_indicador, r.valor_indicador, r.coluna_tempo, r.unidade_metrica
+     FROM relatorio_verificacao_ref r
+     LEFT JOIN relatorio_verificacao_estado e ON e.report_id = r.report_id
+     ORDER BY e.verificado_em IS NOT NULL, e.verificado_em ASC
+     LIMIT ?`,
+    [limite]
+  )) as [any[], unknown]
+  return linhas.map((l) => ({
+    reportId: l.report_id,
+    datasetId: l.dataset_id,
+    nivelGeo: l.nivel_geo,
+    colunaMetrica: l.coluna_metrica || undefined,
+    colunaIndicador: l.coluna_indicador || undefined,
+    valorIndicador: l.valor_indicador || undefined,
+    colunaTempo: l.coluna_tempo || undefined,
+    unidadeMetrica: l.unidade_metrica || undefined,
+  }))
+}
+
+export type EstadoVerificacaoRelatorio = {
+  totalAfirmacoes: number
+  totalConfirma: number
+  totalDiverge: number
+  totalNaoComparavel: number
+  estado: 'ok' | 'divergente'
+  verificadoEm: string
+}
+
+export async function guardarEstadoVerificacao(
+  reportId: number,
+  resumo: Omit<EstadoVerificacaoRelatorio, 'verificadoEm'>
+): Promise<void> {
+  await garantirTabelas()
+  await db.execute(
+    `INSERT INTO relatorio_verificacao_estado
+       (report_id, total_afirmacoes, total_confirma, total_diverge, total_nao_comparavel, estado)
+     VALUES (?, ?, ?, ?, ?, ?)
+     ON DUPLICATE KEY UPDATE
+       total_afirmacoes = VALUES(total_afirmacoes), total_confirma = VALUES(total_confirma),
+       total_diverge = VALUES(total_diverge), total_nao_comparavel = VALUES(total_nao_comparavel),
+       estado = VALUES(estado), verificado_em = NOW()`,
+    [reportId, resumo.totalAfirmacoes, resumo.totalConfirma, resumo.totalDiverge, resumo.totalNaoComparavel, resumo.estado]
+  )
+}
+
+export async function obterEstadosVerificacao(reportIds: number[]): Promise<Map<number, EstadoVerificacaoRelatorio>> {
+  await garantirTabelas()
+  const mapa = new Map<number, EstadoVerificacaoRelatorio>()
+  if (reportIds.length === 0) return mapa
+  const placeholders = reportIds.map(() => '?').join(',')
+  const [linhas] = (await db.execute(
+    `SELECT report_id, total_afirmacoes, total_confirma, total_diverge, total_nao_comparavel, estado, verificado_em
+     FROM relatorio_verificacao_estado WHERE report_id IN (${placeholders})`,
+    reportIds
+  )) as [any[], unknown]
+  for (const l of linhas) {
+    mapa.set(l.report_id, {
+      totalAfirmacoes: l.total_afirmacoes,
+      totalConfirma: l.total_confirma,
+      totalDiverge: l.total_diverge,
+      totalNaoComparavel: l.total_nao_comparavel,
+      estado: l.estado,
+      verificadoEm: l.verificado_em,
+    })
+  }
+  return mapa
 }
