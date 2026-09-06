@@ -686,6 +686,31 @@ export async function sendRelatorioAgendadoEmail(
   })
 }
 
+export async function sendBackupFalhouEmail(to: string, nivel: string, erro: string): Promise<void> {
+  const user = getRequiredEnv('SMTP_USER')
+  const transporter = createSmtpTransporter()
+
+  const bodyHtml = [
+    paragraph(`O backup <strong>${nivel}</strong> da base de dados falhou hoje.`),
+    `<div style="margin:20px 0 0 0; padding:16px; background-color:#FBEAEA; border:1px solid #E8B4B4; border-radius:10px;">
+      <p style="margin:0; font-size:13px; line-height:1.7; color:#7A1F1F; font-family:${FONT_STACK}; white-space:pre-wrap;">${erro}</p>
+    </div>`,
+    paragraph('Verifique o espaço em disco e a ligação à base de dados no servidor.'),
+  ].join('')
+
+  await transporter.sendMail({
+    from: `"Data Portal - Segurança" <${user}>`,
+    to,
+    subject: `Data Portal: backup "${nivel}" falhou`,
+    text: [`O backup ${nivel} da base de dados falhou hoje.`, '', erro].join('\n'),
+    html: emailShell({
+      heading: 'Falha no backup da base de dados',
+      bodyHtml,
+      footerHtml: footerNote('Recebe este alerta por ser administrador do Data Portal.'),
+    }),
+  })
+}
+
 export async function sendOtpEmail(to: string, code: string): Promise<void> {
   const user = getRequiredEnv('SMTP_USER')
   const transporter = createSmtpTransporter()

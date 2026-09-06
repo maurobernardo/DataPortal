@@ -9,7 +9,9 @@ import {
 import { consumeUserTotpBackupCode, findUserById, resolveUserRole } from '@/lib/db'
 import { normalizeText, rateLimit } from '@/lib/security'
 import { parseBackupCodes, verifyTotpToken } from '@/lib/totp'
+import { logAudit } from '@/lib/audit'
 import { logger } from '@/lib/logger'
+import { registarBloqueioSeguranca } from '@/lib/security-events'
 
 export async function POST(request: Request) {
   try {
@@ -24,6 +26,7 @@ export async function POST(request: Request) {
 
     const rl = await rateLimit(`totp-login:${pending.userId}`, 10, 15 * 60 * 1000)
     if (!rl.allowed) {
+      registarBloqueioSeguranca('totp-login', String(pending.userId), 'n/a').catch(() => {})
       return NextResponse.json(
         { error: 'Muitas tentativas. Tente novamente em instantes.' },
         { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } }
@@ -58,6 +61,8 @@ export async function POST(request: Request) {
     const token = signSessionToken({ userId: user.id, email: user.email, role })
     const cookieStore = await cookies()
     cookieStore.set(SESSION_COOKIE_NAME, token, getSessionCookieOptions())
+
+    logAudit({ actorEmail: user.email, action: 'login', entityType: 'user', entityId: user.id, details: '2fa' })
 
     return NextResponse.json({
       success: true,

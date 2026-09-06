@@ -45,7 +45,7 @@ export async function buscaSemanticaCatalogo(pergunta: string): Promise<Resultad
   const resposta = await cliente.messages.create({
     model: modeloPara('suficiencia'),
     max_tokens: 1024,
-    system: SISTEMA_BUSCA_SEMANTICA,
+    system: [{ type: 'text', text: SISTEMA_BUSCA_SEMANTICA, cache_control: { type: 'ephemeral' } }],
     messages: [{ role: 'user', content: `Pergunta: ${pergunta}\n\nDatasets:\n${listaNumerada}` }],
   } as any)
 
@@ -127,7 +127,7 @@ export async function gerarResumoDataset(id: number): Promise<{ resumo: string }
   const resposta = await cliente.messages.create({
     model: modeloPara('suficiencia'),
     max_tokens: 900,
-    system: SISTEMA_RESUMO,
+    system: [{ type: 'text', text: SISTEMA_RESUMO, cache_control: { type: 'ephemeral' } }],
     messages: [{ role: 'user', content: metadados + amostra }],
   } as any)
 

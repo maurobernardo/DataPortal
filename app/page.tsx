@@ -41,6 +41,25 @@ async function getStats() {
   }
 }
 
+/** Contagens REAIS por categoria (todo o catálogo, não só a amostra dos mais vistos que
+ *  alimenta o "Catálogo em destaque" abaixo) — sem isto, o separador de uma categoria mostrava
+ *  quantos datasets dessa categoria calhavam de estar entre os 30 mais vistos, não quantos
+ *  existem a sério no portal (visto ao vivo: "Todos (30)" com o portal a ter 97 datasets). */
+async function getContagensPorCategoria(): Promise<Record<string, number>> {
+  try {
+    const [rows] = (await db.execute(
+      `SELECT c.name as nome, COUNT(d.id) as total FROM Dataset d
+       JOIN Category c ON c.id = d.categoryId
+       GROUP BY c.name`
+    )) as any
+    const mapa: Record<string, number> = {}
+    for (const r of rows) mapa[r.nome] = Number(r.total) || 0
+    return mapa
+  } catch {
+    return {}
+  }
+}
+
 async function getMostViewedDatasets() {
   try {
     const base = `SELECT d.id, d.title, d.description, d.source, d.format, d.dataType, d.filePath, d.views, d.downloads, d.updatedAt,
@@ -67,7 +86,12 @@ async function getMostViewedDatasets() {
 }
 
 export default async function Home() {
-  const [stats, mostViewed, contagens] = await Promise.all([getStats(), getMostViewedDatasets(), contarServicos()])
+  const [stats, mostViewed, contagens, contagensPorCategoria] = await Promise.all([
+    getStats(),
+    getMostViewedDatasets(),
+    contarServicos(),
+    getContagensPorCategoria(),
+  ])
 
   // Pré-visualização real (geometria a sério, não um ícone genérico) só para o dataset em
   // destaque do hero, e só quando ele é geoespacial: gerada aqui no servidor (reaproveitando o
@@ -128,7 +152,11 @@ export default async function Home() {
         highlightedDatasets={heroDatasets}
         destaquePreview={destaquePreview}
       />
-      <FeaturedCatalogSection datasets={featuredDatasets} />
+      <FeaturedCatalogSection
+        datasets={featuredDatasets}
+        totalReal={Number(stats.datasets || 0)}
+        contagensReaisPorCategoria={contagensPorCategoria}
+      />
       <AboutSection
         totalDatasets={Number(stats.datasets || 0)}
         geoespaciais={contagens.geoespaciais}

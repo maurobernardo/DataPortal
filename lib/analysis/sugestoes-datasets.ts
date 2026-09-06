@@ -144,7 +144,7 @@ async function classificarLote(perguntas: string[]): Promise<Classificacao[]> {
   const resposta = await cliente.messages.create({
     model: modeloPara('suficiencia'),
     max_tokens: 4096,
-    system: SISTEMA_CLASSIFICACAO,
+    system: [{ type: 'text', text: SISTEMA_CLASSIFICACAO, cache_control: { type: 'ephemeral' } }],
     messages: [{ role: 'user', content: perguntas.map((p, i) => `${i + 1}. ${p}`).join('\n') }],
   } as any)
   const texto = (resposta as any).content
@@ -376,7 +376,7 @@ async function sugerirTiposParaCategoria(
   const resposta = await cliente.messages.create({
     model: modeloPara('suficiencia'),
     max_tokens: 1024,
-    system: SISTEMA_TIPOS_CATEGORIA,
+    system: [{ type: 'text', text: SISTEMA_TIPOS_CATEGORIA, cache_control: { type: 'ephemeral' } }],
     messages: [{ role: 'user', content: contexto }],
   } as any)
 
@@ -562,7 +562,7 @@ export async function enriquecerComFontesExternas(
   const resposta = await cliente.messages.create({
     model: 'claude-sonnet-5',
     max_tokens: 2048,
-    system: SISTEMA_ENRIQUECIMENTO,
+    system: [{ type: 'text', text: SISTEMA_ENRIQUECIMENTO, cache_control: { type: 'ephemeral' } }],
     tools: [{ type: 'web_search_20260209', name: 'web_search', max_uses: 4 } as any],
     messages: [
       {

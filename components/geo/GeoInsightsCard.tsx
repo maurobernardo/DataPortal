@@ -1,4 +1,4 @@
-import { AlertTriangle, MapPinned, Ruler, Shapes } from 'lucide-react'
+import { MapPinned, Ruler, Shapes } from 'lucide-react'
 import type { GeoInsights } from '@/lib/geo-intelligence'
 
 const GEOMETRY_LABELS_PT: Record<string, string> = {
@@ -23,15 +23,11 @@ export function GeoInsightsCard({ insights }: { insights: GeoInsights | null }) 
     <div className="geo-ldp-section">
       <div className="geo-ldp-section-label">Análise automática</div>
 
-      {insights.crsWarning && (
-        <div className="mb-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5">
-          <AlertTriangle className="size-4 text-amber-700 mt-0.5 shrink-0" aria-hidden />
-          <p className="text-xs text-amber-900 leading-relaxed">
-            As coordenadas deste ficheiro parecem estar fora do intervalo esperado para WGS84
-            (longitude/latitude). Verifique o sistema de referência do ficheiro original.
-          </p>
-        </div>
-      )}
+      {/* insights.crsWarning é um aviso técnico para quem gere o catálogo (ficheiro com sistema
+          de coordenadas suspeito) — nunca mostrado aqui, esta página é pública. Lido por quem
+          consulta o catálogo, "coordenadas fora do intervalo esperado" lê-se como "os dados deste
+          portal têm um erro", que é exactamente a leitura errada a evitar (mesmo princípio dos
+          selos de qualidade em /admin/qualidade-dados). */}
 
       <div className="geo-ldp-formats mb-3">
         {insights.geometryTypes.map(({ type, count }) => (

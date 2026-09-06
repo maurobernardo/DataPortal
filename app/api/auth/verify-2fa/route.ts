@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { clearUserOtp, findUserById } from '@/lib/db'
 import { getSessionCookieOptions, SESSION_COOKIE_NAME, signSessionToken } from '@/lib/auth'
 import { normalizeText, rateLimit } from '@/lib/security'
+import { logAudit } from '@/lib/audit'
 import { logger } from '@/lib/logger'
 
 export async function POST(request: Request) {
@@ -49,6 +50,8 @@ export async function POST(request: Request) {
     const token = signSessionToken({ userId: user.id, email: user.email, role })
     const cookieStore = await cookies()
     cookieStore.set(SESSION_COOKIE_NAME, token, getSessionCookieOptions())
+
+    logAudit({ actorEmail: user.email, action: 'login', entityType: 'user', entityId: user.id, details: 'otp' })
 
     return NextResponse.json({
       success: true,

@@ -345,7 +345,11 @@ export async function analyzeDatasets(
   const response = await client.messages.create({
     model,
     max_tokens: 6000,
-    system: SYSTEM_PROMPT,
+    // SYSTEM_PROMPT é sempre o mesmo texto (~11KB) em todas as perguntas de IA Insights — sem
+    // cache_control, a Anthropic reenvia-o por inteiro em cada pergunta feita no portal, que é o
+    // desperdício que o alerta "prompt cache hit rate is low" da Anthropic apanhou. Em bloco
+    // próprio com cache_control, só é cobrado por inteiro na primeira vez a cada ~5 minutos.
+    system: [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
     output_config: {
       effort: 'medium',
       format: { type: 'json_schema', schema: RESULT_SCHEMA },

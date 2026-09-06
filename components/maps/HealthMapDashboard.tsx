@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import { BarChart3, Loader2, Search } from 'lucide-react'
+import { sanitizarHtml } from '@/lib/sanitize-html'
 import type { CircleMarker, LayerGroup, Map as LeafletMap, TileLayer } from 'leaflet'
 import {
   VAR_META,
@@ -549,12 +550,12 @@ export function HealthMapDashboard({
             <BarChart3 className="hm-panel-icon size-3.5" aria-hidden />
             Estatísticas resumo
           </h4>
-          <div dangerouslySetInnerHTML={{ __html: statsHtml }} />
+          <div dangerouslySetInnerHTML={{ __html: sanitizarHtml(statsHtml) }} />
         </div>
 
         <div className="hm-legend">
           <h4>{legendTitle}</h4>
-          <div dangerouslySetInnerHTML={{ __html: legendHtml }} />
+          <div dangerouslySetInnerHTML={{ __html: sanitizarHtml(legendHtml) }} />
           <div style={{ marginTop: 6, paddingTop: 5, borderTop: '1px solid #30363d' }}>
             <div className="hm-legend-row">
               <span className="hm-legend-dot" style={{ background: '#94a3b8' }} />
@@ -565,7 +566,7 @@ export function HealthMapDashboard({
 
         <div className={`hm-info-box${infoOpen ? ' is-open' : ''}`}>
           <h3>{infoTitle}</h3>
-          <div className="hm-info-body" dangerouslySetInnerHTML={{ __html: infoHtml }} />
+          <div className="hm-info-body" dangerouslySetInnerHTML={{ __html: sanitizarHtml(infoHtml) }} />
         </div>
       </div>
     </div>

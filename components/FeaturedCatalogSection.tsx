@@ -34,7 +34,20 @@ function truncar(texto: string, maxChars: number) {
   return `${cortado.slice(0, ultimoEspaco > 0 ? ultimoEspaco : maxChars).trimEnd()}…`
 }
 
-export function FeaturedCatalogSection({ datasets }: { datasets: FeaturedDataset[] }) {
+export function FeaturedCatalogSection({
+  datasets,
+  totalReal,
+  contagensReaisPorCategoria = {},
+}: {
+  datasets: FeaturedDataset[]
+  /** Total real de datasets do portal (não só os que calham de estar nesta amostra de
+   *  destaque) — usado só para o número ao lado de "Todos". */
+  totalReal?: number
+  /** Contagem real por categoria em todo o catálogo. Quando falta uma categoria aqui (ex.: uma
+   *  categoria nova, a consulta ainda não reflectiu), cai-se para contar dentro da amostra, que
+   *  continua a ser melhor do que mostrar 0. */
+  contagensReaisPorCategoria?: Record<string, number>
+}) {
   const [activeTab, setActiveTab] = useState('Todos')
   const [showAll, setShowAll] = useState(false)
 
@@ -55,6 +68,20 @@ export function FeaturedCatalogSection({ datasets }: { datasets: FeaturedDataset
     }
     return result.slice(0, 7)
   }, [datasets])
+
+  // Número mostrado ao lado de cada separador: o real do catálogo inteiro, não quantos calham de
+  // estar nesta amostra de destaque — só cai para a contagem da amostra quando não há número real
+  // para essa categoria (nunca mostra 0 por engano).
+  function contagemReal(tab: string): number {
+    if (tab === 'Todos') return totalReal ?? datasets.length
+    if (contagensReaisPorCategoria[tab] != null) return contagensReaisPorCategoria[tab]
+    return datasets.filter(
+      (d) =>
+        d.category === tab ||
+        (tab === 'Geoespacial' && d.dataType === 'geoespacial') ||
+        (tab === 'Alfanumérico' && d.dataType === 'alfanumerico')
+    ).length
+  }
 
   const filtered = useMemo(() => {
     if (activeTab === 'Todos') return datasets
@@ -98,15 +125,7 @@ export function FeaturedCatalogSection({ datasets }: { datasets: FeaturedDataset
 
         <div className="flex items-center gap-1 sm:gap-2 border-b border-[#CFE3D6] mb-8 overflow-x-auto pb-px">
           {tabs.map((tab) => {
-            const count =
-              tab === 'Todos'
-                ? datasets.length
-                : datasets.filter(
-                    (d) =>
-                      d.category === tab ||
-                      (tab === 'Geoespacial' && d.dataType === 'geoespacial') ||
-                      (tab === 'Alfanumérico' && d.dataType === 'alfanumerico')
-                  ).length
+            const count = contagemReal(tab)
             const TabIcon = tab === 'Todos' ? LayoutGrid : getCategoryIcon(tab)
             return (
               <button

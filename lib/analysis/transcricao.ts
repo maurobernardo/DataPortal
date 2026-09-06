@@ -23,7 +23,7 @@ export async function corrigirTranscricaoVoz(textoBruto: string): Promise<{ text
   const resposta = await cliente.messages.create({
     model: modeloPara('compreensao'),
     max_tokens: 400,
-    system: SISTEMA_CORRECAO,
+    system: [{ type: 'text', text: SISTEMA_CORRECAO, cache_control: { type: 'ephemeral' } }],
     messages: [{ role: 'user', content: texto }],
   } as any)
 

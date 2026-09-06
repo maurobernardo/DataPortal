@@ -321,7 +321,7 @@ export async function executarComCodigo(
         {
           model: modelo,
           max_tokens: 4096,
-          system: SISTEMA,
+          system: [{ type: 'text', text: SISTEMA, cache_control: { type: 'ephemeral' } }],
           messages,
           tools: [{ type: 'code_execution_20260120', name: 'code_execution' }],
         } as any,

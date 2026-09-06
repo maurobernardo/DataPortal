@@ -13,6 +13,7 @@ import {
   type MalariaNationalPoint,
   type MalariaProvince,
 } from './malaria-map-utils'
+import { sanitizarHtml } from '@/lib/sanitize-html'
 import '@/app/maps/health-map.css'
 import '@/app/maps/malaria-map.css'
 
@@ -144,7 +145,7 @@ function MalariaProvinceChart({
     <div
       ref={containerRef}
       className="ml-main-chart"
-      dangerouslySetInnerHTML={{ __html: svg }}
+      dangerouslySetInnerHTML={{ __html: sanitizarHtml(svg) }}
       onClick={onSvgClick}
     />
   )

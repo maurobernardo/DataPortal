@@ -48,3 +48,8 @@ next-env.d.ts
 # e nunca precisam de ficar no histórico
 *.zip
 
+# backups da base de dados (diário/semanal/mensal, ver lib/backup) — contêm dados de produção,
+# nunca vão para o git; ficam só no disco do servidor
+/backups/*
+!/backups/.gitkeep
+

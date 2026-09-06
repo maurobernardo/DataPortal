@@ -4,6 +4,7 @@ import { findUserByEmail, setUserResetCode } from '@/lib/db'
 import { hasAuthMailConfig, sendPasswordResetEmail } from '@/lib/mailer'
 import { isValidEmail, normalizeEmail, rateLimit } from '@/lib/security'
 import { logger } from '@/lib/logger'
+import { registarBloqueioSeguranca } from '@/lib/security-events'
 
 const GENERIC_MESSAGE =
   'Se existir uma conta com este email, enviámos um código de recuperação.'
@@ -23,6 +24,7 @@ export async function POST(request: Request) {
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
     const rl = await rateLimit(`forgot-password:${ip}:${email}`, 5, 15 * 60 * 1000)
     if (!rl.allowed) {
+      registarBloqueioSeguranca('forgot-password', email, ip).catch(() => {})
       return NextResponse.json(
         { error: 'Muitas tentativas. Tente novamente em instantes.' },
         { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } }

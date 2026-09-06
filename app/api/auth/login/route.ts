@@ -9,7 +9,9 @@ import {
 } from '@/lib/auth'
 import { findUserByEmail, purgarContasComPedidoDeEliminacaoExpirado, resolveUserRole, updateUserRole } from '@/lib/db'
 import { isValidEmail, normalizeEmail, normalizeText, rateLimit } from '@/lib/security'
+import { logAudit } from '@/lib/audit'
 import { logger } from '@/lib/logger'
+import { registarBloqueioSeguranca } from '@/lib/security-events'
 
 export async function POST(request: Request) {
   try {
@@ -26,6 +28,7 @@ export async function POST(request: Request) {
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
     const rl = await rateLimit(`login:${ip}:${email}`, 10, 15 * 60 * 1000)
     if (!rl.allowed) {
+      registarBloqueioSeguranca('login', email, ip).catch(() => {})
       return NextResponse.json(
         { error: 'Muitas tentativas. Tente novamente em instantes.' },
         { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } }
@@ -82,6 +85,11 @@ export async function POST(request: Request) {
     const token = signSessionToken({ userId: user.id, email: user.email, role })
     const cookieStore = await cookies()
     cookieStore.set(SESSION_COOKIE_NAME, token, getSessionCookieOptions())
+
+    // Sessão realmente iniciada aqui (quem tem 2FA activo só chega a este ponto depois de o
+    // confirmar, na rota /api/auth/2fa/verify-login, que regista o login ali) — nunca bloqueia o
+    // login em si, logAudit já engole os seus próprios erros.
+    logAudit({ actorEmail: user.email, action: 'login', entityType: 'user', entityId: user.id })
 
     return NextResponse.json({
       success: true,

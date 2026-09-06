@@ -162,7 +162,7 @@ export async function tentarEnriquecerExterno(
           {
             model: 'claude-sonnet-5',
             max_tokens: 4000,
-            system: SISTEMA_PESQUISA,
+            system: [{ type: 'text', text: SISTEMA_PESQUISA, cache_control: { type: 'ephemeral' } }],
             tools: [
               // web_search_20260209/web_fetch_20260209 correm com filtragem dinâmica: o modelo
               // executa-os dentro de um sandbox de código que pode chamar a pesquisa várias vezes

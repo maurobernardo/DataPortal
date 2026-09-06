@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
 import '@/app/maps/health-map.css'
 import '@/app/maps/cereal-map.css'
+import { sanitizarHtml } from '@/lib/sanitize-html'
 
 type Row = { y: number; p: string; c: string; v: number; a?: number }
 type Bundle = {
@@ -619,7 +620,7 @@ export default function CerealProductionDashboard({ dataPath, title, subtitle, b
                 )}
                 <div
                   style={{ position: 'relative', zIndex: 1 }}
-                  dangerouslySetInnerHTML={{ __html: mapHtml }}
+                  dangerouslySetInnerHTML={{ __html: sanitizarHtml(mapHtml) }}
                   onClick={(e) => onMapAction(e)}
                   onMouseMove={(e) => onMapAction(e, true)}
                   onMouseLeave={hideTip}
@@ -647,7 +648,7 @@ export default function CerealProductionDashboard({ dataPath, title, subtitle, b
             </h2>
             <div className="body">
               {model.pieTotal > 0 ? (
-                <div dangerouslySetInnerHTML={{ __html: pieHtml }} onClick={(e) => onPieAction(e)} onMouseMove={(e) => onPieAction(e, true)} onMouseLeave={hideTip} />
+                <div dangerouslySetInnerHTML={{ __html: sanitizarHtml(pieHtml) }} onClick={(e) => onPieAction(e)} onMouseMove={(e) => onPieAction(e, true)} onMouseLeave={hideTip} />
               ) : (
                 <div className="cr-empty">Sem dados de cereais registados para {year}</div>
               )}
@@ -676,7 +677,7 @@ export default function CerealProductionDashboard({ dataPath, title, subtitle, b
               Produção nacional por cultura, por ronda <span>cada cultura à escala do seu próprio pico</span>
             </h2>
             <div className="body">
-              <div dangerouslySetInnerHTML={{ __html: radarHtml }} onClick={(e) => onRadarAction(e)} onMouseMove={(e) => onRadarAction(e, true)} onMouseLeave={hideTip} />
+              <div dangerouslySetInnerHTML={{ __html: sanitizarHtml(radarHtml) }} onClick={(e) => onRadarAction(e)} onMouseMove={(e) => onRadarAction(e, true)} onMouseLeave={hideTip} />
             </div>
             <div className="cr-chips">
               {model.trend
@@ -706,7 +707,7 @@ export default function CerealProductionDashboard({ dataPath, title, subtitle, b
             </h2>
             <div className="body">
               {model.wl ? (
-                <div dangerouslySetInnerHTML={{ __html: wlHtml }} onClick={(e) => onWlAction(e)} onMouseMove={(e) => onWlAction(e, true)} onMouseLeave={hideTip} />
+                <div dangerouslySetInnerHTML={{ __html: sanitizarHtml(wlHtml) }} onClick={(e) => onWlAction(e)} onMouseMove={(e) => onWlAction(e, true)} onMouseLeave={hideTip} />
               ) : (
                 <div className="cr-empty">
                   {crop === 'All' ? 'Cereais' : cropLabel(crop)} tem apenas uma ronda de inquérito; sem alteração para comparar.

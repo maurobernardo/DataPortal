@@ -185,7 +185,7 @@ async function processarFila(tipo: Tipo): Promise<void> {
     const resposta = await cliente.messages.create({
       model: modeloPara('suficiencia'), // Haiku: tarefa fechada e barata, não precisa de Sonnet.
       max_tokens: 1024,
-      system: SISTEMA_POR_TIPO[tipo],
+      system: [{ type: 'text', text: SISTEMA_POR_TIPO[tipo], cache_control: { type: 'ephemeral' } }],
       messages: [{ role: 'user', content: porTraduzir.join('\n') }],
     } as any)
     const texto = (resposta as any).content

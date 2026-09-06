@@ -22,6 +22,7 @@ import {
   Lightbulb,
   Trash2,
   ShieldAlert,
+  DatabaseBackup,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
@@ -81,6 +82,12 @@ export function AdminSidebar({ user, activeTab }: AdminSidebarProps) {
       label: 'Qualidade dos Dados',
       href: '/admin/qualidade-dados',
       active: pathname === '/admin/qualidade-dados',
+    },
+    {
+      icon: DatabaseBackup,
+      label: 'Backups',
+      href: '/admin/backups',
+      active: pathname === '/admin/backups',
     },
     {
       icon: Lightbulb,
