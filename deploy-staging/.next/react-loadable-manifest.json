@@ -1,0 +1,195 @@
+{
+  "components\\DatasetMapPreview.tsx -> leaflet": {
+    "id": 60759,
+    "files": [
+      "static/chunks/d0deef33.0379166a4ec23470.js"
+    ]
+  },
+  "components\\DatasetPreview.tsx -> ./DatasetMapPreview": {
+    "id": 7083,
+    "files": [
+      "static/chunks/7083.89743846515e667b.js"
+    ]
+  },
+  "components\\DatasetPreview.tsx -> @/components/geo/InteractiveGeoMapPreview": {
+    "id": 45376,
+    "files": [
+      "static/chunks/5376.06e9f12a1345eaa8.js"
+    ]
+  },
+  "components\\ai-insights\\AIChoroplethMap.tsx -> leaflet": {
+    "id": 60759,
+    "files": [
+      "static/chunks/d0deef33.0379166a4ec23470.js"
+    ]
+  },
+  "components\\ai-insights\\AIResultView.tsx -> @/components/ai-insights/AIChoroplethMap": {
+    "id": 78239,
+    "files": [
+      "static/chunks/7402-ae2712722532201a.js",
+      "static/chunks/8239.4521d9011a61b6f6.js"
+    ]
+  },
+  "components\\ai-insights\\AIResultView.tsx -> jspdf": {
+    "id": 53375,
+    "files": [
+      "static/chunks/2f0b94e8.452a2d27023d71da.js",
+      "static/chunks/164f4fb6.b7e8415d245e42b6.js",
+      "static/chunks/8758.6d2e237b08163e73.js"
+    ]
+  },
+  "components\\analise\\AnaliseMapaCoropletico.tsx -> leaflet": {
+    "id": 60759,
+    "files": [
+      "static/chunks/d0deef33.0379166a4ec23470.js"
+    ]
+  },
+  "components\\analise\\AnaliseMapaDestaque.tsx -> leaflet": {
+    "id": 60759,
+    "files": [
+      "static/chunks/d0deef33.0379166a4ec23470.js"
+    ]
+  },
+  "components\\analise\\AnaliseMapaPontos.tsx -> leaflet": {
+    "id": 60759,
+    "files": [
+      "static/chunks/d0deef33.0379166a4ec23470.js"
+    ]
+  },
+  "components\\analise\\DashboardApresentacao.tsx -> html2canvas-pro": {
+    "id": 11639,
+    "files": [
+      "static/chunks/0a2f5824.5d183d98c1704f12.js"
+    ]
+  },
+  "components\\analise\\DashboardApresentacao.tsx -> jspdf": {
+    "id": 53375,
+    "files": [
+      "static/chunks/2f0b94e8.452a2d27023d71da.js",
+      "static/chunks/164f4fb6.b7e8415d245e42b6.js",
+      "static/chunks/8758.6d2e237b08163e73.js"
+    ]
+  },
+  "components\\geo\\GeoCatalogClient.tsx -> @/components/geo/GeoCatalogMapView": {
+    "id": 70422,
+    "files": [
+      "static/chunks/422.86484d6a0565744d.js"
+    ]
+  },
+  "components\\geo\\GeoCatalogClient.tsx -> @/components/geo/GeoCompareMap": {
+    "id": 7682,
+    "files": [
+      "static/chunks/7682.5828ae19daf86e99.js"
+    ]
+  },
+  "components\\geo\\GeoCatalogMapView.tsx -> leaflet": {
+    "id": 60759,
+    "files": [
+      "static/chunks/d0deef33.0379166a4ec23470.js"
+    ]
+  },
+  "components\\geo\\GeoCompareMap.tsx -> leaflet": {
+    "id": 60759,
+    "files": [
+      "static/chunks/d0deef33.0379166a4ec23470.js"
+    ]
+  },
+  "components\\geo\\GeoMapDetailPanel.tsx -> @/components/geo/InteractiveGeoMapPreview": {
+    "id": 45376,
+    "files": [
+      "static/chunks/7402-ae2712722532201a.js",
+      "static/chunks/5376.06e9f12a1345eaa8.js"
+    ]
+  },
+  "components\\geo\\InteractiveGeoMapPreview.tsx -> leaflet": {
+    "id": 60759,
+    "files": [
+      "static/chunks/d0deef33.0379166a4ec23470.js"
+    ]
+  },
+  "components\\mapillary\\VisorRuas360.tsx -> leaflet": {
+    "id": 60759,
+    "files": [
+      "static/chunks/d0deef33.0379166a4ec23470.js"
+    ]
+  },
+  "components\\mapillary\\VisorRuas360.tsx -> mapillary-js": {
+    "id": 18804,
+    "files": [
+      "static/chunks/72b9b594.d5038e5054dbe838.js"
+    ]
+  },
+  "components\\maps\\FeederPulseDashboard.tsx -> leaflet": {
+    "id": 60759,
+    "files": [
+      "static/chunks/d0deef33.0379166a4ec23470.js"
+    ]
+  },
+  "components\\maps\\HealthMapDashboard.tsx -> leaflet": {
+    "id": 60759,
+    "files": [
+      "static/chunks/d0deef33.0379166a4ec23470.js"
+    ]
+  },
+  "components\\maps\\PolesMapDashboard.tsx -> leaflet": {
+    "id": 60759,
+    "files": [
+      "static/chunks/d0deef33.0379166a4ec23470.js"
+    ]
+  },
+  "components\\reports\\MapaGeografiaRelatorio.tsx -> leaflet": {
+    "id": 60759,
+    "files": [
+      "static/chunks/d0deef33.0379166a4ec23470.js"
+    ]
+  },
+  "components\\reports\\PreVisualizacaoPdf.tsx -> pdfjs-dist": {
+    "id": 43194,
+    "files": [
+      "static/chunks/7a49ec60.784fabc67ae5d528.js",
+      "static/chunks/2330.784748e3a0392e10.js",
+      "static/chunks/895.1d26a7b754853291.js"
+    ]
+  },
+  "lib\\relatorios\\exportar-onepager-pdf.ts -> jspdf": {
+    "id": 53375,
+    "files": [
+      "static/chunks/2f0b94e8.452a2d27023d71da.js",
+      "static/chunks/164f4fb6.b7e8415d245e42b6.js",
+      "static/chunks/8758.6d2e237b08163e73.js"
+    ]
+  },
+  "lib\\relatorios\\exportar-resumo-pdf.ts -> jspdf": {
+    "id": 53375,
+    "files": [
+      "static/chunks/2f0b94e8.452a2d27023d71da.js",
+      "static/chunks/164f4fb6.b7e8415d245e42b6.js",
+      "static/chunks/8758.6d2e237b08163e73.js"
+    ]
+  },
+  "lib\\relatorios\\exportar-resumo-pdf.ts -> jspdf-autotable": {
+    "id": 46994,
+    "files": [
+      "static/chunks/6994.22302171c30517d9.js"
+    ]
+  },
+  "node_modules\\jspdf\\dist\\jspdf.es.min.js -> canvg": {
+    "id": 12396,
+    "files": [
+      "static/chunks/bc98253f.f10a81626b6284df.js",
+      "static/chunks/3969.2a000504ea110fdd.js"
+    ]
+  },
+  "node_modules\\jspdf\\dist\\jspdf.es.min.js -> dompurify": {
+    "id": 18848,
+    "files": [
+      "static/chunks/8848-5248a36ac420ed55.js"
+    ]
+  },
+  "node_modules\\jspdf\\dist\\jspdf.es.min.js -> html2canvas": {
+    "id": 6807,
+    "files": [
+      "static/chunks/ad2866b8.df424f64adfa702a.js"
+    ]
+  }
+}

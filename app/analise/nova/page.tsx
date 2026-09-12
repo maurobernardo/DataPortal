@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { getCurrentUser } from '@/lib/auth'
 import { findDatasets } from '@/lib/db'
+import { obterEstadoLimite } from '@/lib/limite-analises-gratis'
 import { NovaAnaliseClient, type DatasetParaEscolha } from '@/components/analise/NovaAnaliseClient'
 import { AIHowToGuide } from '@/components/ai-insights/AIHowToGuide'
 // Importada AQUI, na página, e não só dentro do componente de cliente: num carregamento fresco
@@ -28,6 +29,7 @@ export default async function PaginaNovaAnalise({ searchParams }: Props) {
     redirect(`/login?next=${encodeURIComponent(destino)}`)
   }
 
+  const estadoLimite = await obterEstadoLimite(sessao.userId, sessao.role === 'admin')
   const datasetRows = await findDatasets({ take: 1000 })
   const datasets: DatasetParaEscolha[] = (datasetRows as any[]).map((d) => ({
     id: d.id,
@@ -43,7 +45,10 @@ export default async function PaginaNovaAnalise({ searchParams }: Props) {
   return (
     <>
       <AIHowToGuide />
-      <NovaAnaliseClient datasets={datasets} />
+      <NovaAnaliseClient
+        datasets={datasets}
+        analisesRestantes={Number.isFinite(estadoLimite.restantes) ? estadoLimite.restantes : null}
+      />
     </>
   )
 }

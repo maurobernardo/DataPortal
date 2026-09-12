@@ -74,11 +74,15 @@ export function PainelDigesto({
   titulo,
   ano,
   autenticado,
+  limiteAtingido = false,
 }: {
   reportId: number
   titulo: string
   ano: string
   autenticado: boolean
+  /** Já usou as suas 2 análises gratuitas (dados + relatórios) — desactiva o botão em vez de
+   *  deixar tentar e só mostrar o erro depois de uma chamada ao servidor. */
+  limiteAtingido?: boolean
 }) {
   const [digesto, setDigesto] = useState<Digesto | null>(null)
   const [estado, setEstado] = useState<Estado>('pendente')
@@ -305,10 +309,19 @@ export function PainelDigesto({
             Isto está a demorar muito mais do que o costume. Pode ter havido um problema no
             processamento. Tente pedir a análise de novo.
           </p>
-          <button type="button" onClick={analisar} disabled={aIniciarAnalise} className="rpt-btn rpt-btn-primary">
+          <button
+            type="button"
+            onClick={analisar}
+            disabled={aIniciarAnalise || limiteAtingido}
+            title={limiteAtingido ? 'Já usou as suas 2 análises gratuitas' : undefined}
+            className="rpt-btn rpt-btn-primary"
+          >
             {aIniciarAnalise ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <ScanSearch className="size-4" aria-hidden />}
             {aIniciarAnalise ? 'A começar…' : 'Tentar de novo'}
           </button>
+          {limiteAtingido && !erroAnalise && (
+            <p className="rpt-digesto-erro">Já usou as suas 2 análises gratuitas. Contacte a equipa do portal para continuar a analisar.</p>
+          )}
           {erroAnalise && <p className="rpt-digesto-erro">{erroAnalise}</p>}
         </div>
       </div>
@@ -327,10 +340,19 @@ export function PainelDigesto({
                 ? 'Este relatório já foi analisado. Peça a análise para a desbloquear para si: não é gerada de novo, só fica disponível na sua conta.'
                 : 'Este relatório ainda não tem um resumo. Pode pedi-lo agora.'}
           </p>
-          <button type="button" onClick={analisar} disabled={aIniciarAnalise} className="rpt-btn rpt-btn-primary">
+          <button
+            type="button"
+            onClick={analisar}
+            disabled={aIniciarAnalise || limiteAtingido}
+            title={limiteAtingido ? 'Já usou as suas 2 análises gratuitas' : undefined}
+            className="rpt-btn rpt-btn-primary"
+          >
             {aIniciarAnalise ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <ScanSearch className="size-4" aria-hidden />}
             {aIniciarAnalise ? 'A começar…' : 'Analisar este relatório'}
           </button>
+          {limiteAtingido && !erroAnalise && (
+            <p className="rpt-digesto-erro">Já usou as suas 2 análises gratuitas. Contacte a equipa do portal para continuar a analisar.</p>
+          )}
           {erroAnalise && <p className="rpt-digesto-erro">{erroAnalise}</p>}
         </div>
       </div>

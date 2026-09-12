@@ -23,6 +23,8 @@ import {
   Trash2,
   ShieldAlert,
   DatabaseBackup,
+  FileUp,
+  MessageSquareHeart,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
@@ -34,9 +36,18 @@ interface AdminSidebarProps {
   }
   /** Aba activa em /admin (ex.: 'requests', 'maps') — vem do searchParams da página servidor. */
   activeTab?: string
+  /** 'mobile': usado dentro do menu deslizante do DashboardHeader em ecrãs pequenos — perde o
+   *  posicionamento fixo e a borda/sombra próprias, que só fazem sentido como coluna fixa de
+   *  desktop; a MESMA lista de links é reaproveitada nos dois casos, para nunca haver uma versão
+   *  mobile a ficar desactualizada em relação à de desktop (o que já tinha acontecido antes: uma
+   *  lista à parte no DashboardHeader, sem "Backups"/"Qualidade dos Dados"/etc. depois de
+   *  adicionados aqui). */
+  variant?: 'desktop' | 'mobile'
+  /** Chamado ao clicar em qualquer link — usado pelo menu mobile para se fechar sozinho. */
+  onNavigate?: () => void
 }
 
-export function AdminSidebar({ user, activeTab }: AdminSidebarProps) {
+export function AdminSidebar({ user, activeTab, variant = 'desktop', onNavigate }: AdminSidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
 
@@ -114,6 +125,18 @@ export function AdminSidebar({ user, activeTab }: AdminSidebarProps) {
       active: pathname === '/admin/relatorios-uso',
     },
     {
+      icon: FileUp,
+      label: 'Relatórios Enviados',
+      href: '/admin/relatorios-utilizadores',
+      active: pathname === '/admin/relatorios-utilizadores',
+    },
+    {
+      icon: MessageSquareHeart,
+      label: 'Feedback',
+      href: '/admin/feedback',
+      active: pathname === '/admin/feedback',
+    },
+    {
       icon: Trash2,
       label: 'Lixeira',
       href: '/admin/lixeira',
@@ -146,10 +169,18 @@ export function AdminSidebar({ user, activeTab }: AdminSidebarProps) {
   }
 
   return (
-    <div className="w-64 bg-white border-r border-gray-200 h-screen fixed left-0 top-0 flex flex-col shadow-lg">
-      {/* Logo */}
+    <div
+      className={
+        variant === 'mobile'
+          ? 'w-full h-full flex flex-col'
+          : 'w-64 bg-white border-r border-gray-200 h-screen fixed left-0 top-0 flex flex-col shadow-lg'
+      }
+    >
+      {/* Logo — omitido em variant="mobile": o menu deslizante já tem o seu próprio cabeçalho
+          com título e botão de fechar, e repetir a marca aqui só duplicava a mesma informação. */}
+      {variant === 'desktop' && (
       <div className="p-6 border-b border-gray-200">
-        <Link href="/dashboard" className="flex items-center gap-2">
+        <Link href="/dashboard" onClick={onNavigate} className="flex items-center gap-2">
           <div className="w-16 h-16 flex items-center justify-center">
             <Image 
               src="/images/logo.png"
@@ -165,6 +196,7 @@ export function AdminSidebar({ user, activeTab }: AdminSidebarProps) {
           </div>
         </Link>
       </div>
+      )}
 
       {/* Menu */}
       <div className="flex-1 overflow-y-auto p-4">
@@ -178,6 +210,7 @@ export function AdminSidebar({ user, activeTab }: AdminSidebarProps) {
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={onNavigate}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${
                   item.active
                     ? 'bg-green-50 text-green-600 font-semibold shadow-sm'
@@ -204,6 +237,7 @@ export function AdminSidebar({ user, activeTab }: AdminSidebarProps) {
               <Link
                 key={item.label}
                 href={item.href}
+                onClick={onNavigate}
                 className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200"
               >
                 <Icon className="w-5 h-5 text-gray-500" />
@@ -215,6 +249,7 @@ export function AdminSidebar({ user, activeTab }: AdminSidebarProps) {
             href="/"
             onClick={(e) => {
               e.preventDefault()
+              onNavigate?.()
               window.location.href = '/#contato'
             }}
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200 cursor-pointer"

@@ -3,9 +3,9 @@
 import { useState } from 'react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { Globe, Home, FolderOpen, Settings, Database, FileText, MapPinned, Menu, X, LogOut, BarChart3, MessageSquare, Brain, Globe2, Users, ScrollText, Lightbulb, Trash2 } from 'lucide-react'
+import { Globe, Home, FolderOpen, Database, FileText, MapPinned, Menu, X, Settings, BarChart3 } from 'lucide-react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { AdminSidebar } from './AdminSidebar'
 
 interface DashboardHeaderProps {
   user?: {
@@ -16,19 +16,7 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({ user }: DashboardHeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const router = useRouter()
   const currentDate = format(new Date(), "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })
-
-  async function handleLogout() {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' })
-      setMobileMenuOpen(false)
-      router.push('/login')
-      router.refresh()
-    } catch (error) {
-      console.error('Error logging out:', error)
-    }
-  }
 
   return (
     <div className="bg-white border-b border-gray-200 sticky top-0 z-40">
@@ -151,88 +139,20 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="space-y-2">
-              <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50">
-                <BarChart3 className="w-5 h-5" />
-                <span>Dashboard</span>
-              </Link>
-              <Link href="/admin" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50">
-                <Settings className="w-5 h-5" />
-                <span>Admin</span>
-              </Link>
-              <Link href="/admin?tab=requests" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50">
-                <MessageSquare className="w-5 h-5" />
-                <span>Solicitações</span>
-              </Link>
-              <Link href="/dashboard/ia-utilizacao" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50">
-                <Brain className="w-5 h-5" />
-                <span>Utilização de IA</span>
-              </Link>
-              <Link href="/admin/sugestoes-datasets" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50">
-                <Lightbulb className="w-5 h-5" />
-                <span>Sugestões de Datasets</span>
-              </Link>
-              <Link href="/admin/origem-utilizadores" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50">
-                <Globe2 className="w-5 h-5" />
-                <span>Origem dos Utilizadores</span>
-              </Link>
-              <Link href="/admin/utilizadores" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50">
-                <Users className="w-5 h-5" />
-                <span>Utilizadores</span>
-              </Link>
-              <Link href="/admin/lixeira" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50">
-                <Trash2 className="w-5 h-5" />
-                <span>Lixeira</span>
-              </Link>
-              <Link href="/admin/auditoria" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50">
-                <ScrollText className="w-5 h-5" />
-                <span>Auditoria</span>
-              </Link>
-              <Link href="/" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50">
-                <Home className="w-5 h-5" />
-                <span>Início</span>
-              </Link>
-              <Link href="/dados-espaciais" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50">
-                <FolderOpen className="w-5 h-5" />
-                <span>Geoespaciais</span>
-              </Link>
-              <Link href="/dados-alfanumericos" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50">
-                <Database className="w-5 h-5" />
-                <span>Alfanuméricos</span>
-              </Link>
-              <Link href="/relatorios" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50">
-                <FileText className="w-5 h-5" />
-                <span>Relatórios</span>
-              </Link>
-              <Link href="/dashboards-alfanumericos" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50">
-                <BarChart3 className="w-5 h-5" />
-                <span>Alfanuméricos</span>
-              </Link>
-              <Link href="/maps" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50">
-                <MapPinned className="w-5 h-5" />
-                <span>Mapas Inteligentes</span>
-              </Link>
-            </div>
-            <div className="mt-6 pt-4 border-t border-gray-200">
-              {user && (
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-9 h-9 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                    {user.name?.[0] || user.email[0].toUpperCase()}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-gray-800 truncate">{user.name || 'Admin'}</p>
-                    <p className="text-xs text-gray-500 truncate">{user.email}</p>
-                  </div>
-                </div>
-              )}
-              <button
-                onClick={handleLogout}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-red-600 hover:bg-red-50 transition font-medium"
-              >
-                <LogOut className="w-4 h-4" />
-                <span>Sair</span>
-              </button>
-            </div>
+            {/* Reaproveita a MESMA lista de links do AdminSidebar de desktop (menu completo +
+                links principais + sair), em vez de manter uma segunda lista à parte aqui — essa
+                segunda lista tinha ficado desactualizada, sem "Backups"/"Qualidade dos
+                Dados"/"Relatórios Enviados" depois de adicionados ao AdminSidebar. */}
+            {user ? (
+              <AdminSidebar user={user} variant="mobile" onNavigate={() => setMobileMenuOpen(false)} />
+            ) : (
+              <div className="space-y-2">
+                <Link href="/" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50">
+                  <Home className="w-5 h-5" />
+                  <span>Início</span>
+                </Link>
+              </div>
+            )}
           </aside>
         </div>
       )}

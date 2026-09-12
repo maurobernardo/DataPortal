@@ -4,8 +4,9 @@ export const maxDuration = 300
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
-import { concederAcesso, obterDigesto, registarPedido } from '@/lib/relatorios/persistencia'
+import { concederAcesso, obterDigesto, registarPedido, temAcesso } from '@/lib/relatorios/persistencia'
 import { processarRelatorio, reservarProcessamento, RelatorioNaoProcessavelError } from '@/lib/relatorios/processar'
+import { obterEstadoLimite, MENSAGEM_LIMITE_ATINGIDO } from '@/lib/limite-analises-gratis'
 import { logger } from '@/lib/logger'
 
 /**
@@ -27,6 +28,16 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
 
   const id = Number(params.id)
   if (!Number.isFinite(id)) return NextResponse.json({ erro: 'Identificador inválido' }, { status: 400 })
+
+  // Limite de 2 análises gratuitas por conta, partilhado com o AI Insights — ver
+  // lib/limite-analises-gratis.ts. Só bloqueia quem ainda não tem acesso a ESTE relatório: reler
+  // um resumo já desbloqueado antes nunca deve contar uma segunda vez nem ficar bloqueado.
+  if (!(await temAcesso(id, sessao.userId))) {
+    const limite = await obterEstadoLimite(sessao.userId, sessao.role === 'admin')
+    if (limite.atingiu) {
+      return NextResponse.json({ erro: MENSAGEM_LIMITE_ATINGIDO }, { status: 403 })
+    }
+  }
 
   // Marca "esta conta pediu isto", ANTES de qualquer outra coisa: é o que permite a esta conta
   // ver o estado real do processamento a seguir (ver /digesto). Sem isto, uma conta que nunca

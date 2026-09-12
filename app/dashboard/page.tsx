@@ -40,11 +40,15 @@ async function getDashboardData() {
       return rows[0]?.total ?? 0
     })(),
     (async () => {
-      const [rows] = await db.execute(`SELECT COUNT(*) as total FROM Statistic WHERE type='view'`) as any
+      // Soma de Dataset.views, não COUNT(Statistic): datasets apagados (vão para a lixeira) saem
+      // desta soma, mas as suas linhas antigas em Statistic ficam para sempre como histórico de
+      // auditoria — contá-las aqui inflava este número acima do que a home (que também soma
+      // Dataset.views) e o resto deste mesmo dashboard mostravam, com as duas telas em desacordo.
+      const [rows] = await db.execute(`SELECT COALESCE(SUM(views), 0) as total FROM Dataset`) as any
       return rows[0]?.total ?? 0
     })(),
     (async () => {
-      const [rows] = await db.execute(`SELECT COUNT(*) as total FROM Statistic WHERE type='download'`) as any
+      const [rows] = await db.execute(`SELECT COALESCE(SUM(downloads), 0) as total FROM Dataset`) as any
       return rows[0]?.total ?? 0
     })(),
     (async () => {

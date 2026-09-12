@@ -1,0 +1,16 @@
+{
+  "rotuloCamada": "Produção total de cereais 2023 (t)",
+  "fonte": "MADER/INE Inquérito Agrário Integrado (IAI 2023) — soma de milho, arroz, sorgo e milheto por província",
+  "provinces": [
+    { "province": "Niassa", "lat": -13.2, "lon": 35.2, "total2023": 333288 },
+    { "province": "Cabo Delgado", "lat": -12.3, "lon": 39.3, "total2023": 138731 },
+    { "province": "Nampula", "lat": -15.1, "lon": 39.0, "total2023": 361797 },
+    { "province": "Zambezia", "lat": -16.7, "lon": 36.8, "total2023": 314499 },
+    { "province": "Tete", "lat": -15.8, "lon": 33.6, "total2023": 544683 },
+    { "province": "Manica", "lat": -19.0, "lon": 33.5, "total2023": 428956 },
+    { "province": "Sofala", "lat": -18.8, "lon": 35.1, "total2023": 175996 },
+    { "province": "Inhambane", "lat": -22.4, "lon": 35.4, "total2023": 21505 },
+    { "province": "Gaza", "lat": -23.3, "lon": 33.7, "total2023": 66872 },
+    { "province": "Maputo Provincia", "lat": -25.6, "lon": 32.4, "total2023": 18479 }
+  ]
+}

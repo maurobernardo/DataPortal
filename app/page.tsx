@@ -93,24 +93,6 @@ export default async function Home() {
     getContagensPorCategoria(),
   ])
 
-  // Pré-visualização real (geometria a sério, não um ícone genérico) só para o dataset em
-  // destaque do hero, e só quando ele é geoespacial: gerada aqui no servidor (reaproveitando o
-  // mesmo código que já serve a ficha do dataset), nunca através da API de preview, que regista
-  // um acesso por chamada — inflacionaria as estatísticas de origem só por a pessoa ter visto a
-  // página inicial, sem sequer ter aberto o dataset.
-  const destaqueTopo = mostViewed[0]
-  let destaquePreview: { geojson: any; bbox: [number, number, number, number] | null } | null = null
-  if (destaqueTopo?.dataType === 'geoespacial' && destaqueTopo.filePath) {
-    try {
-      const preview = await getDatasetPreview(destaqueTopo, { maxFeatures: 200 })
-      if ('type' in preview && preview.type === 'geo') {
-        destaquePreview = { geojson: preview.geojson, bbox: preview.bbox }
-      }
-    } catch {
-      destaquePreview = null
-    }
-  }
-
   const heroDatasets = mostViewed.map((dataset) => ({
     id: Number(dataset.id),
     title: dataset.title || 'Dataset sem título',
@@ -121,6 +103,34 @@ export default async function Home() {
     category: dataset.categoryName || null,
     dataType: dataset.dataType === 'geoespacial' ? ('geoespacial' as const) : ('alfanumerico' as const),
   }))
+
+  // O cartão de destaque do hero roda entre vários datasets geoespaciais (nunca alfanuméricos:
+  // não têm mapa para mostrar), trocando de alguns em alguns minutos no cliente (ver HeroSection).
+  // Só a pré-visualização do primeiro é gerada aqui no servidor, reaproveitando o mesmo código que
+  // já serve a ficha do dataset; as seguintes são pedidas ao rodar, já do lado do cliente.
+  const heroGeoDatasetsOrdenados = heroDatasets.filter((d) => d.dataType === 'geoespacial').slice(0, 8)
+  // Ponto de partida ao acaso entre esses candidatos: sem isto, todo F5 reiniciava a página no
+  // mesmo dataset (o mais visto), e a rotação só se notava se a pessoa ficasse minutos com a aba
+  // aberta — mudar o dataset inicial a cada carregamento é o que dá a sensação de "estar sempre a
+  // mudar" mesmo para quem só passa pela home rapidamente.
+  const indiceInicial =
+    heroGeoDatasetsOrdenados.length > 0 ? Math.floor(Math.random() * heroGeoDatasetsOrdenados.length) : 0
+  const heroGeoDatasets =
+    indiceInicial > 0
+      ? [...heroGeoDatasetsOrdenados.slice(indiceInicial), ...heroGeoDatasetsOrdenados.slice(0, indiceInicial)]
+      : heroGeoDatasetsOrdenados
+  const destaqueTopo = mostViewed.find((d) => Number(d.id) === heroGeoDatasets[0]?.id)
+  let destaquePreview: { geojson: any; bbox: [number, number, number, number] | null } | null = null
+  if (destaqueTopo?.filePath) {
+    try {
+      const preview = await getDatasetPreview(destaqueTopo, { maxFeatures: 200 })
+      if ('type' in preview && preview.type === 'geo') {
+        destaquePreview = { geojson: preview.geojson, bbox: preview.bbox }
+      }
+    } catch {
+      destaquePreview = null
+    }
+  }
 
   const featuredDatasets = mostViewed.map((dataset) => ({
     id: Number(dataset.id),
@@ -150,6 +160,7 @@ export default async function Home() {
           views: Number(stats.views || 0),
         }}
         highlightedDatasets={heroDatasets}
+        geoDatasets={heroGeoDatasets}
         destaquePreview={destaquePreview}
       />
       <FeaturedCatalogSection

@@ -6,8 +6,6 @@ import {
 
   Database,
 
-  Download,
-
   FileText,
 
   Globe,
@@ -31,6 +29,7 @@ import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { RecordRecentlyViewed } from '@/components/RecordRecentlyViewed'
 import { ProvenanciaDataset } from '@/components/ProvenanciaDataset'
 import { VoltarComFiltro } from '@/components/VoltarComFiltro'
+import { DownloadDatasetButton } from '@/components/DownloadDatasetButton'
 
 
 
@@ -71,6 +70,8 @@ type DatasetDetail = {
   updatedAt?: string | null
 
   certificacao?: string | null
+
+  downloadPublico?: number | boolean | null
 
   category: { id: number; name: string }
 
@@ -282,25 +283,19 @@ export function GeoDatasetDetailView({ dataset }: { dataset: DatasetDetail }) {
 
                 <div className="geo-detail-actions">
 
-                  {dataset.filePath ? (
+                  {dataset.filePath && dataset.downloadPublico ? (
 
-                    <span
-                      className="geo-detail-btn-primary opacity-50 cursor-not-allowed pointer-events-none"
-                      title="Download temporariamente indisponível"
-                      aria-disabled="true"
-                    >
-
-                      <Download className="size-5" aria-hidden />
-
-                      Download indisponível
-
-                    </span>
+                    <DownloadDatasetButton
+                      datasetId={dataset.id}
+                      className="geo-detail-btn-primary"
+                      label="Download"
+                    />
 
                   ) : (
 
                     <button type="button" disabled className="geo-detail-btn-primary opacity-50 cursor-not-allowed">
 
-                      Indisponível para download
+                      {dataset.filePath ? 'Download não disponível' : 'Indisponível para download'}
 
                     </button>
 

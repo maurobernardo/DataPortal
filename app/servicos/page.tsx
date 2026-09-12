@@ -80,7 +80,7 @@ export default async function ServicosPage() {
     {
       numero: '06',
       titulo: 'Relatórios',
-      desc: 'Relatórios já publicados, prontos a consultar, ou pedido de um relatório personalizado.',
+      desc: 'Relatórios já publicados, prontos a consultar, ou envie o seu próprio PDF para o portal analisar.',
       meta: `${contagens.relatorios} publicados`,
       who: 'Doadores · ONG',
       href: '/relatorios',
@@ -100,11 +100,10 @@ export default async function ServicosPage() {
       numero: '08',
       titulo: 'Download de Dados',
       desc: 'Ficheiro original de qualquer dataset publicado, no formato de origem: SHP, GeoJSON, CSV, XLSX.',
-      meta: 'Notificar-me',
+      meta: 'Disponível em cada dataset',
       who: 'Programadores',
-      href: '#',
+      href: '/dados-alfanumericos',
       icon: 'download' as const,
-      badge: { texto: 'Em breve', classe: 'soon' as const },
     },
     {
       numero: '09',

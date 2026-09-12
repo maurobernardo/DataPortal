@@ -14,19 +14,17 @@ import { recordDailyUsageAndMaybeAlertAdmins } from '@/lib/notifications'
 import { registarAcesso } from '@/lib/origem'
 import { logger } from '@/lib/logger'
 
-/** Downloads temporariamente desactivados a pedido do administrador (geoespaciais e alfanuméricos). */
-const DOWNLOADS_DESACTIVADOS = true
-
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  if (DOWNLOADS_DESACTIVADOS) {
-    return NextResponse.json({ error: 'O download de dados está temporariamente indisponível.' }, { status: 423 })
+  const session = await getCurrentUser()
+  if (!session) {
+    return NextResponse.json({ error: 'Inicie sessão para descarregar este dataset.' }, { status: 401 })
   }
   try {
     const datasetId = parseInt(params.id)
-    
+
     const dataset = await findDatasetById(datasetId)
 
     if (!dataset) {
@@ -34,6 +32,10 @@ export async function GET(
         { error: 'Dataset não encontrado' },
         { status: 404 }
       )
+    }
+
+    if (!dataset.downloadPublico) {
+      return NextResponse.json({ error: 'O download deste dataset não está disponível.' }, { status: 423 })
     }
 
     // Verificar se o arquivo existe
@@ -66,7 +68,6 @@ export async function GET(
 
     // Incrementar contador de downloads
     await incrementDatasetDownloads(datasetId)
-    const session = await getCurrentUser()
     await createStatistic(datasetId, 'download', session?.userId)
     recordDailyUsageAndMaybeAlertAdmins('downloads')
     await registarAcesso(request, 'download', { referenciaId: datasetId, utilizadorId: session?.userId })

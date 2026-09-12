@@ -2,6 +2,11 @@ import { MetadataRoute } from 'next'
 import { db } from '@/lib/db'
 import { getSiteUrl } from '@/lib/site'
 
+// Mesmo motivo do app/robots.ts: sem isto, o Next gera este ficheiro uma única vez durante o
+// build local (com a URL de localhost do .env.local congelada nas URLs de cada entrada), em vez de
+// recalcular no servidor a cada pedido.
+export const dynamic = 'force-dynamic'
+
 const staticPages: Array<{
   path: string
   changeFrequency: MetadataRoute.Sitemap[number]['changeFrequency']

@@ -7,8 +7,8 @@ export const metadata: Metadata = {
     'Como o Data Portal (Data4Moz) recolhe, usa, protege e permite controlar os dados pessoais dos seus utilizadores.',
 }
 
-const ACTUALIZADO_EM = '23 de Agosto de 2026'
-const VERSAO = '2.0'
+const ACTUALIZADO_EM = '7 de Setembro de 2026'
+const VERSAO = '2.1'
 
 const sections: LegalSection[] = [
   {
@@ -208,6 +208,13 @@ const sections: LegalSection[] = [
           um período adicional limitado, estritamente necessário para efeitos de auditoria,
           prevenção de abuso ou cumprimento de obrigações legais.
         </p>
+        <p>
+          Fazemos cópias de segurança periódicas (diárias, semanais e mensais) de toda a base de
+          dados do portal, para permitir recuperação em caso de falha técnica. Por essa razão, dados
+          de uma conta eliminada podem continuar a existir dentro de cópias de segurança já feitas
+          antes da eliminação, até essas cópias serem substituídas pelo ciclo normal de rotação
+          (no máximo alguns meses), mesmo que já não constem da base de dados em uso.
+        </p>
       </>
     ),
   },
@@ -218,10 +225,12 @@ const sections: LegalSection[] = [
     conteudo: (
       <ul>
         <li>As palavras-passe são guardadas de forma cifrada (hash), nunca em texto simples.</li>
-        <li>O acesso administrativo é limitado por função (perfil de administrador) e fica registado num registo de auditoria interno, com identificação de quem fez o quê e quando.</li>
+        <li>O acesso administrativo é limitado por função (perfil de administrador) e fica registado num registo de auditoria interno, com identificação de quem fez o quê e quando, incluindo início e fim de sessão.</li>
         <li>O acesso a serviços de inteligência artificial é feito exclusivamente pelo servidor; chaves de acesso a serviços externos nunca são expostas ao navegador do utilizador.</li>
         <li>É aplicado um limite de utilização às análises de IA por utilizador e por hora, para prevenir uso abusivo e proteger a disponibilidade do serviço para todos.</li>
         <li>Contas podem ser temporariamente desactivadas em caso de suspeita fundamentada de abuso, sem apagar os dados associados, até esclarecimento.</li>
+        <li>Tentativas repetidas de início de sessão falhadas no mesmo período são detectadas automaticamente e podem gerar um alerta interno à equipa de administração, com o endereço IP de origem, para prevenir acessos não autorizados.</li>
+        <li>A base de dados tem cópias de segurança periódicas, guardadas apenas nos nossos próprios servidores, nunca partilhadas com terceiros fora dos prestadores de infraestrutura indicados no ponto 5.</li>
       </ul>
     ),
   },

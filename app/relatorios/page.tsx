@@ -2,7 +2,9 @@ import { FileSearch, Languages, MessageCircleQuestion, ScanSearch } from 'lucide
 import { findAllReports, findEntityFavoriteIds } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
 import { contarProcessados } from '@/lib/relatorios/persistencia'
+import { obterEstadoLimite } from '@/lib/limite-analises-gratis'
 import { ReportsCatalogClient } from '@/components/reports/ReportsCatalogClient'
+import { EnviarRelatorioForm } from '@/components/reports/EnviarRelatorioForm'
 import { RecentlyViewedRail } from '@/components/RecentlyViewedRail'
 import type { PublicReport } from '@/components/reports/types'
 import '../reports-catalog.css'
@@ -39,6 +41,7 @@ export default async function RelatoriosPage() {
       contarProcessados().catch(() => 0),
     ])
   const favoriteIdSet = new Set(favoriteIds)
+  const estadoLimite = session ? await obterEstadoLimite(session.userId, session.role === 'admin') : null
 
   return (
     <div className="rpt-page">
@@ -145,6 +148,14 @@ export default async function RelatoriosPage() {
               </div>
             </div>
           </section>
+
+          {session && (
+            <div className="mb-8">
+              <EnviarRelatorioForm
+                analisesRestantes={estadoLimite && Number.isFinite(estadoLimite.restantes) ? estadoLimite.restantes : null}
+              />
+            </div>
+          )}
 
           <RecentlyViewedRail dataType="report" />
           <ReportsCatalogClient

@@ -6,6 +6,7 @@ import type { GeoDataset } from '@/components/geo/types'
 import { AlfPreviewInspector } from '@/components/alf/AlfPreviewInspector'
 import type { AlfTablePreview } from '@/components/alf/alf-preview-utils'
 import { getCachedPreview, setCachedPreview } from '@/lib/preview-cache'
+import { DownloadDatasetButton } from '@/components/DownloadDatasetButton'
 
 export function AlfDataDetailPanel({ dataset }: { dataset: GeoDataset | null }) {
   const [preview, setPreview] = useState<AlfTablePreview | null>(null)
@@ -122,10 +123,15 @@ export function AlfDataDetailPanel({ dataset }: { dataset: GeoDataset | null }) 
         <Link href={`/dataset/${dataset.id}`} className="alf-detail-action-primary">
           Ver dataset completo →
         </Link>
-        {dataset.filePath ? (
+        {dataset.filePath && dataset.downloadPublico ? (
+          <DownloadDatasetButton
+            datasetId={dataset.id}
+            className="alf-detail-action-secondary"
+          />
+        ) : dataset.filePath ? (
           <span
             className="alf-detail-action-secondary opacity-50 cursor-not-allowed pointer-events-none"
-            title="Download temporariamente indisponível"
+            title="Download não disponível para este dataset"
           >
             ↓ Indisponível
           </span>

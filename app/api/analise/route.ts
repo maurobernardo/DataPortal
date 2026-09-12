@@ -10,6 +10,7 @@ import { AnaliseInviavelError } from '@/lib/analysis/viabilidade'
 import { gerarPerguntasViaveis } from '@/lib/analysis/perguntas-viaveis'
 import { rateLimit } from '@/lib/security'
 import { registarAcesso } from '@/lib/origem'
+import { obterEstadoLimite, MENSAGEM_LIMITE_ATINGIDO } from '@/lib/limite-analises-gratis'
 import { logger } from '@/lib/logger'
 import type { EventoPipeline } from '@/lib/analysis/types'
 
@@ -72,6 +73,16 @@ export async function POST(request: NextRequest) {
       JSON.stringify({ error: 'Limite de análises por hora atingido. Tente mais tarde.' }),
       { status: 429, headers: { 'Content-Type': 'application/json', 'Retry-After': String(rl.retryAfter) } }
     )
+  }
+
+  // Limite de 2 análises gratuitas por conta, partilhado com a análise de relatórios — ver
+  // lib/limite-analises-gratis.ts. Administradores nunca são limitados.
+  const limite = await obterEstadoLimite(sessao.userId, sessao.role === 'admin')
+  if (limite.atingiu) {
+    return new Response(JSON.stringify({ error: MENSAGEM_LIMITE_ATINGIDO }), {
+      status: 403,
+      headers: { 'Content-Type': 'application/json' },
+    })
   }
 
   const analiseId = novoIdAnalise()

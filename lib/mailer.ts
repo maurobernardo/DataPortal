@@ -183,6 +183,46 @@ export async function sendContactEmail(payload: MailPayload): Promise<void> {
   })
 }
 
+export async function sendFeedbackEmail(payload: {
+  fromName: string
+  fromEmail: string
+  message: string
+}): Promise<void> {
+  const user = getRequiredEnv('SMTP_USER')
+  const recipient = getRequiredEnv('CONTACT_RECIPIENT_EMAIL')
+  const transporter = createSmtpTransporter()
+
+  const bodyHtml = [
+    paragraph('Novo feedback recebido durante a fase beta do Data Portal.'),
+    paragraph(`<strong>Nome:</strong> ${payload.fromName}`),
+    paragraph(`<strong>Email:</strong> ${payload.fromEmail}`),
+    `<div style="margin:20px 0 0 0; padding:16px; background-color:#F7F9F8; border:1px solid #E2E8E5; border-radius:10px;">
+      <p style="margin:0; font-size:13px; line-height:1.7; color:#1F2A24; font-family:${FONT_STACK}; white-space:pre-wrap;">${payload.message}</p>
+    </div>`,
+  ].join('')
+
+  await transporter.sendMail({
+    from: `"Data Portal - Feedback Beta" <${user}>`,
+    to: recipient,
+    replyTo: `${payload.fromName} <${payload.fromEmail}>`,
+    subject: `[Feedback Beta] ${payload.fromName}`,
+    text: [
+      'Novo feedback recebido durante a fase beta do Data Portal.',
+      '',
+      `Nome: ${payload.fromName}`,
+      `Email: ${payload.fromEmail}`,
+      '',
+      'Mensagem:',
+      payload.message,
+    ].join('\n'),
+    html: emailShell({
+      heading: 'Novo feedback da fase beta',
+      bodyHtml,
+      footerHtml: footerNote('Enviado a partir do botão de feedback do Data Portal.'),
+    }),
+  })
+}
+
 export async function sendRegistrationVerificationEmail(
   to: string,
   code: string,
@@ -461,35 +501,64 @@ const CONTENT_TYPE_LABELS: Record<'dataset' | 'relatorio' | 'dashboard', string>
   dashboard: 'dashboard',
 }
 
-export async function sendNewContentNotificationEmail(
+/**
+ * Resumo semanal de novidades: um único email por semana com tudo o que foi publicado, em vez de
+ * um email por cada dataset, relatório ou dashboard individual — isso enchia a caixa de correio de
+ * quem segue o portal de perto, ao ponto de valer a pena desligar as notificações por completo.
+ */
+export async function sendResumoSemanalEmail(
   to: string,
-  contentType: 'dataset' | 'relatorio' | 'dashboard',
-  title: string,
-  contentUrl: string
+  itens: { tipo: 'dataset' | 'relatorio' | 'dashboard'; titulo: string; url: string }[]
 ): Promise<void> {
   const user = getRequiredEnv('SMTP_USER')
   const transporter = createSmtpTransporter()
-  const label = CONTENT_TYPE_LABELS[contentType]
+  const siteUrl = getSiteUrl()
+
+  const linhasHtml = itens
+    .map(
+      (item, i) => `
+        <tr>
+          <td style="padding:${i === 0 ? '0' : '14px'} 0 0 0; border-top:${i === 0 ? 'none' : '1px solid #E2E8E5'}; padding-top:${i === 0 ? '0' : '14px'};">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td width="4" style="background-color:#064E2C; border-radius:2px;">&nbsp;</td>
+                <td style="width:12px;">&nbsp;</td>
+                <td>
+                  <p style="margin:0 0 2px 0; font-size:11px; font-weight:700; letter-spacing:0.05em; text-transform:uppercase; color:#8B9A91; font-family:${FONT_STACK};">
+                    ${CONTENT_TYPE_LABELS[item.tipo]}
+                  </p>
+                  <a href="${siteUrl}${item.url}" style="font-size:14px; font-weight:700; color:#064E2C; text-decoration:none; font-family:${FONT_STACK};">
+                    ${item.titulo}
+                  </a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>`
+    )
+    .join('')
 
   const bodyHtml = [
-    paragraph(`Um novo ${label} foi publicado no <strong>Data Portal</strong>:`),
-    `<p style="margin:0 0 20px 0; font-size:18px; font-weight:700; color:#064E2C; font-family:${FONT_STACK};">${title}</p>`,
-    ctaButton(`Ver ${label}`, contentUrl),
+    paragraph(`Esta semana, o Data Portal publicou <strong>${itens.length}</strong> conteúdo${itens.length === 1 ? '' : 's'} novo${itens.length === 1 ? '' : 's'}:`),
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${linhasHtml}</table>`,
+    `<div style="margin-top:24px;">${ctaButton('Ver tudo no portal', siteUrl)}</div>`,
   ].join('')
 
   await transporter.sendMail({
     from: `"Data Portal" <${user}>`,
     to,
-    subject: `Data Portal: novo ${label} disponível: "${title}"`,
+    subject: `Data Portal: ${itens.length} novidade${itens.length === 1 ? '' : 's'} esta semana`,
     text: [
-      `Um novo ${label} foi publicado no Data Portal: "${title}".`,
+      `Esta semana, o Data Portal publicou ${itens.length} conteúdo(s) novo(s):`,
       '',
-      `Ver: ${contentUrl}`,
+      ...itens.map((item) => `- [${CONTENT_TYPE_LABELS[item.tipo]}] ${item.titulo}: ${siteUrl}${item.url}`),
       '',
-      'Recebe este email porque tem uma conta registada no Data Portal.',
+      `Ver tudo: ${siteUrl}`,
+      '',
+      'Recebe este email porque tem uma conta registada no Data Portal e escolheu receber notificações.',
     ].join('\n'),
     html: emailShell({
-      heading: `Novo ${label} disponível`,
+      heading: 'Novidades desta semana',
       bodyHtml,
       footerHtml: defaultFooter(to),
     }),
@@ -579,12 +648,20 @@ export async function sendWelcomeEmail(to: string, name: string): Promise<void> 
       desc: 'Datasets geoespaciais e alfanuméricos oficiais, com pré-visualização antes de descarregar.',
     },
     {
-      title: 'AI Insights',
-      desc: 'Faça uma pergunta em português sobre os dados e receba gráfico, mapa ou previsão em segundos.',
+      title: 'Análise por Inteligência Artificial',
+      desc: 'Faça uma pergunta em português sobre dados geoespaciais, alfanuméricos ou os dois cruzados, e receba um dashboard com gráficos, mapas interactivos e KPIs.',
+    },
+    {
+      title: 'Relatórios',
+      desc: 'Peça um resumo automático de qualquer relatório já publicado no portal, ou carregue o seu próprio PDF para a IA analisar.',
     },
     {
       title: 'Mapas Inteligentes e Dashboards',
       desc: 'Visualizações interactivas já preparadas, prontas a explorar sem instalar nada.',
+    },
+    {
+      title: 'Levantamento 360°',
+      desc: 'Navegue pelas ruas de Maputo e Chimoio captadas em 360°, sem sair do portal.',
     },
     {
       title: 'Favoritos e alertas',

@@ -26,6 +26,7 @@ interface Dataset {
   minimumUnit?: string
   keywords: string
   dataType?: string
+  downloadPublico?: boolean
 }
 
 export function DatasetForm() {
@@ -59,6 +60,7 @@ export function DatasetForm() {
     minimumUnit: '',
     keywords: '',
     dataType: 'geoespacial',
+    downloadPublico: false,
   })
   const [editingId, setEditingId] = useState<number | null>(null)
 
@@ -448,6 +450,7 @@ export function DatasetForm() {
           minimumUnit: '',
           keywords: '',
           dataType: formData.dataType,
+          downloadPublico: false,
         })
         setUploadedFile(null)
         setEditingId(null)
@@ -475,6 +478,7 @@ export function DatasetForm() {
       minimumUnit: dataset.minimumUnit || '',
       keywords: dataset.keywords || '',
       dataType: dataset.dataType || 'geoespacial',
+      downloadPublico: Boolean((dataset as any).downloadPublico),
     })
     setEditingId(dataset.id)
     setUploadedFile(dataset.filePath ? {
@@ -890,6 +894,40 @@ export function DatasetForm() {
               />
             </div>
 
+            <div className="animate-fade-in" style={{ animationDelay: '0.47s' }}>
+              <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                <Globe className="w-4 h-4 text-green-600" />
+                Disponibilidade de download
+              </label>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, downloadPublico: true })}
+                  className={`flex-1 px-4 py-3 rounded-xl border-2 font-medium text-sm transition-all duration-300 ${
+                    formData.downloadPublico
+                      ? 'border-green-500 bg-green-50 text-green-700'
+                      : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                  }`}
+                >
+                  Público (download disponível)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, downloadPublico: false })}
+                  className={`flex-1 px-4 py-3 rounded-xl border-2 font-medium text-sm transition-all duration-300 ${
+                    !formData.downloadPublico
+                      ? 'border-gray-500 bg-gray-100 text-gray-800'
+                      : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                  }`}
+                >
+                  Sem download
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                Quando marcado como público, utilizadores com sessão iniciada podem descarregar este dataset.
+              </p>
+            </div>
+
             {/* Novos campos */}
             <div className="animate-fade-in" style={{ animationDelay: '0.5s' }}>
               <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
@@ -971,6 +1009,7 @@ export function DatasetForm() {
                       minimumUnit: '',
                       keywords: '',
                       dataType: 'geoespacial',
+                      downloadPublico: false,
                     })
                   }}
                   className="flex items-center gap-2 px-6 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-all duration-300 font-semibold"

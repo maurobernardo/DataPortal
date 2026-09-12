@@ -1,13 +1,14 @@
 import {
   findAllRegisteredUsers,
+  findConteudoPublicadoNaSemana,
   findUsersSubscritosNotificacoes,
   incrementDailyUsage,
   markDailyUsageAlerted,
 } from '@/lib/db'
 import {
   hasAuthMailConfig,
-  sendNewContentNotificationEmail,
   sendNewUserAdminAlertEmail,
+  sendResumoSemanalEmail,
   sendUsageThresholdAlertEmail,
 } from '@/lib/mailer'
 import { logger } from '@/lib/logger'
@@ -16,35 +17,28 @@ import { logger } from '@/lib/logger'
  * dos valores explicitamente indicados para cobrir dias de tráfego muito alto. */
 const USAGE_ALERT_THRESHOLDS = [10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000]
 
-function getSiteUrl(): string {
-  return (process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000').replace(/\/$/, '')
-}
-
 /**
- * Avisa quem escolheu receber notificações (nunca todos os utilizadores registados: essa era a
- * versão antiga — o portal enviava email a toda a base de dados sempre que algo novo era
- * publicado, sem hipótese de recusar) sempre que um novo dataset, relatório ou dashboard é
- * publicado. Corre em segundo plano (nunca bloqueia a resposta da criação do conteúdo) e cada
- * envio falha isoladamente — um endereço inválido não impede os restantes.
+ * Resumo semanal (pensado para correr uma vez por semana, via cron — ver
+ * app/api/cron/resumo-semanal/route.ts): um único email com tudo o que foi publicado nos últimos
+ * 7 dias, só para quem escolheu receber notificações e só para utilizadores normais (os
+ * administradores têm os seus próprios alertas operacionais, separados deste). Substitui o antigo
+ * envio imediato por cada dataset/relatório/dashboard publicado, que enchia a caixa de correio de
+ * quem segue o portal de perto.
  */
-export async function notifyUsersOfNewContent(
-  contentType: 'dataset' | 'relatorio' | 'dashboard',
-  title: string,
-  path: string
-): Promise<void> {
+export async function enviarResumoSemanalNovidades(): Promise<void> {
   if (!hasAuthMailConfig()) return
 
-  const url = `${getSiteUrl()}${path}`
+  const itens = await findConteudoPublicadoNaSemana()
+  if (itens.length === 0) return
+
   const users = await findUsersSubscritosNotificacoes()
   if (users.length === 0) return
 
-  const results = await Promise.allSettled(
-    users.map((u) => sendNewContentNotificationEmail(u.email, contentType, title, url))
-  )
+  const results = await Promise.allSettled(users.map((u) => sendResumoSemanalEmail(u.email, itens)))
 
   const failed = results.filter((r) => r.status === 'rejected').length
   if (failed > 0) {
-    logger.error('error_sending_new_content_notifications', { contentType, title, failed, total: users.length })
+    logger.error('error_sending_resumo_semanal', { failed, total: users.length, itens: itens.length })
   }
 }
 
@@ -53,7 +47,7 @@ export async function notifyAdminsOfNewUser(newUser: { name: string; email: stri
   if (!hasAuthMailConfig()) return
 
   const users = await findAllRegisteredUsers()
-  const admins = users.filter((u) => u.role === 'admin')
+  const admins = users.filter((u) => u.role === 'admin' && u.receberNotificacoes !== false)
 
   const results = await Promise.allSettled(
     admins.map((a) => sendNewUserAdminAlertEmail(a.email, newUser))
@@ -83,7 +77,7 @@ export async function recordDailyUsageAndMaybeAlertAdmins(kind: 'views' | 'downl
 
     if (!hasAuthMailConfig()) return
     const users = await findAllRegisteredUsers()
-    const admins = users.filter((u) => u.role === 'admin')
+    const admins = users.filter((u) => u.role === 'admin' && u.receberNotificacoes !== false)
 
     const results = await Promise.allSettled(
       admins.map((a) => sendUsageThresholdAlertEmail(a.email, kind, crossed, result.count))

@@ -141,11 +141,15 @@ export function escolherMapa(d: DadosParaMapa): EscolhaDeMapa {
       }
     }
     if (d.valorEAditivo) {
+      // São contagens, e coloridas por área uma província grande pode parecer mais servida só
+      // por ser grande — o alerta que o coroplético de contagens merece continua a aparecer via
+      // `porque`, mas a instrução foi: círculos ficam disponíveis para quem quiser comparar sem o
+      // efeito do tamanho, a área é que abre por omissão.
       return {
-        tipo: 'simbolos',
+        tipo: 'coropletico',
         porque:
-          'São contagens: pintar a área faria uma província grande parecer mais servida só por ser grande. A área do círculo é o valor.',
-        alternativas: ['coropletico'],
+          'São contagens por unidade; mude para círculos se quiser comparar sem o efeito do tamanho da província.',
+        alternativas: ['simbolos'],
       }
     }
     return {

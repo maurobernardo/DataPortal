@@ -1930,6 +1930,22 @@
   margin: 0 0 var(--sp-4);
 }
 
+/* Aviso do limite de 2 análises gratuitas (dados + relatórios), ver lib/limite-analises-gratis.ts */
+.pdx-aviso-limite {
+  margin: 0 0 var(--sp-4);
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: var(--sage-soft);
+  color: var(--forest-800);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.pdx-aviso-limite-esgotado {
+  background: #FBEAEA;
+  color: #7A1F1F;
+}
+
 .pdx-cabecalho-pagina h1 {
   font-family: var(--sans);
   font-size: 24px;

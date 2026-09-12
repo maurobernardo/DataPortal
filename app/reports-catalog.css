@@ -1737,3 +1737,122 @@
   line-height: 1.65;
   color: var(--pd-ink-700);
 }
+
+/* Enviar o meu relatório (components/reports/EnviarRelatorioForm.tsx) */
+.rpt-enviar-card {
+  background: #fff;
+  border: 1px solid var(--pd-green-100, #E2E8E5);
+  border-radius: 16px;
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rpt-enviar-card-topo {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  color: var(--pd-green-700);
+}
+
+.rpt-enviar-card-titulo {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--pd-ink-900, #0B1B14);
+  margin-bottom: 2px;
+}
+
+.rpt-enviar-card-desc {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--pd-ink-700, #4A5A52);
+}
+
+.rpt-enviar-limite {
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--pd-green-50, #F1F8F4);
+  color: var(--pd-green-700, #064E2C);
+}
+
+.rpt-enviar-limite-esgotado {
+  background: #FBEAEA;
+  color: #7A1F1F;
+}
+
+.rpt-enviar-input,
+.rpt-enviar-ficheiro {
+  width: 100%;
+  border: 1px solid #E2E8E5;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 13.5px;
+  color: var(--pd-ink-900, #0B1B14);
+  background: #fff;
+}
+
+.rpt-enviar-input:focus {
+  outline: 2px solid var(--pd-green-700);
+  outline-offset: 1px;
+}
+
+.rpt-enviar-ficheiro {
+  cursor: pointer;
+  color: var(--pd-ink-700, #4A5A52);
+  transition: border-color 0.15s;
+}
+
+.rpt-enviar-ficheiro:hover {
+  border-color: var(--pd-green-700);
+}
+
+.rpt-enviar-erro {
+  font-size: 13px;
+  color: #B91C1C;
+}
+
+.rpt-enviar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--pd-green-700, #064E2C);
+  color: #fff;
+  font-weight: 700;
+  font-size: 13.5px;
+  border: none;
+  border-radius: 10px;
+  padding: 11px 16px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.rpt-enviar-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.rpt-enviar-btn:not(:disabled):hover {
+  opacity: 0.92;
+}
+
+.rpt-enviar-outro {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: var(--pd-green-700, #064E2C);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.rpt-enviar-outro:hover {
+  text-decoration: underline;
+}

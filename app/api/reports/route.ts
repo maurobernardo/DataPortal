@@ -3,7 +3,6 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { createReport, findAllReports, validarCamposTextoReport } from '@/lib/db'
 import { getCurrentAdmin } from '@/lib/auth'
-import { notifyUsersOfNewContent } from '@/lib/notifications'
 import { logger } from '@/lib/logger'
 
 export async function GET(request: NextRequest) {
@@ -63,12 +62,6 @@ export async function POST(request: NextRequest) {
       detailsText: data.detailsText || null,
       sector: data.sector || null,
     })
-
-    if (report) {
-      notifyUsersOfNewContent('relatorio', report.title, `/relatorios/${report.id}`).catch((error) => {
-        logger.error('error_notifying_users_of_new_report', { error, reportId: report.id })
-      })
-    }
 
     return NextResponse.json(report)
   } catch (error: any) {

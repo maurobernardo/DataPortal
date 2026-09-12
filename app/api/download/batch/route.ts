@@ -12,12 +12,10 @@ import { logger } from '@/lib/logger'
 
 const MAX_BATCH = 20
 
-/** Downloads temporariamente desactivados a pedido do administrador (geoespaciais e alfanuméricos). */
-const DOWNLOADS_DESACTIVADOS = true
-
 export async function POST(request: NextRequest) {
-  if (DOWNLOADS_DESACTIVADOS) {
-    return NextResponse.json({ error: 'O download de dados está temporariamente indisponível.' }, { status: 423 })
+  const session = await getCurrentUser()
+  if (!session) {
+    return NextResponse.json({ error: 'Inicie sessão para descarregar datasets.' }, { status: 401 })
   }
   try {
     const body = await request.json().catch(() => null)
@@ -33,7 +31,7 @@ export async function POST(request: NextRequest) {
     }
 
     const datasets = await findDatasetsByIds(ids)
-    const withFiles = datasets.filter((d: any) => d.filePath && existsSync(join(process.cwd(), 'public', d.filePath)))
+    const withFiles = datasets.filter((d: any) => d.filePath && d.downloadPublico && existsSync(join(process.cwd(), 'public', d.filePath)))
 
     if (withFiles.length === 0) {
       return NextResponse.json({ error: 'Nenhum dos ficheiros selecionados está disponível' }, { status: 404 })
@@ -67,7 +65,6 @@ export async function POST(request: NextRequest) {
     await done
     const zipBuffer = Buffer.concat(chunks)
 
-    const session = await getCurrentUser()
     await Promise.all(
       withFiles.map(async (dataset: any) => {
         await incrementDatasetDownloads(dataset.id)

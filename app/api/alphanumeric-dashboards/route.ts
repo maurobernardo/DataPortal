@@ -3,7 +3,6 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { createAlphanumericDashboard, findAllAlphanumericDashboards } from '@/lib/db'
 import { getCurrentAdmin } from '@/lib/auth'
-import { notifyUsersOfNewContent } from '@/lib/notifications'
 import { logger } from '@/lib/logger'
 
 export async function GET() {
@@ -36,12 +35,6 @@ export async function POST(request: NextRequest) {
       category: data.category ? String(data.category) : null,
       lastDataUpdate: data.lastDataUpdate ? String(data.lastDataUpdate) : null,
     })
-
-    if (dashboard) {
-      notifyUsersOfNewContent('dashboard', dashboard.name, '/dashboards-alfanumericos').catch((error) => {
-        logger.error('error_notifying_users_of_new_dashboard', { error, dashboardId: dashboard.id })
-      })
-    }
 
     return NextResponse.json(dashboard)
   } catch (error) {

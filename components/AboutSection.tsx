@@ -142,16 +142,13 @@ export function AboutSection({
         </Link>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5 mb-14 animate-slide-up" style={{ animationDelay: '0.2s' }}>
-          {pilares.map(({ icon: Icon, label, desc, href, stat }) => (
+          {pilares.map(({ label, desc, href, stat }) => (
             <Link
               key={label}
               href={href}
               className="group rounded-2xl border border-[#E2E8E5] bg-white p-6 shadow-sm transition-all duration-300 hover:border-[#CFE3D6] hover:shadow-[0_10px_30px_rgba(6,78,44,0.08)] hover:-translate-y-0.5"
             >
-              <div className="flex items-start justify-between mb-4">
-                <div className="w-11 h-11 flex items-center justify-center rounded-xl bg-[#F1F8F4] border border-[#CFE3D6] group-hover:bg-[#E7F3EB] group-hover:scale-105 transition-all duration-200">
-                  <Icon className="w-[18px] h-[18px] stroke-[#064E2C]" strokeWidth={2} />
-                </div>
+              <div className="flex items-start justify-start mb-4">
                 <span className="rounded-full bg-[#F1F8F4] px-2.5 py-1 text-[11px] font-bold text-[#064E2C] tabular-nums">
                   {stat}
                 </span>
@@ -200,7 +197,7 @@ export function AboutSection({
             <div className="grid grid-cols-2 gap-3">
               {[
                 { num: 6, sufixo: '', label: 'Áreas do portal (IA, geo, alfa, dashboards, mapas, relatórios)' },
-                { num: 100, sufixo: '%', label: 'Acesso aberto às publicações disponíveis' },
+                { num: 100, sufixo: '%', label: 'Do catálogo em acesso aberto e gratuito' },
               ].map(({ num, sufixo, label }) => (
                 <div
                   key={label}

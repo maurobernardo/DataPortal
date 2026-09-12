@@ -2,13 +2,14 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeft, Calendar, FileText, Globe, Users } from 'lucide-react'
 import { findReportById } from '@/lib/db'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentUser, getCurrentUserProfile } from '@/lib/auth'
 import { ReportRequestButton } from '@/components/ReportRequestButton'
 import { RecordRecentlyViewed } from '@/components/RecordRecentlyViewed'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { PainelDigesto } from '@/components/reports/PainelDigesto'
 import { PerguntarAoRelatorio } from '@/components/reports/PerguntarAoRelatorio'
 import { PreVisualizacaoPdf } from '@/components/reports/PreVisualizacaoPdf'
+import { obterEstadoLimite } from '@/lib/limite-analises-gratis'
 import '../../reports-catalog.css'
 
 export const dynamic = 'force-dynamic'
@@ -28,10 +29,24 @@ export default async function RelatorioDetalhesPage({
     notFound()
   }
 
-  const hasFile = Boolean(report.filePath?.trim())
-  const isPdf = hasFile && report.filePath!.toLowerCase().endsWith('.pdf')
   const sessao = await getCurrentUser()
   const autenticado = !!sessao
+
+  // Um relatório enviado por um utilizador (ainda não publicado no catálogo oficial) só é visível
+  // a quem o enviou e à equipa — nunca a outra pessoa a navegar por /relatorios/[id] a adivinhar
+  // IDs. Relatórios oficiais (origem nula/'oficial') continuam públicos como sempre.
+  if (report.origem === 'utilizador') {
+    const profile = sessao ? await getCurrentUserProfile() : null
+    const ehDono = sessao?.userId === report.uploaded_by_user_id
+    const ehAdmin = profile?.role === 'admin'
+    if (!ehDono && !ehAdmin) {
+      notFound()
+    }
+  }
+
+  const hasFile = Boolean(report.filePath?.trim())
+  const isPdf = hasFile && report.filePath!.toLowerCase().endsWith('.pdf')
+  const estadoLimite = sessao ? await obterEstadoLimite(sessao.userId, sessao.role === 'admin') : null
 
   return (
     <div className="rpt-page">
@@ -147,7 +162,20 @@ export default async function RelatorioDetalhesPage({
           */}
           {isPdf && (
             <div id="analise">
-              <PainelDigesto reportId={report.id} titulo={report.title} ano={report.year} autenticado={autenticado} />
+              {estadoLimite && Number.isFinite(estadoLimite.restantes) && (
+                <p className={`rpt-enviar-limite mb-3${estadoLimite.restantes === 0 ? ' rpt-enviar-limite-esgotado' : ''}`}>
+                  {estadoLimite.restantes === 0
+                    ? 'Já usou as suas 2 análises gratuitas (dados e relatórios contam para o mesmo limite). Contacte a equipa do portal para continuar a analisar.'
+                    : `Tem ${estadoLimite.restantes} ${estadoLimite.restantes === 1 ? 'análise gratuita' : 'análises gratuitas'} restante${estadoLimite.restantes === 1 ? '' : 's'}: conta partilhada com o AI Insights.`}
+                </p>
+              )}
+              <PainelDigesto
+                reportId={report.id}
+                titulo={report.title}
+                ano={report.year}
+                autenticado={autenticado}
+                limiteAtingido={!!estadoLimite?.atingiu}
+              />
               <PerguntarAoRelatorio reportId={report.id} autenticado={autenticado} />
             </div>
           )}

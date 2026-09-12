@@ -4,7 +4,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createDataset, findCategoryById, findDatasets, setDatasetPreviewMeta } from '@/lib/db'
 import { getCurrentAdmin } from '@/lib/auth'
 import { getDatasetPreview } from '@/lib/dataset-preview'
-import { notifyUsersOfNewContent } from '@/lib/notifications'
 import { logAudit } from '@/lib/audit'
 import { logger } from '@/lib/logger'
 
@@ -119,6 +118,7 @@ export async function POST(request: NextRequest) {
       minimumUnit: data.minimumUnit || null,
       keywords: data.keywords || null,
       dataType,
+      downloadPublico: Boolean(data.downloadPublico),
     })
 
     if (dataset) {
@@ -130,10 +130,6 @@ export async function POST(request: NextRequest) {
       } catch (error) {
         logger.error('error_computing_preview_meta_on_create', { error, datasetId: dataset.id })
       }
-
-      notifyUsersOfNewContent('dataset', dataset.title, `/dataset/${dataset.id}`).catch((error) => {
-        logger.error('error_notifying_users_of_new_dataset', { error, datasetId: dataset.id })
-      })
 
       logAudit({
         actorEmail: user.email,

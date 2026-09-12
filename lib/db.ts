@@ -304,7 +304,7 @@ export async function updateUserRole(userId: number, role: 'user' | 'admin') {
 export async function findAllRegisteredUsers() {
   await ensureUsersTable()
   const [rows] = (await db.execute(
-    `SELECT id, name, email, email_verified, role, created_at, active
+    `SELECT id, name, email, email_verified, role, created_at, active, receber_notificacoes
      FROM users
      ORDER BY created_at DESC`
   )) as [any[], unknown]
@@ -316,6 +316,11 @@ export async function findAllRegisteredUsers() {
     role: normalizeRole(row.role),
     createdAt: row.created_at,
     active: row.active === null || row.active === undefined ? true : Boolean(row.active),
+    // null = ainda não respondeu ao popup (conta como "a receber", só false desliga de facto).
+    receberNotificacoes:
+      row.receber_notificacoes === null || row.receber_notificacoes === undefined
+        ? null
+        : Boolean(row.receber_notificacoes),
   }))
 }
 
@@ -341,13 +346,15 @@ export async function setPreferenciaNotificacoes(userId: number, receber: boolea
   await db.execute('UPDATE users SET receber_notificacoes = ? WHERE id = ?', [receber ? 1 : 0, userId])
 }
 
-/** Só quem respondeu SIM: usada exclusivamente para os emails de "novo conteúdo publicado"
- *  (notifyUsersOfNewContent em lib/notifications.ts) — nunca para avisos de segurança da própria
- *  conta (verificação de email, redefinição de senha, 2FA), que continuam a usar o email sempre. */
+/** Só quem respondeu SIM, e só utilizadores normais: usada exclusivamente para o resumo semanal
+ *  de novidades (enviarResumoSemanalNovidades em lib/notifications.ts) — nunca para avisos de
+ *  segurança da própria conta (verificação de email, redefinição de senha, 2FA), que continuam a
+ *  usar o email sempre, nem para os administradores, que têm os seus próprios alertas
+ *  operacionais separados. */
 export async function findUsersSubscritosNotificacoes() {
   await ensureUsersTable()
   const [rows] = (await db.execute(
-    `SELECT id, name, email FROM users WHERE receber_notificacoes = 1 AND active = 1`
+    `SELECT id, name, email FROM users WHERE receber_notificacoes = 1 AND active = 1 AND role = 'user'`
   )) as [any[], unknown]
   return rows.map((row) => ({ id: row.id, name: row.name, email: row.email }))
 }
@@ -737,6 +744,10 @@ export async function ensureDatasetPreviewColumns(): Promise<void> {
     ['certificacao', "VARCHAR(30) NOT NULL DEFAULT 'nao_verificado'"],
     ['resumoIA', 'TEXT NULL'],
     ['resumoIAGeradoEm', 'DATETIME(3) NULL'],
+    // Por omissão 0 (sem download): downloads já estiveram globalmente desligados no portal
+    // inteiro, e mudar aqui a decisão passa a ser por dataset, escolhida por quem o cadastra ou
+    // edita — nunca activada sozinha nos datasets já existentes.
+    ['downloadPublico', 'TINYINT(1) NOT NULL DEFAULT 0'],
   ]
   for (const [name, def] of columns) {
     try {
@@ -895,18 +906,21 @@ export async function findDatasetById(id: number) {
 }
 
 export async function createDataset(data: any) {
+  await ensureDatasetPreviewColumns()
   const [result] = await db.execute(
-    `INSERT INTO Dataset (title, description, categoryId, source, year, format, fileSize, filePath, geometry, coverage, minimumUnit, keywords, dataType, views, downloads, createdAt, updatedAt)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, NOW(), NOW())`,
+    `INSERT INTO Dataset (title, description, categoryId, source, year, format, fileSize, filePath, geometry, coverage, minimumUnit, keywords, dataType, downloadPublico, views, downloads, createdAt, updatedAt)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, NOW(), NOW())`,
     [data.title, data.description, data.categoryId, data.source || '', data.year || new Date().getFullYear(),
      data.format, data.fileSize || '', data.filePath || '', data.geometry || null,
-     data.coverage || null, data.minimumUnit || null, data.keywords || null, data.dataType || 'geoespacial']
+     data.coverage || null, data.minimumUnit || null, data.keywords || null, data.dataType || 'geoespacial',
+     data.downloadPublico ? 1 : 0]
   ) as any
   clearDatasetsCache()
   return findDatasetById(result.insertId)
 }
 
 export async function updateDataset(id: number, data: any, editadoPor?: string) {
+  await ensureDatasetPreviewColumns()
   // Regista a versão anterior antes de sobrescrever (PLANO-SEGURANCA.md): sem isto, uma edição por
   // engano ou maliciosa some sem deixar rasto de "como era antes". Nunca bloqueia a actualização —
   // é best-effort, tal como a lixeira de eliminação.
@@ -925,10 +939,11 @@ export async function updateDataset(id: number, data: any, editadoPor?: string) 
 
   await db.execute(
     `UPDATE Dataset SET title=?, description=?, categoryId=?, source=?, year=?, format=?, fileSize=?, filePath=?,
-     geometry=?, coverage=?, minimumUnit=?, keywords=?, dataType=?, updatedAt=NOW() WHERE id=?`,
+     geometry=?, coverage=?, minimumUnit=?, keywords=?, dataType=?, downloadPublico=?, updatedAt=NOW() WHERE id=?`,
     [data.title, data.description, data.categoryId, data.source, data.year, data.format,
      data.fileSize, data.filePath, data.geometry || null, data.coverage || null,
-     data.minimumUnit || null, data.keywords || null, data.dataType || 'geoespacial', id]
+     data.minimumUnit || null, data.keywords || null, data.dataType || 'geoespacial',
+     data.downloadPublico ? 1 : 0, id]
   )
   clearDatasetsCache()
   return findDatasetById(id)
@@ -1401,14 +1416,97 @@ async function ensureReportSectorColumn(): Promise<void> {
   }
 }
 
+let reportOrigemColumnsEnsured = false
+
+/** `origem` distingue um relatório oficial (equipa Data4Moz) de um enviado por um utilizador —
+ *  `uploaded_by_user_id` guarda quem o enviou, para o admin poder listar por pessoa e o utilizador
+ *  poder ver o seu próprio envio mesmo antes de ser publicado. Ambas nulas/omissas em relatórios
+ *  antigos contam como oficiais (COALESCE abaixo), sem precisar de um backfill. */
+async function ensureReportOrigemColumns(): Promise<void> {
+  if (reportOrigemColumnsEnsured) return
+  reportOrigemColumnsEnsured = true
+  try {
+    await db.execute(`ALTER TABLE Report ADD COLUMN origem VARCHAR(20) NULL`)
+  } catch {
+    /* coluna já existe */
+  }
+  try {
+    await db.execute(`ALTER TABLE Report ADD COLUMN uploaded_by_user_id INT NULL`)
+  } catch {
+    /* coluna já existe */
+  }
+}
+
 export async function findAllReports() {
   await ensureReportSectorColumn()
-  const [rows] = await db.execute('SELECT * FROM Report ORDER BY createdAt DESC') as any
+  await ensureReportOrigemColumns()
+  // A listagem pública nunca mostra relatórios enviados por utilizadores: esses só ficam visíveis
+  // a quem os enviou (página de detalhe, com verificação própria) e à equipa (painel de admin).
+  const [rows] = await db.execute(
+    `SELECT * FROM Report WHERE origem IS NULL OR origem = 'oficial' ORDER BY createdAt DESC`
+  ) as any
   return rows
+}
+
+/**
+ * Um relatório enviado directamente por um utilizador, para o portal gerar a mesma análise que já
+ * gera para os relatórios oficiais — reaproveita a tabela `Report` e todo o pipeline existente
+ * (extracção de texto, digesto, verificação) em vez de duplicar essa lógica: a única diferença real
+ * é a origem e quem pode ver o resultado antes de a equipa decidir publicá-lo no catálogo.
+ */
+export async function createUserReportUpload(data: {
+  title: string
+  filePath: string
+  fileSize: string
+  userId: number
+}) {
+  await ensureReportSectorColumn()
+  await ensureReportOrigemColumns()
+  const ano = new Date().getFullYear()
+  const [result] = await db.execute(
+    `INSERT INTO Report (title, year, coverage, filePath, fileSize, origem, uploaded_by_user_id, createdAt, updatedAt)
+     VALUES (?, ?, ?, ?, ?, 'utilizador', ?, NOW(), NOW())`,
+    [data.title, ano, 'Enviado por utilizador', data.filePath, data.fileSize, data.userId]
+  ) as any
+  return findReportById(result.insertId)
+}
+
+export type RelatorioEnviadoPorUtilizador = {
+  id: number
+  title: string
+  filePath: string | null
+  fileSize: string | null
+  createdAt: string
+  utilizadorNome: string | null
+  utilizadorEmail: string | null
+}
+
+/** Todos os relatórios enviados por utilizadores, mais recentes primeiro — a lista que o painel
+ *  de administração usa para descarregar e, se fizer sentido, publicar no catálogo oficial. */
+export async function listarRelatoriosEnviadosPorUtilizadores(): Promise<RelatorioEnviadoPorUtilizador[]> {
+  await ensureReportOrigemColumns()
+  const [rows] = (await db.execute(
+    `SELECT r.id, r.title, r.filePath, r.fileSize, r.createdAt,
+            u.name AS utilizadorNome, u.email AS utilizadorEmail
+     FROM Report r
+     LEFT JOIN users u ON u.id = r.uploaded_by_user_id
+     WHERE r.origem = 'utilizador'
+     ORDER BY r.createdAt DESC`
+  )) as [any[], unknown]
+  return rows.map((r) => ({
+    id: Number(r.id),
+    title: String(r.title),
+    filePath: r.filePath || null,
+    fileSize: r.fileSize || null,
+    createdAt: new Date(r.createdAt).toISOString(),
+    utilizadorNome: r.utilizadorNome || null,
+    utilizadorEmail: r.utilizadorEmail || null,
+  }))
 }
 
 export async function findReportById(id: number) {
   await ensureReportSectorColumn()
+  await ensureReportOrigemColumns()
   const [rows] = await db.execute('SELECT * FROM Report WHERE id = ? LIMIT 1', [id]) as any
   return rows[0] || null
 }
@@ -2291,4 +2389,91 @@ export async function findUsuariosComAnaliseSobreDataset(
     resultado.push({ email: r.email, pergunta: r.question, datasetIdsRaw: r.datasetIds })
   }
   return resultado
+}
+
+// ==================== FEEDBACK (fase beta) ====================
+let feedbackTableEnsured = false
+async function ensureFeedbackTable() {
+  if (feedbackTableEnsured) return
+  await db.execute(
+    `CREATE TABLE IF NOT EXISTS Feedback (
+      id INT NOT NULL AUTO_INCREMENT,
+      userId INT NULL,
+      nome VARCHAR(150) NOT NULL,
+      email VARCHAR(254) NOT NULL,
+      mensagem TEXT NOT NULL,
+      paginaOrigem VARCHAR(500) NULL,
+      createdAt DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+      PRIMARY KEY (id),
+      INDEX Feedback_createdAt_idx (createdAt)
+    ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
+  )
+  feedbackTableEnsured = true
+}
+
+export async function createFeedback(data: {
+  userId?: number | null
+  nome: string
+  email: string
+  mensagem: string
+  paginaOrigem?: string | null
+}) {
+  await ensureFeedbackTable()
+  await db.execute(
+    'INSERT INTO Feedback (userId, nome, email, mensagem, paginaOrigem, createdAt) VALUES (?, ?, ?, ?, ?, NOW())',
+    [data.userId || null, data.nome, data.email, data.mensagem, data.paginaOrigem || null]
+  )
+}
+
+export async function findFeedbacks(): Promise<any[]> {
+  await ensureFeedbackTable()
+  const [rows] = await db.execute('SELECT * FROM Feedback ORDER BY createdAt DESC')
+  return rows as any[]
+}
+
+export type ItemNovidadeSemanal = {
+  tipo: 'dataset' | 'relatorio' | 'dashboard'
+  titulo: string
+  url: string
+}
+
+/**
+ * Tudo o que foi publicado nos últimos 7 dias, para o resumo semanal de novidades
+ * (enviarResumoSemanalNovidades em lib/notifications.ts) — datasets, relatórios (excluindo os
+ * enviados por utilizadores para análise própria, que nunca entram no catálogo público) e
+ * dashboards alfanuméricos. Mapas Inteligentes ficam de fora: são um catálogo fixo no código
+ * (lib/maps-catalog.ts), não uma tabela com data de criação.
+ */
+export async function findConteudoPublicadoNaSemana(): Promise<ItemNovidadeSemanal[]> {
+  const desde = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+
+  const [datasetRows] = (await db.execute(
+    'SELECT id, title FROM Dataset WHERE createdAt >= ? ORDER BY createdAt ASC',
+    [desde]
+  )) as [any[], unknown]
+
+  const [reportRows] = (await db.execute(
+    'SELECT id, title FROM Report WHERE createdAt >= ? AND uploaded_by_user_id IS NULL ORDER BY createdAt ASC',
+    [desde]
+  )) as [any[], unknown]
+
+  let dashboardRows: any[] = []
+  try {
+    ;[dashboardRows] = (await db.execute(
+      'SELECT id, name FROM AlphanumericDashboard WHERE createdAt >= ? ORDER BY createdAt ASC',
+      [desde]
+    )) as [any[], unknown]
+  } catch {
+    dashboardRows = []
+  }
+
+  return [
+    ...datasetRows.map((r) => ({ tipo: 'dataset' as const, titulo: r.title, url: `/dataset/${r.id}` })),
+    ...reportRows.map((r) => ({ tipo: 'relatorio' as const, titulo: r.title, url: `/relatorios/${r.id}` })),
+    ...dashboardRows.map((r) => ({
+      tipo: 'dashboard' as const,
+      titulo: r.name,
+      url: '/dashboards-alfanumericos',
+    })),
+  ]
 }

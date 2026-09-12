@@ -3,6 +3,15 @@ export type TranslateLanguage = {
   name: string
 }
 
+/** Lê o código do idioma actualmente escolhido no widget do Google Translate (cookie `googtrans`,
+ *  formato "/pt/en") — usado tanto pelo selector de idioma como por quem precisa de saber se a
+ *  página está traduzida para decidir o que mostrar (ver Navigation.tsx). */
+export function readCurrentTranslateLangCode(): string {
+  if (typeof document === 'undefined') return SOURCE_LANGUAGE.code
+  const match = document.cookie.match(/googtrans=\/[^/]+\/([^;]+)/)
+  return match?.[1] || SOURCE_LANGUAGE.code
+}
+
 // Idioma de origem do portal — deve vir sempre primeiro na lista.
 export const SOURCE_LANGUAGE: TranslateLanguage = { code: 'pt', name: 'Português (original)' }
 

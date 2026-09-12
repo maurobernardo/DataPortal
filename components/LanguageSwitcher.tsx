@@ -2,15 +2,9 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { Globe, Search, Check } from 'lucide-react'
-import { SOURCE_LANGUAGE, TRANSLATE_LANGUAGES } from '@/lib/translate-languages'
+import { SOURCE_LANGUAGE, TRANSLATE_LANGUAGES, readCurrentTranslateLangCode } from '@/lib/translate-languages'
 
 const COOKIE_NAME = 'googtrans'
-
-function readCurrentLangCode(): string {
-  if (typeof document === 'undefined') return SOURCE_LANGUAGE.code
-  const match = document.cookie.match(/googtrans=\/[^/]+\/([^;]+)/)
-  return match?.[1] || SOURCE_LANGUAGE.code
-}
 
 function applyLanguage(code: string) {
   const domain = window.location.hostname
@@ -37,7 +31,7 @@ export function LanguageSwitcher({ compact = false }: { compact?: boolean }) {
   const rootRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    setCurrent(readCurrentLangCode())
+    setCurrent(readCurrentTranslateLangCode())
   }, [])
 
   useEffect(() => {

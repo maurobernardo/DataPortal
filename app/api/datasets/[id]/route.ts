@@ -77,6 +77,7 @@ export async function PUT(
       minimumUnit: data.minimumUnit || null,
       keywords: data.keywords || null,
       dataType,
+      downloadPublico: data.downloadPublico !== undefined ? Boolean(data.downloadPublico) : Boolean(existing.downloadPublico),
     }, user.email)
 
     if (!dataset) {
@@ -124,7 +125,7 @@ export async function PUT(
         .then(async (anomalias) => {
           if (anomalias.length === 0 || !hasAuthMailConfig()) return
           const utilizadores = await findAllRegisteredUsers()
-          const admins = utilizadores.filter((u) => u.role === 'admin')
+          const admins = utilizadores.filter((u) => u.role === 'admin' && u.receberNotificacoes !== false)
           await Promise.all(admins.map((a) => sendAnomaliaVersaoEmail(a.email, dataset.title, id, anomalias)))
         })
         .catch((error) => logger.error('dataset_anomalia_versao_error', { error, id }))

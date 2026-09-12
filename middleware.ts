@@ -54,73 +54,20 @@ function isProtectedPath(pathname: string): boolean {
 }
 
 /**
- * Redireciona para HTTPS quando o proxy à frente da aplicação (comum em hosting partilhado tipo
- * cPanel, onde o Node corre atrás de um Apache/LiteSpeed que termina o TLS) diz explicitamente que
- * o pedido chegou por HTTP.
- *
- * Só actua quando o cabeçalho `x-forwarded-proto` está mesmo presente e vale `http` — nunca por
- * omissão nem a adivinhar a partir do URL do pedido (`request.url` reflecte sempre o protocolo
- * interno entre o proxy e o Node, que é tipicamente HTTP mesmo para visitas externas em HTTPS, e
- * redireccionar com base nisso criava um ciclo infinito). Se o proxy não reencaminhar este
- * cabeçalho, esta função não faz nada — mais seguro não redireccionar do que redireccionar errado.
- * Nunca em desenvolvimento (não há HTTPS nenhum a correr), e nunca em `/api/*` (chamadas de
- * servidor a servidor, como os crons, não podem ser silenciosamente redireccionadas).
+ * O redirect HTTP→HTTPS por middleware (baseado em `x-forwarded-proto`) e a protecção CSRF por
+ * verificação de origem foram ambos tentados e removidos: em hosting partilhado tipo
+ * cPanel/Passenger, os cabeçalhos que o proxy reencaminha para o Node não reflectiam de forma
+ * fiável o que o browser do visitante realmente via — o CSRF bloqueava TODO pedido POST legítimo
+ * em produção (login, recuperação de senha, análise de relatórios, AI Insights, todos a devolver
+ * 403 "origem inválida"), mesmo depois de duas tentativas de correcção. O HSTS (abaixo, em
+ * `applySecurityHeaders`) já cobre HTTPS para visitantes recorrentes; o redirect forçado por
+ * middleware fica de fora até haver forma fiável de confirmar o protocolo real no hosting actual.
+ * A defesa que fica para CSRF: cookies de sessão SameSite=Lax (lib/session.ts), que já impedem o
+ * browser de enviar o cookie de sessão em pedidos cross-site na esmagadora maioria dos casos reais.
  */
-function redirecionarParaHttps(request: NextRequest): NextResponse | null {
-  if (process.env.NODE_ENV !== 'production') return null
-  if (request.nextUrl.pathname.startsWith('/api/')) return null
-  if (request.headers.get('x-forwarded-proto') !== 'http') return null
-
-  const httpsUrl = request.nextUrl.clone()
-  httpsUrl.protocol = 'https:'
-  return NextResponse.redirect(httpsUrl, 308)
-}
-
-const METODOS_MUTAVEIS = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
-
-// Rotas chamadas por sistemas externos, não pelo browser com sessão por cookie: cron jobs (já
-// protegidos pelo próprio CRON_SECRET) e o callback de OAuth, que o browser do utilizador chega a
-// visitar via redirect vindo de google.com/linkedin.com (Origin/Referer nunca vai ser o nosso
-// próprio domínio nesse caso, mas não é um pedido forjado).
-function isentoDeCsrf(pathname: string): boolean {
-  return pathname.startsWith('/api/cron/') || pathname.startsWith('/api/auth/oauth/')
-}
-
-/**
- * Defesa CSRF por verificação de origem: um pedido que muda estado (POST/PUT/PATCH/DELETE) só é
- * aceite se vier do próprio domínio. Os cookies de sessão já são SameSite=Lax (lib/session.ts),
- * o que já bloqueia o envio automático do cookie em pedidos cross-site na maioria dos browsers
- * modernos — esta verificação é a segunda camada, explícita, que não depende do browser do
- * visitante suportar SameSite correctamente. Não exige um token CSRF novo em cada formulário/
- * fetch do frontend (que arriscava partir chamadas existentes); usa antes o cabeçalho Origin (ou
- * Referer como recurso) que o próprio browser já envia, sem a aplicação poder falsificar.
- */
-function bloqueadoPorCsrf(request: NextRequest): boolean {
-  if (!METODOS_MUTAVEIS.has(request.method)) return false
-  if (isentoDeCsrf(request.nextUrl.pathname)) return false
-
-  const origemEsperada = request.nextUrl.origin
-  const origin = request.headers.get('origin')
-  if (origin) return origin !== origemEsperada
-
-  const referer = request.headers.get('referer')
-  if (referer) return !referer.startsWith(origemEsperada)
-
-  // Nem Origin nem Referer: pedidos same-origin (fetch/formulário) enviam sempre um dos dois para
-  // métodos mutáveis nos browsers actuais — a ausência de ambos é mais provável ser um cliente
-  // não-browser forjado do que uma visita legítima, por isso bloqueia por omissão.
-  return true
-}
 
 export function middleware(request: NextRequest) {
-  const redirectoHttps = redirecionarParaHttps(request)
-  if (redirectoHttps) return redirectoHttps
-
   const pathname = request.nextUrl.pathname
-
-  if (pathname.startsWith('/api/') && bloqueadoPorCsrf(request)) {
-    return NextResponse.json({ error: 'Pedido rejeitado: origem inválida.' }, { status: 403 })
-  }
 
   const origin = request.headers.get('origin')
   const allowedOrigins = getAllowedOrigins()

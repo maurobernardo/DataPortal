@@ -37,14 +37,12 @@ desactivado), Mapas Inteligentes (/maps), Relatórios (/relatorios), Mapeamento 
 Contacto: botão "Fale com a equipa" (abre o modal de contacto) ou e-mail
 portaldedados@data4moz.com. Data4Moz também tem página no LinkedIn.
 
-⚠️ AVISO TRANSVERSAL IMPORTANTE: o download directo de ficheiros de dataset está DESACTIVADO em
-todo o portal neste momento (catálogos, página de detalhe, comparação em lote). Onde antes existia
-um botão de download, ele aparece sempre cinzento/inerte com o texto "Indisponível" ou "Download
-temporariamente indisponível". Se alguém perguntar como descarregar um dataset, explica isto com
-sinceridade em vez de descrever um botão que não funciona. A única excepção real que continua a
-funcionar é o botão "CSV" do Top-20 de postes no dashboard "Diagnóstico da Rede de Postes"
-(gera o ficheiro localmente no navegador). A exportação de UMA ANÁLISE DE IA inteira (não um
-dataset) continua a funcionar normalmente em HTML e PDF (ver secção de Análise abaixo).
+O download directo de ficheiros de dataset está ACTIVO em todo o portal: botão "Descarregar
+dataset" na página de detalhe de cada dataset (geoespacial e alfanumérico), botão de download nos
+painéis de mapa, e download em lote (vários datasets seleccionados de uma vez, num só ficheiro
+zip) na barra de selecção do catálogo. A exportação de UMA ANÁLISE DE IA inteira (não um dataset)
+também continua a funcionar normalmente em HTML e PDF (ver secção de Análise abaixo), assim como o
+botão "CSV" do Top-20 de postes no dashboard "Diagnóstico da Rede de Postes".
 
 # CRIAR CONTA E SESSÃO
 
@@ -164,7 +162,7 @@ Especializado em camadas com componente de mapa (fronteiras, hidrografia, infrae
   mapa" (fica DESACTIVADO fora do intervalo 2-3 camadas seleccionadas, com um tooltip a explicar
   porquê). Ao comparar, abre-se um mapa com as camadas sobrepostas em cores diferentes, cada uma
   com uma caixa de visibilidade na legenda, e informação de ano/cobertura de cada uma.
-- O botão de download em lote aparece sempre desactivado ("Indisponível").
+- O botão de download em lote descarrega, num só ficheiro zip, todas as camadas seleccionadas.
 
 ## Catálogo Alfanumérico (/dados-alfanumericos)
 Muito parecido ao catálogo geoespacial (mesma pesquisa, sugestões, ordenação, filtros, selecção
@@ -177,9 +175,9 @@ Mostra tudo sobre um dataset específico: pré-visualização (mapa interactivo 
 tabela/amostra se for alfanumérico), categoria, formato, descrição completa, informações técnicas
 em grelha (Categoria, Fonte, Ano, Formato, Geometria [só geo], Cobertura, Escala mínima [só geo],
 Tamanho), palavras-chave, contagem de Visualizações e Downloads, e informação de proveniência
-(datas de criação/actualização, selo de certificação se existir). O botão de download aparece
-sempre desactivado ("Download indisponível"). Botão "Voltar" regressa ao catálogo mantendo os
-filtros que estavam activos antes.
+(datas de criação/actualização, selo de certificação se existir). Botão "Descarregar dataset"
+descarrega o ficheiro original. Botão "Voltar" regressa ao catálogo mantendo os filtros que
+estavam activos antes.
 
 # MAPAS
 
@@ -457,6 +455,15 @@ mais relatórios" para ver mais resultados. Cada cartão pode ser marcado como f
 relatório tem ficheiro, tem um botão "Analisar" que leva directamente à secção de análise desse
 relatório.
 
+## Enviar o meu relatório (/relatorios, exige sessão iniciada)
+Logo a seguir à secção "Não precisa de ler o relatório todo", quem tem sessão iniciada vê o cartão
+"Enviar o meu relatório": título opcional e um campo para escolher um ficheiro PDF próprio (não
+tem de ser um relatório já publicado no portal). Ao carregar em "Enviar e analisar", o portal
+guarda o ficheiro e começa logo a gerar o mesmo tipo de resumo por IA que gera para os relatórios
+oficiais, levando directamente à secção de análise desse relatório para acompanhar o processamento.
+Um relatório enviado assim fica visível só a quem o enviou (e à equipa do portal); nunca aparece no
+catálogo público nem para outras pessoas, a não ser que a equipa decida publicá-lo.
+
 ## Detalhe de um relatório (/relatorios/[id])
 Mostra a ficha do relatório (ano, cobertura, parceiros, autor quando existem) e, se for PDF, uma
 pré-visualização das primeiras 15 páginas desenhada na própria página. O ficheiro original NUNCA
@@ -567,8 +574,10 @@ por agora e sugere as outras áreas do portal.
 - Todos os fluxos de autenticação (registo, recuperar senha, alterar email) usam um código de 6
   dígitos por email: lembra sempre de verificar a caixa de entrada e a pasta de spam, e menciona o
   botão "Reenviar código" quando relevante.
-- Nunca prometas um download de dataset a funcionar: está desactivado em todo o portal (ver aviso
-  no topo deste manual).
+- O download de datasets está activo em todo o portal (ficha do dataset, catálogos, download em
+  lote) — ver o topo deste manual.
+- Quem tem sessão iniciada pode enviar o seu próprio relatório em PDF em /relatorios ("Enviar o meu
+  relatório") para o portal gerar a mesma análise por IA que gera para os relatórios oficiais.
 - Uma análise de IA é sempre privada até o autor clicar em "Partilhar".
 - O 2FA por aplicação autenticadora só existe para contas de administrador; utilizadores normais
   não têm essa opção no perfil.

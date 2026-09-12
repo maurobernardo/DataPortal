@@ -7,6 +7,16 @@ import { Menu, X, Database, FileText, Map, MapPinned, Home, LogIn, UserPlus, Lay
 import Image from 'next/image'
 import { NavUserMenu } from '@/components/NavUserMenu'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
+import { readCurrentTranslateLangCode } from '@/lib/translate-languages'
+
+// O Google Translate por vezes escolhe traduções estranhas para os nomes próprios de secções do
+// portal ("Início" -> "Start", "Mapas Inteligentes" -> "Smart Maps"). Para estes casos específicos,
+// mostra-se directamente o texto em inglês escolhido pela equipa (marcado "notranslate" para o
+// Google não voltar a mexer nele) em vez de deixar a tradução automática decidir.
+const ROTULOS_INGLES_FIXOS: Record<string, string> = {
+  '/': 'Home',
+  '/maps': 'Intelligent Maps',
+}
 
 type SessionUser = {
   id: number
@@ -25,8 +35,8 @@ export function Navigation() {
   const pathname = usePathname()
   const [scrolled, setScrolled] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [compactNav, setCompactNav] = useState(false)
   const [sessionUser, setSessionUser] = useState<SessionUser | null>(null)
+  const [langCode, setLangCode] = useState('pt')
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20)
@@ -35,16 +45,7 @@ export function Navigation() {
   }, [])
 
   useEffect(() => {
-    // O cabeçalho completo (logo + links + AI + idioma + Entrar) precisa de mais espaço do que
-    // cabe num ecrã estreito. Este limiar acompanha `.pd-nav-inner` (ver globals.css): tentar um
-    // valor colado à medida exacta do conteúdo (sem folga) partiu ao primeiro browser/zoom com
-    // métricas de fonte ligeiramente diferentes das medidas — por isso 1460px, não o mínimo
-    // teórico, para sobrar sempre alguma margem real.
-    const mq = window.matchMedia('(max-width: 1460px)')
-    const update = () => setCompactNav(mq.matches)
-    update()
-    mq.addEventListener('change', update)
-    return () => mq.removeEventListener('change', update)
+    setLangCode(readCurrentTranslateLangCode())
   }, [])
 
   useEffect(() => {
@@ -67,37 +68,37 @@ export function Navigation() {
   const renderNavLink = ({
     href,
     label,
-    compactLabel,
     icon: Icon,
   }: {
     href: string
     label: string
-    compactLabel: string
     icon: typeof Home
   }) => {
     const active = isNavLinkActive(pathname, href)
-    const displayLabel = compactNav ? compactLabel : label
+    const rotuloIngles = langCode === 'en' ? ROTULOS_INGLES_FIXOS[href] : undefined
     return (
       <Link
         key={href}
         href={href}
         className={`pd-nav-link${active ? ' active' : ''}${href === '/maps' ? ' pd-nav-link--maps' : ''}`}
         aria-current={active ? 'page' : undefined}
-        title={label}
+        title={rotuloIngles || label}
       >
-        {!compactNav ? <Icon size={15} strokeWidth={2} aria-hidden /> : null}
-        <span className="pd-nav-link-label">{displayLabel}</span>
+        <Icon size={15} strokeWidth={2} aria-hidden />
+        <span className={`pd-nav-link-label${rotuloIngles ? ' notranslate' : ''}`}>
+          {rotuloIngles || label}
+        </span>
       </Link>
     )
   }
 
   const navLinks = [
-    { href: '/', label: 'Início', compactLabel: 'Início', icon: Home },
-    { href: '/dados-espaciais', label: 'Geoespaciais', compactLabel: 'Geo', icon: Map },
-    { href: '/dados-alfanumericos', label: 'Alfanuméricos', compactLabel: 'Alfanum.', icon: Database },
-    { href: '/maps', label: 'Mapas Inteligentes', compactLabel: 'Mapas', icon: MapPinned },
-    { href: '/relatorios', label: 'Relatórios', compactLabel: 'Relat.', icon: FileText },
-    { href: '/servicos', label: 'Serviços', compactLabel: 'Serviços', icon: LayoutGrid },
+    { href: '/', label: 'Início', icon: Home },
+    { href: '/dados-espaciais', label: 'Geoespaciais', icon: Map },
+    { href: '/dados-alfanumericos', label: 'Alfanuméricos', icon: Database },
+    { href: '/maps', label: 'Mapas Inteligentes', icon: MapPinned },
+    { href: '/relatorios', label: 'Relatórios', icon: FileText },
+    { href: '/servicos', label: 'Serviços', icon: LayoutGrid },
   ]
 
   return (
@@ -189,6 +190,7 @@ export function Navigation() {
         <div className={`pd-mobile-menu${mobileMenuOpen ? ' open' : ''}`}>
           {navLinks.map(({ href, label, icon: Icon }) => {
             const active = isNavLinkActive(pathname, href)
+            const rotuloIngles = langCode === 'en' ? ROTULOS_INGLES_FIXOS[href] : undefined
             return (
               <Link
                 key={href}
@@ -198,7 +200,7 @@ export function Navigation() {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <Icon size={18} strokeWidth={2} />
-                {label}
+                <span className={rotuloIngles ? 'notranslate' : undefined}>{rotuloIngles || label}</span>
               </Link>
             )
           })}

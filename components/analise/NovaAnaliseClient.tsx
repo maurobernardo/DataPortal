@@ -98,7 +98,14 @@ function mensagemDeEspera(segundos: number): string {
   return 'Ainda a preparar o plano: perguntas assim costumam demorar entre 1 e 3 minutos nesta fase.'
 }
 
-export function NovaAnaliseClient({ datasets }: { datasets: DatasetParaEscolha[] }) {
+export function NovaAnaliseClient({
+  datasets,
+  analisesRestantes,
+}: {
+  datasets: DatasetParaEscolha[]
+  /** null = sem limite (administrador); número = quantas análises gratuitas ainda restam. */
+  analisesRestantes: number | null
+}) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [pesquisa, setPesquisa] = useState('')
@@ -587,6 +594,14 @@ export function NovaAnaliseClient({ datasets }: { datasets: DatasetParaEscolha[]
           </p>
         </header>
 
+        {!aCorrer && analisesRestantes !== null && (
+          <div className={`pdx-aviso-limite${analisesRestantes === 0 ? ' pdx-aviso-limite-esgotado' : ''}`}>
+            {analisesRestantes === 0
+              ? 'Já usou as suas 2 análises gratuitas (dados e relatórios contam para o mesmo limite). Contacte a equipa do portal para continuar a analisar.'
+              : `Tem ${analisesRestantes} ${analisesRestantes === 1 ? 'análise gratuita' : 'análises gratuitas'} restante${analisesRestantes === 1 ? '' : 's'}: conta partilhada com a análise de relatórios.`}
+          </div>
+        )}
+
         {!aCorrer && (
           <>
             <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-4 lg:gap-5 items-start">
@@ -901,16 +916,23 @@ export function NovaAnaliseClient({ datasets }: { datasets: DatasetParaEscolha[]
                     Datasets {seleccionados.length}/{MAX_DATASETS}
                   </span>
                 </div>
-                {!podeAnalisar && (
-                  <p className="text-[12px] mt-1" style={{ color: 'var(--ink-faint)' }} aria-live="polite">
-                    Seleccione 1 a {MAX_DATASETS} datasets e escreva a sua pergunta (mín. {MIN_PERGUNTA} caracteres).
+                {analisesRestantes === 0 ? (
+                  <p className="text-[12px] mt-1" style={{ color: '#7A1F1F' }} aria-live="polite">
+                    Já usou as suas 2 análises gratuitas. Contacte a equipa do portal para continuar a analisar.
                   </p>
+                ) : (
+                  !podeAnalisar && (
+                    <p className="text-[12px] mt-1" style={{ color: 'var(--ink-faint)' }} aria-live="polite">
+                      Seleccione 1 a {MAX_DATASETS} datasets e escreva a sua pergunta (mín. {MIN_PERGUNTA} caracteres).
+                    </p>
+                  )
                 )}
               </div>
               <button
                 type="button"
                 onClick={() => iniciar()}
-                disabled={!podeAnalisar}
+                disabled={!podeAnalisar || analisesRestantes === 0}
+                title={analisesRestantes === 0 ? 'Já usou as suas 2 análises gratuitas' : undefined}
                 className="pdx-btn pdx-btn-primary pdx-btn-grande"
               >
                 Analisar

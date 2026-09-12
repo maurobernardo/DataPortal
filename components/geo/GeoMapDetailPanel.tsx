@@ -7,6 +7,7 @@ import { getCachedPreview, setCachedPreview } from '@/lib/preview-cache'
 import { GeoInsightsCard } from '@/components/geo/GeoInsightsCard'
 import { RelatedDatasets } from '@/components/RelatedDatasets'
 import { GeoMapSkeleton } from '@/components/geo/GeoMapSkeleton'
+import { DownloadDatasetButton } from '@/components/DownloadDatasetButton'
 import type { GeoInsights } from '@/lib/geo-intelligence'
 
 const InteractiveGeoMapPreview = dynamic(
@@ -217,10 +218,15 @@ export function GeoMapDetailPanel({ dataset }: { dataset: GeoDataset | null }) {
           <Link href={`/dataset/${dataset.id}`} className="geo-ldp-action-primary">
             Ver dataset completo →
           </Link>
-          {dataset.filePath ? (
+          {dataset.filePath && dataset.downloadPublico ? (
+            <DownloadDatasetButton
+              datasetId={dataset.id}
+              className="geo-ldp-action-secondary"
+            />
+          ) : dataset.filePath ? (
             <span
               className="geo-ldp-action-secondary opacity-50 cursor-not-allowed pointer-events-none"
-              title="Download temporariamente indisponível"
+              title="Download não disponível para este dataset"
             >
               ↓ Indisponível
             </span>

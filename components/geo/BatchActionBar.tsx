@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Download, Loader2, Map as MapIcon, Scale, X } from 'lucide-react'
 
 export function BatchActionBar({
@@ -16,6 +17,7 @@ export function BatchActionBar({
    *  alfanuméricos comparam metadados numa tabela, não num mapa. */
   compareLabel?: string
 }) {
+  const router = useRouter()
   const [downloading, setDownloading] = useState(false)
 
   if (selectedIds.length === 0) return null
@@ -28,6 +30,10 @@ export function BatchActionBar({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ids: selectedIds }),
       })
+      if (res.status === 401) {
+        router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`)
+        return
+      }
       if (!res.ok) {
         const data = await res.json().catch(() => null)
         alert(data?.error || 'Erro ao gerar o ficheiro zip')
@@ -71,12 +77,12 @@ export function BatchActionBar({
         )}
         <button
           type="button"
-          className="geo-batch-bar-btn opacity-50 cursor-not-allowed"
-          disabled
-          title="Download temporariamente indisponível"
+          className="geo-batch-bar-btn"
+          onClick={handleDownload}
+          disabled={downloading}
         >
-          <Download className="size-4" aria-hidden />
-          Indisponível
+          {downloading ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Download className="size-4" aria-hidden />}
+          {downloading ? 'A preparar...' : 'Download'}
         </button>
         <button type="button" className="geo-batch-bar-close" onClick={onClear} aria-label="Limpar seleção">
           <X className="size-4" aria-hidden />

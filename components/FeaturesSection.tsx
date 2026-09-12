@@ -240,7 +240,7 @@ export function FeaturesSection() {
           <div className="flex gap-8 md:gap-10 shrink-0">
             {[
               { n: '13+', label: 'Funcionalidades' },
-              { n: '100%', label: 'Acesso aberto' },
+              { n: '0 MT', label: 'Para começar' },
               { n: '∞', label: 'Formatos' },
             ].map(({ n, label }) => (
               <div key={label} className="text-center">
@@ -255,7 +255,6 @@ export function FeaturesSection() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 mb-6">
           {visible.map((f, i) => {
-            const Icon = f.icon
             const vs = variantStyles[f.variant]
             const isHero = i === 0
             return (
@@ -273,15 +272,6 @@ export function FeaturesSection() {
                   </span>
 
                   <div className="flex items-center gap-3 mb-5 pr-8">
-                    <div
-                      className={[
-                        'shrink-0 w-12 h-12 rounded-xl flex items-center justify-center border transition-transform duration-300 group-hover:scale-105',
-                        vs.iconBg,
-                        vs.iconBorder,
-                      ].join(' ')}
-                    >
-                      <Icon className="w-5 h-5" color={vs.iconStroke} strokeWidth={2} />
-                    </div>
                     <span
                       className={`inline-flex w-fit items-center text-[11px] font-semibold tracking-wide uppercase px-3 py-1.5 rounded-full ${vs.tagClass}`}
                     >

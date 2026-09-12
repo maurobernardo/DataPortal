@@ -136,15 +136,66 @@ function GraficoVisualizacoes({ datasets }: { datasets: HeroPreviewDataset[] }) 
   )
 }
 
+/** O cartão de destaque troca de dataset geoespacial de tempos a tempos, em vez de ficar preso
+ *  ao mesmo desde que a página carregou — pedido explícito: só datasets geoespaciais (os
+ *  alfanuméricos não têm mapa para mostrar aqui). */
+const INTERVALO_ROTACAO_MS = 3 * 60 * 1000
+
 function HeroPreview({
   datasets,
-  destaquePreview,
+  geoDatasets,
+  destaquePreviewInicial,
 }: {
   datasets: HeroPreviewDataset[]
-  destaquePreview: { geojson: any; bbox: [number, number, number, number] | null } | null
+  geoDatasets: HeroPreviewDataset[]
+  destaquePreviewInicial: { geojson: any; bbox: [number, number, number, number] | null } | null
 }) {
-  const destaque = datasets[0]
   const ranking = datasets.slice(0, 2)
+
+  const [indice, setIndice] = useState(0)
+  const [destaquePreview, setDestaquePreview] = useState(destaquePreviewInicial)
+  // Segue "indice" sem entrar nas dependências do efeito de rotação abaixo: só serve para o
+  // temporizador saber, quando dispara, qual é o índice actual — usar "indice" directamente ali
+  // obrigaria a recriar o setInterval a cada troca, o que reinicia a contagem dos 3 minutos.
+  const indiceRef = useRef(0)
+  useEffect(() => {
+    indiceRef.current = indice
+  }, [indice])
+
+  useEffect(() => {
+    if (geoDatasets.length < 2) return
+    let cancelado = false
+
+    async function rodar() {
+      const proximoIndice = (indiceRef.current + 1) % geoDatasets.length
+      const proximo = geoDatasets[proximoIndice]
+      if (!proximo) return
+      // Busca a pré-visualização do próximo dataset ANTES de trocar o título/selo: trocar os dois
+      // a par é o que importa aqui — antes, o título mudava logo e o mapa só chegava depois (ou
+      // nunca, porque o remount pela key já tinha passado), mostrando um dataset com o mapa de
+      // outro durante a espera.
+      try {
+        const res = await fetch(`/api/datasets/${proximo.id}/preview`)
+        const dados = res.ok ? await res.json() : null
+        if (cancelado) return
+        setDestaquePreview(dados?.type === 'geo' ? { geojson: dados.geojson, bbox: dados.bbox ?? null } : null)
+        setIndice(proximoIndice)
+      } catch {
+        if (!cancelado) {
+          setDestaquePreview(null)
+          setIndice(proximoIndice)
+        }
+      }
+    }
+
+    const temporizador = setInterval(rodar, INTERVALO_ROTACAO_MS)
+    return () => {
+      cancelado = true
+      clearInterval(temporizador)
+    }
+  }, [geoDatasets])
+
+  const destaque = geoDatasets[indice]
 
   const cardStyle: CSSProperties = {
     background: GLASS.bg,
@@ -180,7 +231,11 @@ function HeroPreview({
           pré-visualização não pôde ser gerada (ficheiro em falta, formato não suportado). ── */}
       <div style={{ position: 'relative', height: 268 }}>
         {destaquePreview ? (
+          // key=destaque.id: o mapa Leaflet só é construído uma vez (ver DatasetMapPreview), por
+          // isso precisa de remontar por completo a cada troca de dataset na rotação — sem isto,
+          // ficava preso para sempre à geometria do primeiro destaque mostrado.
           <DatasetMapPreview
+            key={destaque.id}
             geojson={destaquePreview.geojson}
             bbox={destaquePreview.bbox}
             className="w-full h-full"
@@ -192,7 +247,7 @@ function HeroPreview({
             title={destaque.title}
             category={destaque.category || 'Geral'}
             index={0}
-            kind={destaque.dataType === 'geoespacial' ? 'geo' : 'alf'}
+            kind="geo"
           />
         )}
         {/* z-index alto e explícito em tudo o que se sobrepõe ao mapa: o Leaflet cria as suas
@@ -423,12 +478,16 @@ function HeroPreview({
 export function HeroSection({
   statsData,
   highlightedDatasets,
+  geoDatasets,
   destaquePreview = null,
 }: {
   statsData: HeroStats
   highlightedDatasets: HeroPreviewDataset[]
-  /** Geometria real (geojson/bbox) do dataset em destaque (datasets[0]), pré-gerada no servidor —
-   *  null quando o destaque é alfanumérico ou a pré-visualização não pôde ser gerada. */
+  /** Datasets geoespaciais candidatos ao cartão de destaque, do mais ao menos visto — o cartão
+   *  roda entre eles no cliente (ver HeroPreview). Nunca inclui alfanuméricos: não têm mapa. */
+  geoDatasets: HeroPreviewDataset[]
+  /** Geometria real (geojson/bbox) do primeiro dataset de geoDatasets, pré-gerada no servidor —
+   *  null quando não pôde ser gerada. As seguintes, ao rodar, são pedidas já no cliente. */
   destaquePreview?: { geojson: any; bbox: [number, number, number, number] | null } | null
 }) {
   const router = useRouter()
@@ -438,8 +497,15 @@ export function HeroSection({
   const [certificadoAberto, setCertificadoAberto] = useState(false)
   const searchBarRef = useRef<HTMLDivElement>(null)
 
+  // Arredondado por baixo ("100+", "200+") só para o total de datasets: é o número que muda mais
+  // devagar mas aparece na primeira dobra do portal, e um valor exacto (ex.: "107") obriga a olhar
+  // para ele como se fosse preciso ao dataset — um "100+" comunica a mesma escala sem prometer
+  // precisão que ninguém vai verificar. Os outros três KPIs (organizações, downloads,
+  // visualizações) continuam exactos.
+  const arredondarComMais = (n: number) => (n >= 100 ? `${Math.floor(n / 100) * 100}+` : Math.round(n).toLocaleString('pt-BR'))
+
   const stats = [
-    { num: statsData.datasets, label: 'Datasets' },
+    { num: statsData.datasets, label: 'Datasets', formatar: arredondarComMais },
     { num: statsData.organizations, label: 'Organizações' },
     { num: statsData.downloads, label: 'Downloads' },
     { num: statsData.views, label: 'Visualizações' },
@@ -518,7 +584,7 @@ export function HeroSection({
             <RevealOnScroll delayMs={70}>
               <h1>
                 A infraestrutura de dados{' '}
-                <span className="accent">de Moçambique</span>, num só lugar.
+                <span className="accent">de Moçambique,</span> num só lugar.
               </h1>
             </RevealOnScroll>
 
@@ -605,7 +671,7 @@ export function HeroSection({
                 {stats.map((s) => (
                   <div key={s.label}>
                     <div className="pd-stat-num">
-                      <CountUp value={s.num} formatar={(n) => Math.round(n).toLocaleString('pt-BR')} />
+                      <CountUp value={s.num} formatar={s.formatar || ((n) => Math.round(n).toLocaleString('pt-BR'))} />
                     </div>
                     <div className="pd-stat-label">{s.label}</div>
                   </div>
@@ -616,7 +682,11 @@ export function HeroSection({
 
           {/* ── RIGHT COLUMN — Live preview ── */}
           <RevealOnScroll delayMs={160}>
-            <HeroPreview datasets={highlightedDatasets} destaquePreview={destaquePreview} />
+            <HeroPreview
+              datasets={highlightedDatasets}
+              geoDatasets={geoDatasets}
+              destaquePreviewInicial={destaquePreview}
+            />
           </RevealOnScroll>
         </div>
       </section>

@@ -1,0 +1,20 @@
+{
+  "provinces": [
+    {"province": "Niassa", "region": "North", "lat": -13.2, "lon": 35.2, "tile_x": 1, "tile_y": 0, "v2015": 36.3, "v2018": 48.6, "n2015": 285, "n2018": 278, "delta": 12.3, "relative_change": 33.9, "risk_2018": "High", "source_2015": "IMASIDA 2015, Quadro 10.13, PDF page 180", "source_2018": "IIM 2018, Quadro 4.10, PDF page 92"},
+    {"province": "Cabo Delgado", "region": "North", "lat": -12.3, "lon": 39.3, "tile_x": 2, "tile_y": 0, "v2015": 25.1, "v2018": 57.3, "n2015": 356, "n2018": 354, "delta": 32.2, "relative_change": 128.3, "risk_2018": "Very high", "source_2015": "IMASIDA 2015, Quadro 10.13, PDF page 180", "source_2018": "IIM 2018, Quadro 4.10, PDF page 92"},
+    {"province": "Nampula", "region": "North", "lat": -15.1, "lon": 39.0, "tile_x": 2, "tile_y": 1, "v2015": 65.6, "v2018": 47.9, "n2015": 1134, "n2018": 969, "delta": -17.7, "relative_change": -27.0, "risk_2018": "High", "source_2015": "IMASIDA 2015, Quadro 10.13, PDF page 180", "source_2018": "IIM 2018, Quadro 4.10, PDF page 92"},
+    {"province": "Zambézia", "region": "Central", "lat": -16.7, "lon": 36.8, "tile_x": 1, "tile_y": 2, "v2015": 67.6, "v2018": 44.3, "n2015": 581, "n2018": 910, "delta": -23.3, "relative_change": -34.5, "risk_2018": "High", "source_2015": "IMASIDA 2015, Quadro 10.13, PDF page 180", "source_2018": "IIM 2018, Quadro 4.10, PDF page 92"},
+    {"province": "Tete", "region": "Central", "lat": -15.8, "lon": 33.6, "tile_x": 0, "tile_y": 2, "v2015": 30.1, "v2018": 29.4, "n2015": 375, "n2018": 386, "delta": -0.7, "relative_change": -2.3, "risk_2018": "Moderate", "source_2015": "IMASIDA 2015, Quadro 10.13, PDF page 180", "source_2018": "IIM 2018, Quadro 4.10, PDF page 92"},
+    {"province": "Manica", "region": "Central", "lat": -19.0, "lon": 33.5, "tile_x": 0, "tile_y": 3, "v2015": 25.2, "v2018": 47.6, "n2015": 405, "n2018": 332, "delta": 22.4, "relative_change": 88.9, "risk_2018": "High", "source_2015": "IMASIDA 2015, Quadro 10.13, PDF page 180", "source_2018": "IIM 2018, Quadro 4.10, PDF page 92"},
+    {"province": "Sofala", "region": "Central", "lat": -18.8, "lon": 35.1, "tile_x": 1, "tile_y": 3, "v2015": 31.5, "v2018": 29.4, "n2015": 483, "n2018": 415, "delta": -2.1, "relative_change": -6.7, "risk_2018": "Moderate", "source_2015": "IMASIDA 2015, Quadro 10.13, PDF page 180", "source_2018": "IIM 2018, Quadro 4.10, PDF page 92"},
+    {"province": "Inhambane", "region": "South", "lat": -22.4, "lon": 35.4, "tile_x": 1, "tile_y": 4, "v2015": 22.3, "v2018": 35.1, "n2015": 318, "n2018": 240, "delta": 12.8, "relative_change": 57.4, "risk_2018": "Moderate", "source_2015": "IMASIDA 2015, Quadro 10.13, PDF page 180", "source_2018": "IIM 2018, Quadro 4.10, PDF page 92"},
+    {"province": "Gaza", "region": "South", "lat": -23.3, "lon": 33.7, "tile_x": 0, "tile_y": 4, "v2015": 16.0, "v2018": 16.8, "n2015": 399, "n2018": 217, "delta": 0.8, "relative_change": 5.0, "risk_2018": "Low", "source_2015": "IMASIDA 2015, Quadro 10.13, PDF page 180", "source_2018": "IIM 2018, Quadro 4.10, PDF page 92"},
+    {"province": "Maputo Província", "region": "South", "lat": -25.6, "lon": 32.4, "tile_x": 0, "tile_y": 5, "v2015": 2.8, "v2018": 1.3, "n2015": 174, "n2018": 197, "delta": -1.5, "relative_change": -53.6, "risk_2018": "Low", "source_2015": "IMASIDA 2015, Quadro 10.13, PDF page 180", "source_2018": "IIM 2018, Quadro 4.10, PDF page 92"},
+    {"province": "Maputo Cidade", "region": "South", "lat": -25.96, "lon": 32.58, "tile_x": 1, "tile_y": 5, "v2015": 2.2, "v2018": 0.9, "n2015": 129, "n2018": 129, "delta": -1.3, "relative_change": -59.1, "risk_2018": "Low", "source_2015": "IMASIDA 2015, Quadro 10.13, PDF page 180", "source_2018": "IIM 2018, Quadro 4.10, PDF page 92"}
+  ],
+  "national": [
+    {"geography": "Mozambique", "year": 2011, "value": 39.0, "source": "IIM 2018, Figure 4.5 trend summary"},
+    {"geography": "Mozambique", "year": 2015, "value": 39.6, "source": "IMASIDA 2015, Quadro 10.13"},
+    {"geography": "Mozambique", "year": 2018, "value": 39.0, "source": "IIM 2018, Figure 4.5 and Quadro 4.10 narrative"}
+  ]
+}

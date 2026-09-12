@@ -1,6 +1,17 @@
-/** URL pública do site (SEO, sitemap, robots). Preferir NEXT_PUBLIC_SITE_URL em produção. */
+/**
+ * URL pública do site (SEO, sitemap, robots, links em emails).
+ *
+ * NEXTAUTH_URL primeiro, nunca NEXT_PUBLIC_SITE_URL primeiro: uma variável NEXT_PUBLIC_ fica
+ * gravada FIXA no código JS durante `next build`, com o valor que estiver activo na máquina onde o
+ * build correu — não é lida em tempo real no servidor. Apanhado ao vivo: o build local tem
+ * `.env.local` com `NEXT_PUBLIC_SITE_URL=http://localhost:3000` (para desenvolvimento), e esse
+ * valor ficava congelado no `.next` publicado, fazendo o robots.txt em produção apontar o sitemap
+ * para localhost — Googlebot nunca encontrava o sitemap. NEXTAUTH_URL não tem o prefixo NEXT_PUBLIC_,
+ * por isso É lida em tempo real a partir do .env do próprio servidor, correcta independentemente de
+ * onde o build foi feito (mesmo raciocínio já usado em lib/mailer.ts e lib/oauth.ts).
+ */
 export function getSiteUrl(): string {
-  const fromEnv = process.env.NEXT_PUBLIC_SITE_URL?.trim()
+  const fromEnv = (process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_SITE_URL)?.trim()
   if (fromEnv) return fromEnv.replace(/\/$/, '')
   const vercel = process.env.VERCEL_URL?.trim()
   if (vercel) return `https://${vercel.replace(/^https?:\/\//, '').replace(/\/$/, '')}`

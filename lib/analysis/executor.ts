@@ -2866,80 +2866,6 @@ function gerarCascataDeVariacao(ctx: ContextoExecucao): void {
 }
 
 /**
- * A forma da distribuição de cada indicador entre as unidades.
- *
- * Máximo, mínimo e mediana já vão para os KPIs como três números soltos. O que eles não dizem é
- * onde vive a maioria, quão espalhada está, e quem ficou claramente de fora. Um país com metade
- * dos distritos entre 38 e 120 escolas e um a 360 conta uma história diferente de um em que a
- * mesma mediana vem de valores todos encostados — e os três números são iguais nos dois casos.
- *
- * Os valores extremos são calculados pela mesma regra de Tukey que o resto da análise usa (fora de
- * Q1 - 1,5·IQR a Q3 + 1,5·IQR), e cada ponto guarda o nome da unidade: um extremo sem nome é uma
- * curiosidade, com nome é uma pista.
- */
-function gerarCaixasDeDistribuicao(ctx: ContextoExecucao): void {
-  const MIN_UNIDADES = 5
-
-  const porNivel = new Map<string, SerieGeografica[]>()
-  for (const serie of ctx.series) {
-    if (serie.unidades.length < MIN_UNIDADES || serie.modo === 'categorico') continue
-    const grupo = porNivel.get(serie.nivel) || []
-    grupo.push(serie)
-    porNivel.set(serie.nivel, grupo)
-  }
-
-  for (const [nivel, series] of Array.from(porNivel)) {
-    const distribuicoes = series.map((serie) => {
-      const ordenados = serie.unidades.map((u) => u.valor).filter((v) => Number.isFinite(v)).sort((a, b) => a - b)
-      const quantil = (q: number) => ordenados[Math.min(ordenados.length - 1, Math.floor(ordenados.length * q))]
-      const q1 = quantil(0.25)
-      const q3 = quantil(0.75)
-      const iqr = q3 - q1
-      const abaixo = q1 - 1.5 * iqr
-      const acima = q3 + 1.5 * iqr
-      const foraDoPadrao = serie.unidades
-        .filter((u) => u.valor < abaixo || u.valor > acima)
-        .sort((a, b) => Math.abs(b.valor - quantil(0.5)) - Math.abs(a.valor - quantil(0.5)))
-        .slice(0, 8)
-        .map((u) => ({ nome: u.nome, valor: u.valor }))
-      // Os bigodes param no último valor DENTRO do intervalo aceite: esticá-los até ao extremo
-      // faria o ponto fora do padrão parecer o fim normal da distribuição.
-      const dentro = ordenados.filter((v) => v >= abaixo && v <= acima)
-      return {
-        nome: serie.metrica,
-        min: dentro.length ? dentro[0] : ordenados[0],
-        q1,
-        mediana: quantil(0.5),
-        q3,
-        max: dentro.length ? dentro[dentro.length - 1] : ordenados[ordenados.length - 1],
-        outliers: foraDoPadrao,
-        n: ordenados.length,
-      }
-    })
-
-    // Várias caixas partilham um eixo horizontal: se as escalas não forem comparáveis, uma caixa
-    // fica achatada contra a margem e as outras num traço. Nesse caso desenha-se só a primeira.
-    const magnitudes = distribuicoes.map((d) => Math.abs(d.max)).filter((m) => m > 0)
-    const comparaveis =
-      magnitudes.length < 2 || Math.max(...magnitudes) / Math.min(...magnitudes) <= 12
-    const aDesenhar = comparaveis ? distribuicoes : distribuicoes.slice(0, 1)
-
-    empurrarGrafico(ctx, {
-      passo_id: `distribuicao_${nivel}`,
-      forma: 'caixa',
-      titulo:
-        aDesenhar.length === 1
-          ? `Como se distribui: ${aDesenhar[0].nome}`
-          : 'Como se distribuem os indicadores entre as unidades',
-      eixoX: [],
-      series: [],
-      distribuicoes: aDesenhar,
-      categoria: 'comparativo',
-    })
-  }
-}
-
-/**
  * Três medidas de cada unidade num só desenho.
  *
  * É o par do radar, para o caso que o radar recusa. Quando os indicadores vivem em ordens de
@@ -3043,7 +2969,6 @@ function gerarFunilDeCobertura(ctx: ContextoExecucao): void {
 export function gerarGraficosDeGarantia(ctx: ContextoExecucao): void {
   gerarRadarDePerfil(ctx)
   gerarBolhasDeTresMedidas(ctx)
-  gerarCaixasDeDistribuicao(ctx)
   gerarCascataDeVariacao(ctx)
   gerarFunilDeCobertura(ctx)
 
